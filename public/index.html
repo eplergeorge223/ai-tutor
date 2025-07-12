@@ -360,6 +360,7 @@
             stopSpeech();
             
             const speechSupported = initializeSpeechRecognition();
+            speechSynthesis.speak(new SpeechSynthesisUtterance(' '));
             if (!speechSupported) {
                 alert('Speech recognition is not supported in this browser. Please use Chrome or Edge for the best experience.');
                 return;
@@ -513,28 +514,32 @@ return;
             });
         }
 
-        // Text-to-speech
-        function speak(text) {
-            stopSpeech();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9;
-            utterance.pitch = 1.1;
-            utterance.volume = 1;
-            
-            const voices = speechSynthesis.getVoices();
-            const preferredVoice = voices.find(voice => 
-                voice.name.includes('Female') || 
-                voice.name.includes('Samantha') || 
-                voice.name.includes('Karen') ||
-                (voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female'))
-            );
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
-            }
-            
-            speechSynthesis.speak(utterance);
-        }
+function speak(text) {
+    stopSpeech(); // cancel previous if speaking
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 1;
+
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice =>
+        voice.name.includes('Samantha') ||
+        voice.name.includes('Karen') ||
+        (voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female'))
+    );
+
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
+    }
+
+    // Helps mobile reliability
+    utterance.onend = () => console.log("✅ Speech ended");
+    utterance.onerror = (e) => console.error("❌ Speech error:", e.error);
+
+    speechSynthesis.speak(utterance);
+}
+
 
         // Stop speech
         function stopSpeech() {
