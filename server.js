@@ -1,3 +1,16 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+// Write Google credentials from env var to a temp file and set GOOGLE_APPLICATION_CREDENTIALS
+if (process.env.GOOGLE_CREDENTIALS_JSON) {
+  const tmpDir = os.tmpdir();
+  const credPath = path.join(tmpDir, 'google-credentials.json');
+  fs.writeFileSync(credPath, process.env.GOOGLE_CREDENTIALS_JSON);
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath;
+}
+
+
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
