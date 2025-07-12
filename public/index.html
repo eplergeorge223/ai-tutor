@@ -681,6 +681,8 @@ setTimeout(() => {
         }
 
         async function startTutoring() {
+
+            
             await initializeSpeechSynthesis();
             
             const speechSupported = initializeSpeechRecognition();
@@ -692,6 +694,10 @@ setTimeout(() => {
 
             const studentName = document.getElementById('student-name').value.trim();
             const studentGrade = document.getElementById('student-grade').value;
+
+                if (!studentName || !studentGrade) {
+        updateStatus("Please enter your name and select your grade to start!");
+        return;
 
             try {
                 updateStatus("Starting your session...");

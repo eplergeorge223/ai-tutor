@@ -83,66 +83,63 @@ if (regex.test(lowerText)) {
   return { inappropriate: false };
 }
 
-// Generate session ID
-function generateSessionId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+const regex = new RegExp(`\\b${word}\\b`, 'i');
+if (regex.test(lowerText)) {
+  // False positive exceptions (tweak as needed)
+  const exceptions = ['class', 'assistant', 'pass', 'assignment'];
+  for (const exc of exceptions) {
+    if (lowerText.includes(exc)) return { inappropriate: false };
+  }
+  return { inappropriate: true, category, word };
 }
 
-// Enhanced AI Tutor system prompt with stronger content filtering
+
+// Generate session ID
 function getTutorSystemPrompt(grade, studentName) {
-  const basePrompt = `You are ${studentName}'s AI Tutor. Keep responses SHORT but EDUCATIONAL!
+  const basePrompt = `
+You are an AI Tutor for ${studentName}. Your job: teach students to THINK, not just memorize! 
+Keep replies short, simple, and step-by-step. 
+- Never just give answers; show how to solve and ask guiding questions.
+- Always use language a kid that age will understand.
+- Use their name in responses sometimes.
+- Be patient, encouraging, and celebrate effort.
+- Strictly avoid adult/inappropriate topics: if they come up, say "Let's find something fun to learn instead!" and change the subject.
+- Never discuss personal/private matters.
 
-TUTORING RULES:
-- DON'T just give answers - TEACH the process!
-- Show HOW to solve problems step by step
-- Use simple methods kids can understand
-- Ask guiding questions to help them think
-- Encourage them to try before giving the answer
+Response limits:
+- PreK–2: 1–2 sentences.
+- 3–5: 2–3 sentences.
+- 6–8: 3–4 sentences.
+- 9–12: 4–5 sentences.
 
-RESPONSE LENGTH RULES:
-- 1-2 sentences MAX for grades PreK-2
-- 2-3 sentences MAX for grades 3-5  
-- 3-4 sentences MAX for grades 6-8
-- 4-5 sentences MAX for grades 9-12
+Examples:
+- Math: "Let's count 5 plus 5 on your fingers. What do you get, ${studentName}?"
+- Reading: "Sound out c-a-t. What word is that?"
+- Science: "What do you think happens to ice in the sun?"
 
-TEACHING EXAMPLES:
-- Math: "Let's count together! Put up 5 fingers, then 5 more. How many total?"
-- Reading: "Sound out each letter: c-a-t. What word does that make?"
-- Science: "What do you think happens when ice gets warm?"
+Stay positive, focused, and always teach the process!
+  `.trim();
 
-PERSONALITY:
-- Patient and encouraging
-- Guide them to discover answers
-- Celebrate their thinking process
-- Make them feel smart for figuring it out
-
-SAFETY RULES:
-- Redirect inappropriate topics: "Let's learn something cool instead! What interests you?"
-- Stay positive and educational
-- Never discuss adult topics
-
-Remember: You're teaching them to THINK, not just memorize answers!`;
-
-  // Much shorter grade-specific guidelines
   const gradeGuidelines = {
-    'PreK': 'Use very simple words. 1 sentence answers.',
-    'K': 'Simple words, basic concepts. 1-2 sentences.',
-    '1': 'Easy words, encourage trying. 1-2 sentences.',
-    '2': 'Build confidence, simple explanations. 2 sentences.',
-    '3': 'More detail but still brief. 2-3 sentences.',
-    '4': 'Explain clearly but don\'t ramble. 2-3 sentences.',
-    '5': 'Good explanations, stay focused. 3 sentences.',
-    '6': 'More complex but still concise. 3-4 sentences.',
-    '7': 'Clear, focused responses. 3-4 sentences.',
-    '8': 'Detailed but not overwhelming. 3-4 sentences.',
-    '9': 'Comprehensive but efficient. 4-5 sentences.',
-    '10': 'Thorough but respect their time. 4-5 sentences.',
-    '11': 'In-depth but stay on point. 4-5 sentences.',
-    '12': 'Complete but efficient answers. 4-5 sentences.'
+    'PreK': 'Use very simple words. 1 sentence max.',
+    'K': 'Simple words, basic ideas. 1–2 sentences.',
+    '1': 'Easy words, encourage trying. 1–2 sentences.',
+    '2': 'Build confidence, simple steps. 2 sentences.',
+    '3': 'A bit more detail, still brief. 2–3 sentences.',
+    '4': 'Explain clearly, don’t ramble. 2–3 sentences.',
+    '5': 'Good explanations, stay on topic. 3 sentences.',
+    '6': 'A little more complex, still short. 3–4 sentences.',
+    '7': 'Focused and clear. 3–4 sentences.',
+    '8': 'Explain in detail, don’t overwhelm. 3–4 sentences.',
+    '9': 'Cover fully, be efficient. 4–5 sentences.',
+    '10': 'Thorough, but keep it moving. 4–5 sentences.',
+    '11': 'Go in-depth, stay focused. 4–5 sentences.',
+    '12': 'Complete answers, efficient. 4–5 sentences.'
   };
 
   return `${basePrompt}\n\n${gradeGuidelines[grade] || gradeGuidelines['K']}`;
 }
+
 
 
 // Enhanced session structure
@@ -267,6 +264,20 @@ app.post('/api/chat', async (req, res) => {
     console.log(`💬 Chat message received for session ${sessionId.slice(-6)} from ${session.studentName} (Grade: ${session.grade}). Message: "${message.substring(0, Math.min(message.length, 50))}..."`);
 
     const response = await generateAIResponse(sessionId, message.trim()); // No 'context' param
+
+    const aiContentCheck = containsInappropriateContent(response.text);
+if (aiContentCheck.inappropriate) {
+  session.totalWarnings = (session.totalWarnings || 0) + 1;
+  const redirectResponse = generateRedirectResponse(aiContentCheck.category, session);
+  console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${aiContentCheck.word}" (Category: ${aiContentCheck.category}).`);
+  return res.json({
+    response: redirectResponse,
+    subject: null,
+    suggestions: generateSafeSuggestions(session.grade),
+    encouragement: generateEncouragement(session),
+    status: 'redirected'
+  });
+}
 
     // Track topics and learning patterns
 const { subject, subtopic } = classifySubject(message);
@@ -480,12 +491,6 @@ function buildPersonalizedSummary(session) {
   return lines.join(' ');
 }
 
-function capitalize(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-
 // Get session summary with enhanced details
 app.get('/api/session/:sessionId/summary', (req, res) => {
   try {
@@ -678,26 +683,36 @@ async function generateAIResponse(sessionId, userMessage) {
     if (lowerMessage.includes('tell me a story') || lowerMessage.includes('story about')) {
       maxTokens = Math.min(maxTokens * 2, 300); // Cap even stories
     }
+const completion = await openai.chat.completions.create({
+  model: config.GPT_MODEL,
+  messages: messagesToSendToAI,
+  max_tokens: maxTokens,
+  temperature: config.GPT_TEMPERATURE,
+  presence_penalty: config.GPT_PRESENCE_PENALTY,
+  frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+  stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
+});
 
-    const completion = await openai.chat.completions.create({
-      model: config.GPT_MODEL,
-      messages: messagesToSendToAI,
-      max_tokens: maxTokens,
-      temperature: config.GPT_TEMPERATURE,
-      presence_penalty: config.GPT_PRESENCE_PENALTY,
-      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      // Add stop sequences to prevent rambling (max 4 allowed)
-      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
-    });
+const aiResponse = completion.choices[0].message.content.trim();
+const sentenceLimits = { PreK: 1, K: 2, '1': 2, '2': 2, '3': 3, '4': 3, '5': 3, '6': 4, '7': 4, '8': 4, '9': 5, '10': 5, '11': 5, '12': 5 };
+const maxSentences = sentenceLimits[session.grade] || 2;
+const sentences = aiResponse.match(/[^.!?]+[.!?]+/g) || [aiResponse];
+const trimmedResponse = sentences.slice(0, maxSentences).join(' ').trim();
 
-    const aiResponse = completion.choices[0].message.content.trim();
+// Output filtering
+const aiContentCheck = containsInappropriateContent(trimmedResponse);
+let finalResponse = trimmedResponse;
+if (aiContentCheck.inappropriate) {
+  session.totalWarnings = (session.totalWarnings || 0) + 1;
+  finalResponse = generateRedirectResponse(aiContentCheck.category, session);
+  console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${aiContentCheck.word}" (Category: ${aiContentCheck.category}).`);
+}
 
-    // Add AI response to session
-    session.messages.push({
-      role: 'assistant',
-      content: aiResponse,
-      timestamp: new Date()
-    });
+session.messages.push({
+  role: 'assistant',
+  content: finalResponse,
+  timestamp: new Date()
+});
 
     const subject = classifySubject(userMessage);
     const encouragement = generateEncouragement(session);
