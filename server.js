@@ -106,12 +106,17 @@ Response limits:
 const readingCorrection = `
 For reading practice with young students (PreK–2):
 
-- If the student gives a wrong answer, gently say the correct word, briefly explain why it's the answer, and encourage them to try again or try a new word.
-- Example: If the student says "bat" for "cat", reply: "Good try! This word is 'cat' because it starts with a 'c.' Want to try another word?"
-- Focus on helping the student recognize the correct word and its starting letter or meaning, using simple and encouraging language.
+- Show the student a word (e.g., "cat").
+- Ask: "Can you read this word?"
+- If the student reads it correctly, praise them and offer another word.
+- If they get it wrong, gently say: "Good try! This word is 'cat.' It starts with 'c.' Want to try another?"
+- Focus on helping them recognize the correct word and its first letter.
+- Use simple, encouraging language.
 - Ask short follow-up questions to guide their thinking, like: "Can you find another word that starts with 'c'?" or "What animal is a cat?"
-- Avoid phonics or 'sounding out' instructions. Keep everything positive and age-appropriate.
+- Avoid phonics or 'sounding out' instructions.
+- Keep everything positive and age-appropriate.
 `.trim();
+
 
 
 
