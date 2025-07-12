@@ -74,14 +74,20 @@ function containsInappropriateContent(text) {
   const lowerText = text.toLowerCase();
   for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
     for (const word of words) {
-const regex = new RegExp(`\\b${word}\\b`, 'i');
-if (regex.test(lowerText)) {
+      const regex = new RegExp(`\\b${word}\\b`, 'i');
+      if (regex.test(lowerText)) {
+        // False positive exceptions (tweak as needed)
+        const exceptions = ['class', 'assistant', 'pass', 'assignment'];
+        for (const exc of exceptions) {
+          if (lowerText.includes(exc)) return { inappropriate: false };
+        }
         return { inappropriate: true, category, word };
       }
     }
   }
   return { inappropriate: false };
 }
+
 
 const regex = new RegExp(`\\b${word}\\b`, 'i');
 if (regex.test(lowerText)) {
