@@ -12,9 +12,9 @@ const config = {
   CLEANUP_INTERVAL: 5 * 60 * 1000, // Check for expired sessions every 5 minutes
   MAX_SESSION_INTERACTIONS: 100, // Max interactions per session before a soft limit
   GPT_MODEL: 'gpt-4o-mini',
-  GPT_TEMPERATURE: 0.8, // Slightly higher for more engaging responses
-  GPT_PRESENCE_PENALTY: 0.3, // Encourage more varied responses
-  GPT_FREQUENCY_PENALTY: 0.2, // Penalize frequent tokens
+  GPT_TEMPERATURE: 0.7, // Slightly higher for more engaging responses
+  GPT_PRESENCE_PENALTY: 0.1, // Encourage more varied responses
+  GPT_FREQUENCY_PENALTY: 0.1, // Penalize frequent tokens
   VALID_GRADES: ['PreK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
   // Content filtering words (can be expanded/externalized)
   INAPPROPRIATE_TOPICS: {
@@ -90,66 +90,54 @@ function generateSessionId() {
 
 // Enhanced AI Tutor system prompt with stronger content filtering
 function getTutorSystemPrompt(grade, studentName) {
-  const basePrompt = `You are ${studentName}'s AI Tutor, a friendly, encouraging, and knowledgeable educational assistant. Your personality should be:
+  const basePrompt = `You are ${studentName}'s AI Tutor. Keep responses SHORT and engaging!
 
-- Warm, patient, and encouraging
-- Age-appropriate in language and explanations
-- Curious and enthusiastic about learning
-- Supportive when students struggle
-- Celebratory of achievements and progress
+RESPONSE LENGTH RULES:
+- 1-2 sentences MAX for grades PreK-2
+- 2-3 sentences MAX for grades 3-5  
+- 3-4 sentences MAX for grades 6-8
+- 4-5 sentences MAX for grades 9-12
+- NEVER write long paragraphs or explanations
+- Get to the point quickly
+- Ask ONE follow-up question to keep engagement
 
-CRITICAL SAFETY RULES:
-- NEVER discuss inappropriate topics including: violence, weapons, sexual content, drugs, or adult themes
-- If asked about inappropriate topics, redirect to age-appropriate learning: "That's not something we talk about in our learning time! Let's explore something educational instead. What subject interests you?"
-- If student uses inappropriate language, gently correct: "Let's use kind words in our learning space. What would you like to learn about today?"
-- Always maintain a positive, educational focus
-- If student is rude or disrespectful, stay calm and redirect: "I'm here to help you learn amazing things! What topic would you like to explore?"
+PERSONALITY:
+- Friendly and encouraging
+- Use simple, clear language
+- Be enthusiastic but brief
+- Celebrate small wins
+- Human-like
 
-ENGAGEMENT RULES:
-- Ask follow-up questions to keep the conversation flowing
-- Share interesting facts and connections
-- Use storytelling when appropriate
-- Encourage curiosity and critical thinking
-- Make learning feel like an adventure
-- Connect topics to real-world examples the student can relate to
+SAFETY RULES:
+- Redirect inappropriate topics: "Let's learn something cool instead! What interests you?"
+- Stay positive and educational
+- Never discuss adult topics
 
-STORY LENGTH GUIDELINES:
-- Short story (2-3 minutes): 3-4 paragraphs
-- Medium story (5 minutes): 6-8 paragraphs with detailed descriptions
-- Long story (10+ minutes): 10+ paragraphs with character development and plot
+ENGAGEMENT:
+- Ask questions to keep kids thinking
+- Use examples they can relate to
+- Make learning feel fun, not like work
+- Connect to their world (games, sports, movies they know)`;
 
-Guidelines:
-- Ask follow-up questions to gauge understanding
-- Break complex topics into simple, digestible parts
-- Use analogies and examples kids can relate to
-- Encourage critical thinking with gentle prompts
-- Adapt your explanations based on the student's responses
-- Keep responses conversational and engaging
-- Always be positive and supportive
-- DO NOT use emojis in your responses as they will be read aloud by text-to-speech
-- Remember previous topics discussed in this session and build upon them`;
-
-  // Grade-specific adaptations
-  const gradeSpecific = {
-    'PreK': 'Use very simple language, focus on basic concepts, use lots of encouragement. Responses should be 1-2 sentences.',
-    'K': 'Use simple words, focus on letters, numbers 1-10, colors, shapes. Keep responses short and playful.',
-    '1': 'Focus on basic reading, simple addition/subtraction, encourage sounding out words. 1-2 sentences.',
-    '2': 'Build on phonics, simple sentences, numbers to 100, basic science concepts. 2-3 sentences.',
-    '3': 'More complex reading, multiplication tables, longer explanations. 2-3 sentences.',
-    '4': 'Introduction to fractions, more complex stories, science experiments. 2-4 sentences.',
-    '5': 'Decimals, more advanced reading comprehension, detailed explanations. 3-4 sentences.',
-    '6': 'Pre-algebra concepts, research skills, critical thinking. 3-5 sentences.',
-    '7': 'Algebra basics, more complex writing, scientific method. 3-5 sentences.',
-    '8': 'Advanced algebra, essay writing, complex problem solving. 4-6 sentences.',
-    '9': 'High school concepts, independent thinking, career exploration. 4-6 sentences.',
-    '10': 'Advanced topics, college preparation, abstract thinking. 4-7 sentences.',
-    '11': 'College-level concepts, research skills, critical analysis. 5-8 sentences.',
-    '12': 'Advanced academic work, career preparation, complex projects. 5-8 sentences.'
+  // Much shorter grade-specific guidelines
+  const gradeGuidelines = {
+    'PreK': 'Use very simple words. 1 sentence answers.',
+    'K': 'Simple words, basic concepts. 1-2 sentences.',
+    '1': 'Easy words, encourage trying. 1-2 sentences.',
+    '2': 'Build confidence, simple explanations. 2 sentences.',
+    '3': 'More detail but still brief. 2-3 sentences.',
+    '4': 'Explain clearly but don\'t ramble. 2-3 sentences.',
+    '5': 'Good explanations, stay focused. 3 sentences.',
+    '6': 'More complex but still concise. 3-4 sentences.',
+    '7': 'Clear, focused responses. 3-4 sentences.',
+    '8': 'Detailed but not overwhelming. 3-4 sentences.',
+    '9': 'Comprehensive but efficient. 4-5 sentences.',
+    '10': 'Thorough but respect their time. 4-5 sentences.',
+    '11': 'In-depth but stay on point. 4-5 sentences.',
+    '12': 'Complete but efficient answers. 4-5 sentences.'
   };
 
-  const gradeGuideline = gradeSpecific[grade] || gradeSpecific['K'];
-
-  return `${basePrompt}\n\nGrade-specific guidance: ${gradeGuideline}\n\nRemember: You're not just answering questions, you're fostering a love of learning while keeping everything safe and appropriate!`;
+  return `${basePrompt}\n\n${gradeGuidelines[grade] || gradeGuidelines['K']}`;
 }
 
 // Enhanced session structure
@@ -219,24 +207,23 @@ app.post('/api/session/start', async (req, res) => {
 // Generate welcome message based on grade
 function generateWelcomeMessage(studentName, grade) {
   const gradeMessages = {
-    'PreK': `Hi ${studentName}! I'm your learning friend! Let's have fun together!`,
-    'K': `Hello ${studentName}! I'm here to help you learn cool new things! What sounds fun today?`,
-    '1': `Hi ${studentName}! I'm your AI tutor and I love learning with first graders! What would you like to explore?`,
-    '2': `Hey ${studentName}! Ready for some awesome learning adventures? I'm here to help!`,
-    '3': `Hi ${studentName}! Third grade is such an exciting time to learn! What are you curious about?`,
-    '4': `Hello ${studentName}! I'm your AI tutor and I'm excited to tackle some fourth-grade challenges with you!`,
-    '5': `Hi ${studentName}! Fifth grade brings so many interesting topics! What would you like to dive into?`,
-    '6': `Hey ${studentName}! Middle school is full of fascinating subjects! What's on your mind today?`,
-    '7': `Hi ${studentName}! Seventh grade opens up so many new learning opportunities! What interests you?`,
-    '8': `Hello ${studentName}! Eighth grade is perfect for exploring complex ideas! What would you like to discover?`,
-    '9': `Hi ${studentName}! High school brings exciting challenges! What subject can I help you with today?`,
-    '10': `Hey ${studentName}! Sophomore year is great for building strong foundations! What's your focus?`,
-    '11': `Hello ${studentName}! Junior year is crucial for growth! What topic would you like to master?`,
-    '12': `Hi ${studentName}! Senior year - let's make it count! What can I help you achieve today?`
+    'PreK': `Hi ${studentName}! Let's learn together!`,
+    'K': `Hello ${studentName}! What sounds fun today?`,
+    '1': `Hi ${studentName}! Ready to learn cool things?`,
+    '2': `Hey ${studentName}! What should we explore?`,
+    '3': `Hi ${studentName}! What are you curious about?`,
+    '4': `Hello ${studentName}! What interests you today?`,
+    '5': `Hi ${studentName}! What would you like to learn?`,
+    '6': `Hey ${studentName}! What's on your mind?`,
+    '7': `Hi ${studentName}! What interests you?`,
+    '8': `Hello ${studentName}! What should we discover?`,
+    '9': `Hi ${studentName}! What can I help with?`,
+    '10': `Hey ${studentName}! What's your focus today?`,
+    '11': `Hello ${studentName}! What topic interests you?`,
+    '12': `Hi ${studentName}! What can we explore today?`
   };
   return gradeMessages[grade] || gradeMessages['K'];
 }
-
 // Enhanced chat endpoint with content filtering
 app.post('/api/chat', async (req, res) => {
   try {
@@ -648,51 +635,43 @@ function generateNextSteps(session) {
     return ['Keep exploring and practicing what interests you most!'];
 }
 
-// Enhanced AI response generation with better engagement
-async function generateAIResponse(sessionId, userMessage) { // Removed 'context' parameter
+async function generateAIResponse(sessionId, userMessage) {
   const session = sessions.get(sessionId);
   if (!session) throw new Error('Session not found');
 
-  // Add user message to session
- session.messages.push({
-  role: 'user',
-  content: userMessage,
-  timestamp: new Date()
-});
-if (session.messages.length > 100) session.messages = session.messages.slice(-50);
+  session.messages.push({
+    role: 'user',
+    content: userMessage,
+    timestamp: new Date()
+  });
 
+  // Keep only last 6 messages to reduce context and cost
+  if (session.messages.length > 6) {
+    session.messages = session.messages.slice(-6);
+  }
 
-  // Get the dynamic system prompt for the current session state
   const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName);
-
-  // Filter out previous system messages from history and limit to last 10 relevant messages
-  // This ensures the current, dynamic system prompt is always the first sent to OpenAI,
-  // followed by a limited history of actual conversation turns.
+  
   const conversationHistoryForAI = session.messages
-    .filter(m => m.role !== 'system') // Exclude old system prompts from history
-    .slice(-10); // Keep last 10 user/assistant turns
+    .filter(m => m.role !== 'system')
+    .slice(-4); // Only last 4 exchanges
 
   const messagesToSendToAI = [
-    { role: 'system', content: systemPromptContent }, // The current, active system prompt
-    ...conversationHistoryForAI.map(msg => ({ // The relevant conversation history
+    { role: 'system', content: systemPromptContent },
+    ...conversationHistoryForAI.map(msg => ({
       role: msg.role,
       content: msg.content
     }))
   ];
 
   try {
-    // Adjust max_tokens based on request type
-    let maxTokens = 200;
+    // Much more aggressive token limits
+    let maxTokens = getMaxTokensForGrade(session.grade);
+    
+    // Only allow longer responses for explicit story requests
     const lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.includes('story') && (lowerMessage.includes('minute') || lowerMessage.includes('long'))) {
-      if (lowerMessage.includes('5 minute') || lowerMessage.includes('five minute')) {
-        maxTokens = 800; // Longer story
-      } else if (lowerMessage.includes('10 minute') || lowerMessage.includes('ten minute')) {
-        maxTokens = 1200; // Very long story
-      } else if (lowerMessage.includes('short')) {
-        maxTokens = 400; // Short story
-      }
+    if (lowerMessage.includes('tell me a story') || lowerMessage.includes('story about')) {
+      maxTokens = Math.min(maxTokens * 2, 300); // Cap even stories
     }
 
     const completion = await openai.chat.completions.create({
@@ -701,22 +680,21 @@ if (session.messages.length > 100) session.messages = session.messages.slice(-50
       max_tokens: maxTokens,
       temperature: config.GPT_TEMPERATURE,
       presence_penalty: config.GPT_PRESENCE_PENALTY,
-      frequency_penalty: config.GPT_FREQUENCY_PENALTY
+      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+      // Add stop sequences to prevent rambling
+      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,", "In conclusion,"]
     });
 
-    const aiResponse = completion.choices[0].message.content;
+    const aiResponse = completion.choices[0].message.content.trim();
 
-    // Add AI response to session history
-session.messages.push({
-  role: 'assistant',
-  content: aiResponse,
-  timestamp: new Date()
-});
-if (session.messages.length > 100) session.messages = session.messages.slice(-50); // Only keep last 50
+    // Add AI response to session
+    session.messages.push({
+      role: 'assistant',
+      content: aiResponse,
+      timestamp: new Date()
+    });
 
-
-    // Analyze response for additional features
-    const subject = classifySubject(userMessage); // Use user message to classify
+    const subject = classifySubject(userMessage);
     const encouragement = generateEncouragement(session);
 
     return {
@@ -724,11 +702,11 @@ if (session.messages.length > 100) session.messages = session.messages.slice(-50
       subject: subject,
       encouragement: encouragement
     };
+
   } catch (error) {
     console.error(`❌ AI API Error for session ${sessionId.slice(-6)}:`, error.message);
-
-    // Enhanced fallback response
-    const fallbackResponse = generateContextualFallback(userMessage, session);
+    
+    const fallbackResponse = generateShortFallback(userMessage, session);
     session.messages.push({
       role: 'assistant',
       content: fallbackResponse,
@@ -742,6 +720,27 @@ if (session.messages.length > 100) session.messages = session.messages.slice(-50
     };
   }
 }
+
+function getMaxTokensForGrade(grade) {
+  const gradeLevel = parseInt(grade) || 0;
+  
+  if (gradeLevel <= 2) return 50;   // PreK-2: Very short
+  if (gradeLevel <= 5) return 75;   // 3-5: Short
+  if (gradeLevel <= 8) return 100;  // 6-8: Medium
+  return 125; // 9-12: Longer but still reasonable
+}
+
+function generateShortFallback(input, session) {
+  const shortFallbacks = [
+    `That's interesting, ${session.studentName}! Tell me more!`,
+    `Great question! What do you think?`,
+    `I love how you think! What else?`,
+    `You're so curious! What's next?`,
+    `Good thinking! Let's explore more!`
+  ];
+  return shortFallbacks[Math.floor(Math.random() * shortFallbacks.length)];
+}
+
 
 // UNIVERSAL K-12 SUBJECTS & SUBTOPICS CLASSIFIER
 
