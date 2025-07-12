@@ -103,14 +103,17 @@ Response limits:
 - 9–12: 4–5 sentences.
 `.trim();
 
-const phonicsPrompt = `
-- When teaching reading to grades PreK, K, 1, or 2:
-  - Always model "sounding out" with *speech sounds*, not letter names. For CVC words (like cat, bat, sat), use: "'c' says 'kuh', 'a' says 'a' like in 'apple', 't' says 'tuh'. Now blend: kuh-a-t... cat!"
-  - If a student gives the wrong sounds or word, gently correct them, then model the right sounds and blending again: "Almost! Let's do it together: 'b' says 'buh', 'a' says 'a' like in 'apple', 't' says 'tuh'. When we blend them, we get 'bat.' Want to try again?"
-  - Never use letter names. Always give the actual sound for each letter as a kid would say it.
-  - Use simple examples: "'o' says 'o' like in 'octopus'", "'e' says 'e' like in 'elephant'", etc.
-  - Responses must be 1–2 sentences, very simple, and always explain **why** the answer is right or wrong.
+const readingCorrection = `
+For reading practice with young students (PreK–2):
+
+- If the student gives a wrong answer, gently say the correct word, briefly explain why it's the answer, and encourage them to try again or try a new word.
+- Example: If the student says "bat" for "cat", reply: "Good try! This word is 'cat' because it starts with a 'c.' Want to try another word?"
+- Focus on helping the student recognize the correct word and its starting letter or meaning, using simple and encouraging language.
+- Ask short follow-up questions to guide their thinking, like: "Can you find another word that starts with 'c'?" or "What animal is a cat?"
+- Avoid phonics or 'sounding out' instructions. Keep everything positive and age-appropriate.
 `.trim();
+
+
 
   const examples = `
 Examples:
