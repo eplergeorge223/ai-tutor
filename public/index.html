@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,19 +19,19 @@
             justify-content: center;
             align-items: center;
             color: white;
-            padding: 0.5rem;
+            padding: 1rem;
         }
 
         .container {
             text-align: center;
             max-width: 800px;
             width: 100%;
-            padding: 0.5rem;
+            padding: 1rem;
         }
 
         .mascot {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 4rem;
+            margin-bottom: 1rem;
             animation: gentle-float 3s ease-in-out infinite;
         }
 
@@ -42,49 +41,49 @@
         }
 
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            margin-bottom: 1rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .start-button {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             border: none;
-            border-radius: 25px;
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
+            border-radius: 50px;
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: white;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
             font-family: inherit;
-            margin: 0.5rem;
+            margin: 1rem;
         }
 
         .start-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
         }
 
         .voice-button {
             background: linear-gradient(45deg, #2196F3, #1976D2);
             border: none;
             border-radius: 50%;
-            width: 70px;
-            height: 70px;
-            font-size: 1.5rem;
+            width: 120px;
+            height: 120px;
+            font-size: 2rem;
             color: white;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
-            margin: 0.5rem;
+            margin: 1rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -113,12 +112,12 @@
         }
 
         .status {
-            font-size: 0.9rem;
-            margin: 0.5rem 0;
-            min-height: 2rem;
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            min-height: 3rem;
             background: rgba(255,255,255,0.1);
-            padding: 0.5rem;
-            border-radius: 15px;
+            padding: 1rem;
+            border-radius: 20px;
             backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
@@ -127,19 +126,18 @@
 
         .session-summary {
             background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
             backdrop-filter: blur(10px);
             text-align: left;
         }
 
         .summary-item {
-            margin: 0.5rem 0;
+            margin: 1rem 0;
             padding: 0.5rem;
             background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 10px;
         }
 
         .hidden { display: none; }
@@ -147,12 +145,12 @@
         .end-session-btn {
             background: linear-gradient(45deg, #f44336, #d32f2f);
             border: none;
-            border-radius: 20px;
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
             color: white;
             cursor: pointer;
-            margin: 0.5rem;
+            margin: 1rem;
             font-family: inherit;
             transition: all 0.3s ease;
         }
@@ -163,28 +161,36 @@
 
         .suggestions {
             background: rgba(255,255,255,0.1);
-            padding: 0.8rem;
+            padding: 1rem;
             border-radius: 15px;
-            margin: 0.5rem 0;
+            margin: 1rem 0;
             backdrop-filter: blur(10px);
         }
 
         .suggestions h3 {
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
         }
 
         .suggestion-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 0.5rem;
-            margin-top: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .suggestion-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
         }
 
         .suggestion-item {
             background: rgba(255,255,255,0.2);
-            padding: 0.6rem;
-            border-radius: 15px;
+            padding: 0.75rem 1rem;
+            border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
@@ -192,7 +198,7 @@
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
         .suggestion-item:hover {
@@ -207,60 +213,50 @@
 
         .conversation-area {
             background: rgba(255,255,255,0.1);
-            padding: 0.8rem;
+            padding: 1rem;
             border-radius: 15px;
-            margin: 0.5rem 0;
-            max-height: 150px;
+            margin: 1rem 0;
+            max-height: 300px;
             overflow-y: auto;
             backdrop-filter: blur(10px);
         }
 
-        .conversation-area h3 {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
         .conversation-item {
-            margin: 0.3rem 0;
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
             text-align: left;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
         .user-message {
             background: rgba(76, 175, 80, 0.3);
-            margin-left: 0.5rem;
+            margin-left: 1rem;
         }
 
         .tutor-message {
             background: rgba(33, 150, 243, 0.3);
-            margin-right: 0.5rem;
+            margin-right: 1rem;
         }
 
         .student-info {
             background: rgba(255,255,255,0.1);
-            padding: 0.8rem;
+            padding: 1rem;
             border-radius: 15px;
-            margin: 0.5rem 0;
+            margin: 1rem 0;
             backdrop-filter: blur(10px);
-        }
-
-        .student-info h3 {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
         }
 
         .student-info input, .student-info select {
             background: rgba(255,255,255,0.2);
             border: none;
-            border-radius: 8px;
-            padding: 0.5rem;
-            margin: 0.3rem;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
             color: white;
-            font-size: 0.9rem;
+            font-size: 1rem;
             width: 100%;
-            max-width: 250px;
+            max-width: 300px;
         }
 
         .student-info input::placeholder {
@@ -279,136 +275,50 @@
 
         .voice-controls {
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin: 0.5rem 0;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .voice-controls {
+                flex-direction: row;
+                justify-content: center;
+            }
         }
 
         /* Mobile optimizations */
         @media (max-width: 480px) {
             .container {
-                padding: 0.25rem;
-            }
-
-            .mascot {
-                font-size: 2rem;
-                margin-bottom: 0.25rem;
+                padding: 0.5rem;
             }
 
             h1 {
-                font-size: 1.5rem;
-                margin-bottom: 0.25rem;
+                font-size: 2rem;
             }
 
             h2 {
-                font-size: 1.2rem;
-                margin-bottom: 0.25rem;
+                font-size: 1.5rem;
             }
 
             .voice-button {
-                width: 60px;
-                height: 60px;
-                font-size: 1.2rem;
+                width: 100px;
+                height: 100px;
+                font-size: 1.5rem;
             }
 
             .start-button {
-                padding: 0.8rem 1.5rem;
-                font-size: 1rem;
-            }
-
-            .status {
-                font-size: 0.8rem;
-                padding: 0.4rem;
-                min-height: 1.5rem;
-            }
-
-            .conversation-area {
-                max-height: 120px;
-                padding: 0.6rem;
-            }
-
-            .suggestions {
-                padding: 0.6rem;
-            }
-
-            .suggestion-item {
-                padding: 0.5rem;
-                font-size: 0.75rem;
-            }
-
-            .student-info {
-                padding: 0.6rem;
-            }
-
-            .student-info input, .student-info select {
-                padding: 0.4rem;
-                font-size: 0.8rem;
-                margin: 0.2rem;
-            }
-
-            .session-summary {
-                padding: 0.8rem;
-                margin: 0.5rem 0;
-            }
-
-            .summary-item {
-                font-size: 0.8rem;
-                padding: 0.4rem;
-            }
-
-            .end-session-btn {
-                padding: 0.4rem 0.8rem;
-                font-size: 0.8rem;
-            }
-
-            /* Reduce welcome screen text */
-            #welcome-screen p {
-                font-size: 1rem !important;
-                margin-bottom: 1rem !important;
-            }
-        }
-
-        /* Ultra-small screens */
-        @media (max-width: 360px) {
-            .suggestion-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .suggestion-item {
-                font-size: 0.7rem;
-                padding: 0.4rem;
-            }
-        }
-
-        /* Landscape mobile orientation */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .mascot {
-                font-size: 1.5rem;
-                margin-bottom: 0.1rem;
-            }
-            
-            h1, h2 {
+                padding: 1rem 2rem;
                 font-size: 1.2rem;
-                margin-bottom: 0.1rem;
             }
-            
+
             .status {
-                min-height: 1.2rem;
-                font-size: 0.7rem;
+                font-size: 1rem;
+                padding: 0.75rem;
             }
-            
+
             .conversation-area {
-                max-height: 80px;
-            }
-            
-            .suggestions {
-                padding: 0.4rem;
-            }
-            
-            .student-info {
-                padding: 0.4rem;
+                max-height: 200px;
             }
         }
     </style>
@@ -419,7 +329,7 @@
         <div id="welcome-screen">
             <div class="mascot">🎓</div>
             <h1>Hi! I'm your AI Tutor!</h1>
-            <p style="font-size: 1rem; margin-bottom: 1rem;">Ready to learn together?</p>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
             <div class="student-info">
                 <h3>Tell me about yourself!</h3>
@@ -443,7 +353,7 @@
                 </select>
             </div>
             
-            <button class="start-button" id="start-btn">Start Learning!</button>
+            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
 
         <!-- Main Tutoring Interface -->
@@ -451,23 +361,22 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-        <div class="status" id="status" aria-live="polite">Press the microphone to start talking!</div>
-
+            <div class="status" id="status">Press the microphone to start talking!</div>
             
             <div class="voice-controls">
-                <button class="voice-button" id="mic-btn">🎤</button>
-                <button class="end-session-btn" id="end-session-btn">End Session</button>
+                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
+                <button class="end-session-btn" onclick="endSession()">End Session</button>
             </div>
 
             <div id="suggestions" class="suggestions">
                 <h3>🎯 What sounds fun today?</h3>
                 <div class="suggestion-grid" id="suggestion-grid">
-                    <div class="suggestion-item" data-query="Can you help me with math?">🔢 Math</div>
-                    <div class="suggestion-item" data-query="I want to practice reading">📖 Reading</div>
-                    <div class="suggestion-item" data-query="Tell me about animals">🦁 Animals</div>
-                    <div class="suggestion-item" data-query="Can we do a creative activity?">🎨 Creative</div>
-                    <div class="suggestion-item" data-query="I have a question about homework">📚 Homework</div>
-                    <div class="suggestion-item" data-query="Tell me a story">📚 Stories</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
                 </div>
             </div>
 
@@ -482,11 +391,9 @@
             <div class="mascot">✨</div>
             <h2>Great Learning Session!</h2>
             <div class="session-summary" id="summary-content"></div>
-            <button class="start-button" id="new-session-btn">Start New Session</button>
+            <button class="start-button" onclick="startNewSession()">Start New Session</button>
         </div>
     </div>
-
-
 
     <script>
         // App State
@@ -760,39 +667,39 @@
             
             if (combined.includes('math') || combined.includes('number') || combined.includes('add') || combined.includes('subtract') || combined.includes('multiply') || combined.includes('divide')) {
                 suggestions = [
-                    { text: '🔢 More Math', query: 'Can you give me another math problem?' },
-                    { text: '📊 Explain Math', query: 'Can you explain this math topic more?' },
-                    { text: '🎲 Math Games', query: 'Let\'s play a math game!' },
-                    { text: '🧮 Real Math', query: 'How is this math used in real life?' }
+                    { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
+                    { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
+                    { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
+                    { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
                 ];
             } else if (combined.includes('read') || combined.includes('book') || combined.includes('story') || combined.includes('word')) {
                 suggestions = [
-                    { text: '📖 Read Together', query: 'Can we read something together?' },
-                    { text: '📝 New Words', query: 'Can you teach me new vocabulary?' },
-                    { text: '✍️ Write Story', query: 'Help me write a creative story' },
-                    { text: '🎭 Act It Out', query: 'Can we act out this story?' }
+                    { text: '📖 Read together', query: 'Can we read something together?' },
+                    { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
+                    { text: '✍️ Write a story', query: 'Help me write a creative story' },
+                    { text: '🎭 Act out the story', query: 'Can we act out this story?' }
                 ];
             } else if (combined.includes('science') || combined.includes('animal') || combined.includes('plant') || combined.includes('space') || combined.includes('experiment')) {
                 suggestions = [
-                    { text: '🔬 Experiment', query: 'Can we do a science experiment?' },
-                    { text: '🌟 Space', query: 'Tell me about space and planets' },
-                    { text: '🐾 Animals', query: 'I want to learn about animals' },
-                    { text: '🌱 Plants', query: 'Tell me about plants and how they grow' }
+                    { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
+                    { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
+                    { text: '🐾 Explore animals', query: 'I want to learn about animals' },
+                    { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
                 ];
             } else if (combined.includes('art') || combined.includes('draw') || combined.includes('create') || combined.includes('music')) {
                 suggestions = [
-                    { text: '🎨 Art Project', query: 'Can we do an art project?' },
-                    { text: '🖌️ Drawing', query: 'Teach me how to draw better' },
-                    { text: '🎵 Music', query: 'Let\'s learn about music' },
-                    { text: '🎭 Drama', query: 'Can we do something dramatic?' }
+                    { text: '🎨 Creative projects', query: 'Can we do an art project?' },
+                    { text: '🖌️ Drawing tips', query: 'Teach me how to draw better' },
+                    { text: '🎵 Music exploration', query: 'Let\'s learn about music' },
+                    { text: '🎭 Drama activities', query: 'Can we do something dramatic?' }
                 ];
             } else {
                 // Default suggestions based on conversation flow
                 suggestions = [
-                    { text: '❓ Ask Me', query: 'I have a question about something' },
-                    { text: '🎯 New Topic', query: 'What should we learn about next?' },
-                    { text: '🔍 Learn More', query: 'Can you tell me more about this?' },
-                    { text: '🎉 Fun Activity', query: 'Let\'s do something fun and educational' }
+                    { text: '❓ Ask me anything', query: 'I have a question about something' },
+                    { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
+                    { text: '🔍 Explore more', query: 'Can you tell me more about this?' },
+                    { text: '🎉 Try something fun', query: 'Let\'s do something fun and educational' }
                 ];
             }
             
@@ -802,7 +709,7 @@
                 const suggestionDiv = document.createElement('div');
                 suggestionDiv.className = 'suggestion-item';
                 suggestionDiv.textContent = suggestion.text;
-                suggestionDiv.dataset.query = suggestion.query;
+                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
                 suggestionGrid.appendChild(suggestionDiv);
             });
         }
@@ -892,73 +799,54 @@
             }
         }
 
-async function endSession() {
-    stopSpeech();
+        async function endSession() {
+            stopSpeech();
+            
+            if (isListening) {
+                recognition.stop();
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
+                await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
 
-    if (isListening && recognition) { // Add check for recognition existence
-        recognition.stop();
-    }
-
-    isProcessing = true; // Prevent new input while ending session
-    updateStatus("Ending your session and getting summary...");
-
-    try {
-        // 1. Send request to end the session first
-        const endResponse = await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, {
-            method: 'POST'
-        });
-
-        if (!endResponse.ok) {
-            console.warn(`Backend session end failed for ID: ${currentSessionId}, status: ${endResponse.status}`);
-            // Don't throw, still try to get summary if possible or show fallback
+                const summary = response.ok ? await response.json() : null;
+                showSessionSummary(summary);
+            } catch (error) {
+                console.error('Error getting session summary:', error);
+                showSessionSummary(null);
+            }
         }
 
-        // 2. Then, request the summary
-        const summaryResponse = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
-        const summary = summaryResponse.ok ? await summaryResponse.json() : null;
 
-        showSessionSummary(summary);
-
-    } catch (error) {
-        console.error('Error during session termination or summary retrieval:', error);
-        showSessionSummary(null); // Show fallback summary on error
-    } finally {
-        isProcessing = false;
-        // The UI will be switched to summary screen, so no need to update status here
-    }
-}
-
-
-async function showSessionSummary(summary) {
-    document.getElementById('tutor-interface').classList.add('hidden');
-    document.getElementById('session-summary').classList.remove('hidden');
-
-    const summaryContent = document.getElementById('summary-content');
-
-    if (summary && summary.duration && summary.totalInteractions && summary.topicsExplored && summary.highlights && summary.recommendations) {
-        // Ensure all expected fields are present before rendering
-        summaryContent.innerHTML = `
-            <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
-            <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
-            <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-            <div class="summary-item"><strong>Learning Highlights:</strong>
-                <ul style="margin-top: 0.5rem; list-style-position: inside;">
-                    ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
-                </ul>
-            </div>
-            <div class="summary-item"><strong>Recommendations:</strong> ${summary.recommendations}</div>
-        `;
-    } else {
-        console.warn('Incomplete or missing summary data:', summary);
-        summaryContent.innerHTML = `
-            <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-            <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-            <div class="summary-item">I encountered an issue generating a detailed summary, but I hope you had a great time learning!</div>
-        `;
-    }
-
-    await speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
-}
+        // Show session summary
+        async function showSessionSummary(summary) {
+            document.getElementById('tutor-interface').classList.add('hidden');
+            document.getElementById('session-summary').classList.remove('hidden');
+            
+            const summaryContent = document.getElementById('summary-content');
+            
+            if (summary) {
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
+                    <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
+                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+                    <div class="summary-item"><strong>Learning Highlights:</strong> 
+                        <ul style="margin-top: 0.5rem;">
+                            ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="summary-item"><strong>Recommendations:</strong> ${summary.recommendations}</div>
+                `;
+            } else {
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+                `;
+            }
+            
+            await speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
+        }
 
         // Start new session
         function startNewSession() {
@@ -974,15 +862,13 @@ async function showSessionSummary(summary) {
             document.getElementById('welcome-screen').classList.remove('hidden');
             document.getElementById('conversation-area').classList.add('hidden');
             document.getElementById('conversation-messages').innerHTML = '';
-
-            conversationContext = [];
-            currentSubject = null;
-
             
             // Clear form
             document.getElementById('student-name').value = '';
             document.getElementById('student-grade').value = '';
             
+            // Reset audio status
+            document.getElementById('audio-status').textContent = 'Click "Test Audio" to make sure you can hear me!';
             
             // Reset microphone button
             updateMicButton();
@@ -995,15 +881,6 @@ async function showSessionSummary(summary) {
             
             // Initialize speech synthesis
             await initializeSpeechSynthesis();
-
-                // Speech support check (this disables mic before any user tries to use it)
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        const micBtn = document.getElementById('mic-btn');
-        if (micBtn) {
-            micBtn.disabled = true;
-            micBtn.title = "Speech recognition not supported in this browser. Use Chrome or Edge.";
-        }
-    }
             
             // Test basic functionality
             console.log('Speech synthesis supported:', 'speechSynthesis' in window);
