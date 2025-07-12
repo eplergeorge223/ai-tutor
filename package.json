@@ -4,11 +4,13 @@
   "description": "Backend server for Sophia's AI Tutor",
   "main": "server.js",
   "type": "commonjs",
+  "private": true,
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "lint": "eslint .",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet\" && exit 0",
+    "postinstall": "echo 'Ready to go!'"
   },
   "keywords": [
     "ai",
@@ -33,6 +35,6 @@
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": "20.x"
   }
 }
