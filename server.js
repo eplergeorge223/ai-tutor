@@ -154,7 +154,9 @@ function createSession(sessionId, studentName, grade, subjects) {
     };
 }
 
-// Routes
+function generateSessionId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
 // Start new tutoring session
 app.post('/api/session/start', async (req, res) => {
