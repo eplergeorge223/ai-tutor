@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,6 +53,56 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
+        .student-info {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: white;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .form-group select {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .form-group select option {
+            background: #764ba2;
+            color: white;
+        }
+
         .start-button {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             border: none;
@@ -64,7 +115,7 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
             font-family: inherit;
-            margin: 1rem;
+            margin: 1rem 0;
         }
 
         .start-button:hover {
@@ -124,24 +175,6 @@
             justify-content: center;
         }
 
-        .session-summary {
-            background: rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 20px;
-            margin: 2rem 0;
-            backdrop-filter: blur(10px);
-            text-align: left;
-        }
-
-        .summary-item {
-            margin: 1rem 0;
-            padding: 0.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-        }
-
-        .hidden { display: none; }
-
         .end-session-btn {
             background: linear-gradient(45deg, #f44336, #d32f2f);
             border: none;
@@ -179,14 +212,6 @@
             margin-top: 1rem;
         }
 
-        /* Mobile-first responsive design */
-        @media (max-width: 768px) {
-            .suggestion-grid {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-        }
-
         .suggestion-item {
             background: rgba(255,255,255,0.2);
             padding: 0.75rem 1rem;
@@ -211,17 +236,95 @@
             transform: translateY(0);
         }
 
-        .conversation-area {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
-            max-height: 300px;
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .conversation-item {
+        .live-captions {
+            position: fixed;
+            bottom: 8vh;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 220px;
+            max-width: 90vw;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 1.3rem;
+            padding: 1.1rem 2rem;
+            border-radius: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            text-align: center;
+            z-index: 100;
+            opacity: 0.97;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .history-btn {
+            background: linear-gradient(45deg, #ffcc00, #ffa500);
+            color: #333;
+            border: none;
+            border-radius: 18px;
+            padding: 0.7rem 2rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem auto;
+            display: block;
+        }
+
+        .history-btn:hover {
+            background: linear-gradient(45deg, #ffa500, #ffcc00);
+            transform: translateY(-2px);
+        }
+
+        .chat-history-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #333;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 95vw;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #888;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #f44336;
+        }
+
+        .chat-message {
             margin: 0.5rem 0;
             padding: 0.5rem 1rem;
             border-radius: 10px;
@@ -230,128 +333,48 @@
         }
 
         .user-message {
-            background: rgba(76, 175, 80, 0.3);
+            background: rgba(76, 175, 80, 0.2);
             margin-left: 1rem;
         }
 
         .tutor-message {
-            background: rgba(33, 150, 243, 0.3);
+            background: rgba(33, 150, 243, 0.2);
             margin-right: 1rem;
         }
 
-        .student-info {
+        .session-summary {
             background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
             backdrop-filter: blur(10px);
+            text-align: left;
         }
 
-        .student-info input, .student-info select {
-            background: rgba(255,255,255,0.2);
-            border: none;
+        .summary-item {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            padding: 0.5rem 1rem;
-            margin: 0.5rem;
-            color: white;
-            font-size: 1rem;
-            width: 100%;
-            max-width: 300px;
         }
 
-        .student-info input::placeholder {
-            color: rgba(255,255,255,0.7);
+        .hidden {
+            display: none;
         }
 
-        .student-info select {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .student-info select option {
-            background: #764ba2;
-            color: white;
-        }
-
-        .voice-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        @media (min-width: 768px) {
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .suggestion-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
             .voice-controls {
                 flex-direction: row;
                 justify-content: center;
             }
         }
 
-        .live-captions {
-    position: fixed;
-    bottom: 8vh;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 220px;
-    max-width: 90vw;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    font-size: 1.3rem;
-    padding: 1.1rem 2rem;
-    border-radius: 30px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    text-align: center;
-    z-index: 100;
-    opacity: 0.97;
-    transition: opacity 0.3s;
-    pointer-events: none;
-}
-
-.history-btn {
-    display: block;
-    margin: 1rem auto 0 auto;
-    background: linear-gradient(45deg, #ffcc00, #ffa500);
-    color: #333;
-    border: none;
-    border-radius: 18px;
-    padding: 0.7rem 2rem;
-    font-weight: bold;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-.history-btn:hover {
-    background: linear-gradient(45deg, #ffa500, #ffcc00);
-}
-
-.chat-history-modal {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.55);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.modal-content {
-    background: #fff;
-    color: #333;
-    border-radius: 16px;
-    padding: 2rem;
-    width: 95vw; max-width: 540px;
-    max-height: 85vh; overflow-y: auto;
-    box-shadow: 0 10px 32px rgba(0,0,0,0.3);
-    position: relative;
-}
-.close-btn {
-    position: absolute; top: 14px; right: 18px;
-    background: none; border: none; font-size: 2rem; color: #888; cursor: pointer;
-    transition: color 0.2s;
-}
-.close-btn:hover { color: #f44336; }
-
-
-        /* Mobile optimizations */
         @media (max-width: 480px) {
             .container {
                 padding: 0.5rem;
@@ -381,8 +404,8 @@
                 padding: 0.75rem;
             }
 
-            .conversation-area {
-                max-height: 200px;
+            .student-info {
+                padding: 1.5rem;
             }
         }
     </style>
@@ -395,30 +418,33 @@
             <h1>Hi! I'm your AI Tutor!</h1>
             <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
-<div class="student-info">
-    <label for="student-name" style="display:block; text-align:left; margin-bottom:0.2rem;">Name</label>
-    <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
-
-    <label for="student-grade" style="display:block; text-align:left; margin-top:1rem; margin-bottom:0.2rem;">Grade</label>
-    <select id="student-grade">
-        <option value="">Select your grade</option>
-        <option value="PreK">Pre-K</option>
-        <option value="K">Kindergarten</option>
-        <option value="1">1st Grade</option>
-        <option value="2">2nd Grade</option>
-        <option value="3">3rd Grade</option>
-        <option value="4">4th Grade</option>
-        <option value="5">5th Grade</option>
-        <option value="6">6th Grade</option>
-        <option value="7">7th Grade</option>
-        <option value="8">8th Grade</option>
-        <option value="9">9th Grade</option>
-        <option value="10">10th Grade</option>
-        <option value="11">11th Grade</option>
-        <option value="12">12th Grade</option>
-    </select>
-</div>
-
+            <div class="student-info">
+                <div class="form-group">
+                    <label for="student-name">Name</label>
+                    <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="student-grade">Grade</label>
+                    <select id="student-grade">
+                        <option value="">Select your grade</option>
+                        <option value="PreK">Pre-K</option>
+                        <option value="K">Kindergarten</option>
+                        <option value="1">1st Grade</option>
+                        <option value="2">2nd Grade</option>
+                        <option value="3">3rd Grade</option>
+                        <option value="4">4th Grade</option>
+                        <option value="5">5th Grade</option>
+                        <option value="6">6th Grade</option>
+                        <option value="7">7th Grade</option>
+                        <option value="8">8th Grade</option>
+                        <option value="9">9th Grade</option>
+                        <option value="10">10th Grade</option>
+                        <option value="11">11th Grade</option>
+                        <option value="12">12th Grade</option>
+                    </select>
+                </div>
+            </div>
             
             <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
@@ -447,21 +473,28 @@
                 </div>
             </div>
 
- <!-- Live Captions area (add after controls/buttons section) -->
-<div id="live-captions" class="live-captions hidden"></div>
+            <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+        </div>
 
-<!-- Add this button somewhere visible under the controls or at the bottom of .container -->
-<button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+        <!-- Session Summary -->
+        <div id="session-summary" class="session-summary hidden">
+            <h2>Session Complete! 🎉</h2>
+            <div id="summary-content"></div>
+            <button class="start-button" onclick="startNewSession()">Start New Session</button>
+        </div>
 
-<!-- Modal for chat history (add at the end of .container, before </div>) -->
-<div id="chat-history-modal" class="chat-history-modal hidden">
-    <div class="modal-content">
-        <button onclick="closeHistory()" class="close-btn">&times;</button>
-        <h3>Chat History</h3>
-        <div id="full-chat-history"></div>
+        <!-- Live Captions -->
+        <div id="live-captions" class="live-captions hidden"></div>
+
+        <!-- Chat History Modal -->
+        <div id="chat-history-modal" class="chat-history-modal hidden">
+            <div class="modal-content">
+                <button onclick="closeHistory()" class="close-btn">&times;</button>
+                <h3>Chat History</h3>
+                <div id="full-chat-history"></div>
+            </div>
+        </div>
     </div>
-</div>
-
 
     <script>
         // App State
@@ -471,14 +504,14 @@
         let currentSessionId = null;
         let isProcessing = false;
         let sessionStarted = false;
-        let audioInitialized = false;
         let selectedVoice = null;
         let conversationContext = [];
-        let chatHistory = []; // Stores all messages
+        let chatHistory = [];
         let currentSubject = null;
+        
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
-        // Initialize speech synthesis with mobile fixes
+        // Initialize speech synthesis
         function initializeSpeechSynthesis() {
             return new Promise((resolve) => {
                 let voices = speechSynthesis.getVoices();
@@ -503,8 +536,6 @@
         }
 
         function selectBestVoice(voices) {
-            console.log('Available voices:', voices.map(v => v.name));
-            
             const preferredVoices = [
                 'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
                 'Google UK English Female', 'Google US English', 'Microsoft Zira',
@@ -522,16 +553,10 @@
             if (!selectedVoice) {
                 selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
             }
-            
-            console.log('Selected voice:', selectedVoice?.name || 'Default');
-        }
-
-        function speak(text) {
-            return speakWithPromise(text);
         }
 
         function speakWithPromise(text) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel();
                 }
@@ -547,30 +572,23 @@
                         utterance.voice = selectedVoice;
                     }
                     
+                    utterance.onstart = () => {
+                        showLiveCaption(text);
+                    };
+                    
                     utterance.onend = () => {
-                        console.log('✅ Speech completed');
+                        setTimeout(() => {
+                            document.getElementById('live-captions').classList.add('hidden');
+                        }, 600);
                         resolve();
                     };
                     
-                    utterance.onerror = (event) => {
-                        console.error('❌ Speech error:', event.error);
-                        resolve(); // Resolve anyway to prevent hanging
+                    utterance.onerror = () => {
+                        resolve();
                     };
-
-                    utterance.onstart = () => {
-    showLiveCaption(text);
-};
-utterance.onend = () => {
-    setTimeout(() => {
-        document.getElementById('live-captions').classList.add('hidden');
-    }, 600);
-    resolve();
-};
-
                     
                     try {
                         speechSynthesis.speak(utterance);
-                        console.log('🎤 Speaking...');
                     } catch (error) {
                         console.error('Speech synthesis error:', error);
                         resolve();
@@ -581,7 +599,6 @@ utterance.onend = () => {
 
         function initializeSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                console.log('Speech recognition not supported');
                 return false;
             }
 
@@ -592,14 +609,12 @@ utterance.onend = () => {
             recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
-                console.log('🎤 Recognition started');
                 isListening = true;
                 updateMicButton();
                 updateStatus("I'm listening! Go ahead and speak.");
             };
 
             recognition.onend = () => {
-                console.log('🎤 Recognition ended');
                 isListening = false;
                 updateMicButton();
                 if (!isProcessing) {
@@ -609,9 +624,6 @@ utterance.onend = () => {
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript.trim();
-                const confidence = event.results[0][0].confidence;
-                
-                console.log('🎤 Recognition result:', transcript, 'Confidence:', confidence);
                 
                 if (transcript && transcript.length > 0 && !isProcessing) {
                     handleUserInput(transcript);
@@ -621,7 +633,6 @@ utterance.onend = () => {
             };
 
             recognition.onerror = (event) => {
-                console.error('🎤 Recognition error:', event.error);
                 isListening = false;
                 isProcessing = false;
                 updateMicButton();
@@ -631,9 +642,7 @@ utterance.onend = () => {
                     'audio-capture': "I couldn't access your microphone. Please check your permissions.",
                     'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
                     'network': "Network error. Please check your internet connection.",
-                    'aborted': "Speech recognition was cancelled.",
                     'service-not-allowed': "Your browser may not support speech recognition. Try using Chrome and allow microphone access."
-
                 };
                 
                 const message = errorMessages[event.error] || "I didn't catch that clearly. Please try speaking again!";
@@ -645,7 +654,6 @@ utterance.onend = () => {
 
         async function startTutoring() {
             await initializeSpeechSynthesis();
-            audioInitialized = true;
             
             const speechSupported = initializeSpeechRecognition();
             
@@ -680,14 +688,13 @@ utterance.onend = () => {
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                await speak(welcomeMessage);
+                await speakWithPromise(welcomeMessage);
                 addToConversation('tutor', welcomeMessage);
                 updateStatus("Press the microphone to start talking!");
 
             } catch (error) {
                 console.error('Error starting session:', error);
                 alert("Failed to start session. Please try again later.");
-                return;
             }
         }
 
@@ -716,11 +723,10 @@ utterance.onend = () => {
                 const data = await response.json();
                 const tutorResponse = data.response;
                 
-                await speak(tutorResponse);
+                await speakWithPromise(tutorResponse);
                 addToConversation('tutor', tutorResponse);
                 conversationContext.push({ role: 'assistant', content: tutorResponse });
                 
-                // Update current subject and suggestions
                 if (data.subject) {
                     currentSubject = data.subject;
                 }
@@ -731,7 +737,7 @@ utterance.onend = () => {
                 console.error('Error getting response:', error);
                 const fallbackResponse = generateFallbackResponse(input);
                 addToConversation('tutor', fallbackResponse);
-                await speak(fallbackResponse);
+                await speakWithPromise(fallbackResponse);
             } finally {
                 isProcessing = false;
                 updateStatus("Press the microphone to continue our conversation!");
@@ -740,41 +746,31 @@ utterance.onend = () => {
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = document.getElementById('suggestion-grid');
-            
-            // Analyze the conversation to generate contextual suggestions
             const combined = (userInput + ' ' + tutorResponse).toLowerCase();
             let suggestions = [];
             
-            if (combined.includes('math') || combined.includes('number') || combined.includes('add') || combined.includes('subtract') || combined.includes('multiply') || combined.includes('divide')) {
+            if (combined.includes('math') || combined.includes('number')) {
                 suggestions = [
                     { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
                     { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
                     { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
                     { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
                 ];
-            } else if (combined.includes('read') || combined.includes('book') || combined.includes('story') || combined.includes('word')) {
+            } else if (combined.includes('read') || combined.includes('story')) {
                 suggestions = [
                     { text: '📖 Read together', query: 'Can we read something together?' },
                     { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
                     { text: '✍️ Write a story', query: 'Help me write a creative story' },
                     { text: '🎭 Act out the story', query: 'Can we act out this story?' }
                 ];
-            } else if (combined.includes('science') || combined.includes('animal') || combined.includes('plant') || combined.includes('space') || combined.includes('experiment')) {
+            } else if (combined.includes('science') || combined.includes('animal')) {
                 suggestions = [
                     { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
                     { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
                     { text: '🐾 Explore animals', query: 'I want to learn about animals' },
                     { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
                 ];
-            } else if (combined.includes('art') || combined.includes('draw') || combined.includes('create') || combined.includes('music')) {
-                suggestions = [
-                    { text: '🎨 Creative projects', query: 'Can we do an art project?' },
-                    { text: '🖌️ Drawing tips', query: 'Teach me how to draw better' },
-                    { text: '🎵 Music exploration', query: 'Let\'s learn about music' },
-                    { text: '🎭 Drama activities', query: 'Can we do something dramatic?' }
-                ];
             } else {
-                // Default suggestions based on conversation flow
                 suggestions = [
                     { text: '❓ Ask me anything', query: 'I have a question about something' },
                     { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
@@ -783,7 +779,6 @@ utterance.onend = () => {
                 ];
             }
             
-            // Update the suggestion grid
             suggestionGrid.innerHTML = '';
             suggestions.forEach(suggestion => {
                 const suggestionDiv = document.createElement('div');
@@ -799,53 +794,40 @@ utterance.onend = () => {
             
             if (lower.includes('math') || lower.includes('number')) {
                 return "I love math! Let's work on this together. Can you tell me more about what you'd like to practice?";
-            } else if (lower.includes('read') || lower.includes('story') || lower.includes('book')) {
+            } else if (lower.includes('read') || lower.includes('story')) {
                 return "Reading is so much fun! What kind of stories do you enjoy?";
-            } else if (lower.includes('animal') || lower.includes('pet')) {
+            } else if (lower.includes('animal')) {
                 return "Animals are amazing! Do you have a favorite animal?";
             } else {
                 return "That sounds really interesting! Can you tell me more about what you're thinking?";
             }
         }
 
-function addToConversation(sender, message) {
-    chatHistory.push({ sender, message });
+        function addToConversation(sender, message) {
+            chatHistory.push({ sender, message });
+        }
 
-    // Show as live caption if it's tutor's turn to speak
-    if (sender === 'tutor') {
-        showLiveCaption(message);
-    }
-}
-function showLiveCaption(text) {
-    const captionsDiv = document.getElementById('live-captions');
-    captionsDiv.textContent = text;
-    captionsDiv.classList.remove('hidden');
-    // Hide after speech is done (you can also tie this to speech end for more precision)
-    setTimeout(() => {
-        captionsDiv.classList.add('hidden');
-    }, Math.max(3500, text.length * 45)); // Keeps up longer for long text
-}
+        function showLiveCaption(text) {
+            const captionsDiv = document.getElementById('live-captions');
+            captionsDiv.textContent = text;
+            captionsDiv.classList.remove('hidden');
+            setTimeout(() => {
+                captionsDiv.classList.add('hidden');
+            }, Math.max(3500, text.length * 45));
+        }
 
-function showHistory() {
-    const fullHistoryDiv = document.getElementById('full-chat-history');
-    fullHistoryDiv.innerHTML = chatHistory.map(msg =>
-        `<div class="${msg.sender}-message" style="margin:0.5rem 0;">
-            <b>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</b> ${msg.message}
-        </div>`
-    ).join('');
-    document.getElementById('chat-history-modal').classList.remove('hidden');
-}
+        function showHistory() {
+            const fullHistoryDiv = document.getElementById('full-chat-history');
+            fullHistoryDiv.innerHTML = chatHistory.map(msg =>
+                `<div class="chat-message ${msg.sender}-message">
+                    <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
+                </div>`
+            ).join('');
+            document.getElementById('chat-history-modal').classList.remove('hidden');
+        }
 
-function closeHistory() {
-    document.getElementById('chat-history-modal').classList.add('hidden');
-}
-
-
-
-        function stopSpeech() {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-            }
+        function closeHistory() {
+            document.getElementById('chat-history-modal').classList.add('hidden');
         }
 
         function toggleListening() {
@@ -860,14 +842,12 @@ function closeHistory() {
             }
             
             if (isListening) {
-                console.log('🎤 Stopping recognition...');
                 recognition.stop();
             } else {
-                console.log('🎤 Starting recognition...');
                 try {
                     recognition.start();
                 } catch (error) {
-                    console.error('🎤 Error starting recognition:', error);
+                    console.error('Error starting recognition:', error);
                     updateStatus("Error starting microphone. Please try again.");
                 }
             }
