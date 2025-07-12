@@ -263,6 +263,18 @@
             pointer-events: none;
         }
 
+        .live-captions.user-caption {
+    background: rgba(56, 183, 74, 0.88); /* Greenish for user speech */
+    color: #fff;
+    border: 2px solid #2ecc40;
+}
+.live-captions.bot-caption {
+    background: rgba(52, 152, 219, 0.88); /* Bluish for bot TTS */
+    color: #fff;
+    border: 2px solid #2980b9;
+}
+
+
         .history-btn {
             background: linear-gradient(45deg, #ffcc00, #ffa500);
             color: #333;
@@ -484,7 +496,8 @@
         </div>
 
         <!-- Live Captions -->
-        <div id="live-captions" class="live-captions hidden"></div>
+        <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
+
 
         <!-- Chat History Modal -->
         <div id="chat-history-modal" class="chat-history-modal hidden">
@@ -535,6 +548,30 @@
             });
         }
 
+async function playTTS(text) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/speak`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, languageCode: 'en-US', voice: 'en-US-Neural2-F' })
+    });
+
+    const data = await response.json();
+    if (data.success && data.audioContent) {
+      const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
+      showLiveCaption(text, 'bot');
+      await audio.play();
+      return;
+    }
+    throw new Error('No server audio');
+  } catch (err) {
+    // This is the fallback when Google TTS fails or server error occurs
+    await speakWithPromise(text);
+  }
+}
+
+
+
         function selectBestVoice(voices) {
             const preferredVoices = [
                 'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
@@ -577,11 +614,9 @@
                     };
                     
                     utterance.onend = () => {
-                        setTimeout(() => {
-                            document.getElementById('live-captions').classList.add('hidden');
-                        }, 600);
-                        resolve();
-                    };
+    document.getElementById('live-captions').classList.add('hidden');
+    resolve();
+};
                     
                     utterance.onerror = () => {
                         resolve();
@@ -598,13 +633,15 @@
         }
 
         function initializeSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                return false;
-            }
+if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    updateStatus("Sorry, your browser doesn't support speech recognition. Try Chrome or Edge!");
+    return false;
+}
+
 
             recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.continuous = false;
-            recognition.interimResults = false;
+            recognition.interimResults = true;
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 1;
 
@@ -622,15 +659,30 @@
                 }
             };
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript.trim();
-                
-                if (transcript && transcript.length > 0 && !isProcessing) {
-                    handleUserInput(transcript);
-                } else if (!isProcessing) {
-                    updateStatus("I didn't catch that clearly. Please try speaking again!");
-                }
-            };
+recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+    }
+    // Show live, whether interim or final
+    document.getElementById('live-captions').textContent = transcript;
+    document.getElementById('live-captions').classList.remove('hidden');
+
+    // If it's final (user stopped speaking)
+    if (event.results[event.results.length - 1].isFinal) {
+        if (transcript.trim().length > 0 && !isProcessing) {
+            handleUserInput(transcript.trim());
+        } else if (!isProcessing) {
+            updateStatus("I didn't catch that clearly. Please try speaking again!");
+        }
+        // Hide caption after handling (or keep for a second if you want)
+setTimeout(() => {
+    document.getElementById('live-captions').classList.add('hidden');
+}, 600);
+
+    }
+};
+
 
             recognition.onerror = (event) => {
                 isListening = false;
@@ -688,7 +740,7 @@
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                await speakWithPromise(welcomeMessage);
+                await playTTS(welcomeMessage);
                 addToConversation('tutor', welcomeMessage);
                 updateStatus("Press the microphone to start talking!");
 
@@ -723,7 +775,8 @@
                 const data = await response.json();
                 const tutorResponse = data.response;
                 
-                await speakWithPromise(tutorResponse);
+
+                await playTTS(tutorResponse);
                 addToConversation('tutor', tutorResponse);
                 conversationContext.push({ role: 'assistant', content: tutorResponse });
                 
@@ -737,7 +790,8 @@
                 console.error('Error getting response:', error);
                 const fallbackResponse = generateFallbackResponse(input);
                 addToConversation('tutor', fallbackResponse);
-                await speakWithPromise(fallbackResponse);
+                await playTTS(fallbackResponse);
+
             } finally {
                 isProcessing = false;
                 updateStatus("Press the microphone to continue our conversation!");
@@ -807,14 +861,14 @@
             chatHistory.push({ sender, message });
         }
 
-        function showLiveCaption(text) {
-            const captionsDiv = document.getElementById('live-captions');
-            captionsDiv.textContent = text;
-            captionsDiv.classList.remove('hidden');
-            setTimeout(() => {
-                captionsDiv.classList.add('hidden');
-            }, Math.max(3500, text.length * 45));
-        }
+function showLiveCaption(text, type = 'bot') {
+    const captionsDiv = document.getElementById('live-captions');
+    captionsDiv.classList.add('hidden'); 
+    captionsDiv.textContent = text;
+    captionsDiv.classList.remove('hidden');
+    captionsDiv.classList.toggle('user-caption', type === 'user');
+    captionsDiv.classList.toggle('bot-caption', type === 'bot');
+}
 
         function showHistory() {
             const fullHistoryDiv = document.getElementById('full-chat-history');
@@ -902,31 +956,23 @@
             const summaryContent = document.getElementById('summary-content');
             
 if (summary) {
+    // Merge suggestions and next steps into one contextual block
+    const allSuggestions = [
+        ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
+        ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
+    ].filter(Boolean);
+
     summaryContent.innerHTML = `
         <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
-        <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
         <div class="summary-item"><strong>Number of Inappropriate or Off-topic Requests:</strong> ${summary.totalWarnings}</div>
         <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-        <div class="summary-item"><strong>Learning Highlights:</strong> 
-            <ul style="margin-top: 0.5rem;">
-                ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
-            </ul>
+        <div class="summary-item"><strong>Learning Highlights:</strong><br>
+            ${summary.highlights.join('<br>')}
         </div>
-        <div class="summary-item"><strong>Suggestions:</strong> ${Array.isArray(summary.suggestions) 
-            ? `<ul>${summary.suggestions.map(s => `<li>${s}</li>`).join('')}</ul>` 
-            : summary.suggestions}
-        </div>
-        <div class="summary-item"><strong>Achievements:</strong>
-            ${summary.achievements && summary.achievements.length 
-                ? `<ul style="margin-top: 0.5rem;">${summary.achievements.map(a => `<li>${a}</li>`).join('')}</ul>`
-                : '<span>None recorded this session.</span>'
-            }
-        </div>
-        <div class="summary-item"><strong>Next Steps:</strong>
-            ${summary.nextSteps && summary.nextSteps.length
-                ? `<ul style="margin-top: 0.5rem;">${summary.nextSteps.map(ns => `<li>${ns}</li>`).join('')}</ul>`
-                : '<span>Keep asking great questions!</span>'
-            }
+        <div class="summary-item"><strong>Suggestions & Next Steps:</strong><br>
+            ${allSuggestions.length > 0
+                ? allSuggestions.join('<br>')
+                : 'Keep asking great questions!'}
         </div>
     `;
 } else {
@@ -937,8 +983,10 @@ if (summary) {
 }
 
 
+
             
-            await speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
+            await playTTS("You had a wonderful learning session today! Keep being curious and asking great questions.");
+
         }
 
         // Start new session
@@ -953,16 +1001,12 @@ if (summary) {
             // Reset UI
             document.getElementById('session-summary').classList.add('hidden');
             document.getElementById('welcome-screen').classList.remove('hidden');
-            document.getElementById('conversation-area').classList.add('hidden');
-            document.getElementById('conversation-messages').innerHTML = '';
             
             // Clear form
             document.getElementById('student-name').value = '';
             document.getElementById('student-grade').value = '';
             
-            // Reset audio status
-            document.getElementById('audio-status').textContent = 'Click "Test Audio" to make sure you can hear me!';
-            
+
             // Reset microphone button
             updateMicButton();
             updateStatus("Ready to start a new session!");

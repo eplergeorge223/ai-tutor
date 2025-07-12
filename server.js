@@ -57,6 +57,7 @@ const openai = new OpenAI({
 // Store conversation history for each session
 const sessions = new Map();
 
+
 // Cleanup expired sessions
 setInterval(() => {
   const now = Date.now();
@@ -83,9 +84,12 @@ if (regex.test(lowerText)) {
 }
 
 // Generate session ID
+const { v4: uuidv4 } = require('uuid');
+
 function generateSessionId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return uuidv4();
 }
+
 
 // Enhanced AI Tutor system prompt with stronger content filtering
 function getTutorSystemPrompt(grade, studentName) {
@@ -162,10 +166,10 @@ function createSession(sessionId, studentName, grade, subjects) {
         startTime: new Date(),
         lastActivity: Date.now(),
         messages: [{ role: 'system', content: initialSystemMessageContent, timestamp: new Date() }], // Pre-populate with system message
-        totalInteractions: 0,
         totalWarnings: 0,
         topicsDiscussed: new Set(),
         currentTopic: null,
+        topicBreakdown: {}, 
         conversationContext: [],
         achievements: [],
         strugglingAreas: [],
@@ -252,9 +256,6 @@ app.post('/api/chat', async (req, res) => {
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
 
-    if (session.totalInteractions >= config.MAX_SESSION_INTERACTIONS) {
-      return res.status(429).json({ error: 'Session interaction limit reached. Please start a new session to continue learning.' });
-    }
 
     // Check for inappropriate content
     const contentCheck = containsInappropriateContent(message);
@@ -279,18 +280,25 @@ app.post('/api/chat', async (req, res) => {
     const response = await generateAIResponse(sessionId, message.trim()); // No 'context' param
 
     // Track topics and learning patterns
-    const subject = classifySubject(message);
-    if (subject) {
-      session.topicsDiscussed.add(subject);
-      session.currentTopic = subject;
-    }
+const { subject, subtopic } = classifySubject(message);
+if (subject) {
+  session.topicsDiscussed.add(subject);
+  session.currentTopic = subject;
+  if (!session.topicBreakdown[subject]) session.topicBreakdown[subject] = {};
+  if (subtopic) {
+    session.topicBreakdown[subject][subtopic] = (session.topicBreakdown[subject][subtopic] || 0) + 1;
+  }
+}
+
 
     // Update conversation context for better suggestions
-    session.conversationContext.push({
-      message: message,
-      topic: subject,
-      timestamp: Date.now()
-    });
+ session.conversationContext.push({
+  role: 'user',
+  message: message,
+  topic: subject,
+  subtopic: subtopic,
+  timestamp: Date.now()
+});
 
     // Keep only last 5 context items
     if (session.conversationContext.length > 5) {
@@ -300,7 +308,7 @@ app.post('/api/chat', async (req, res) => {
     res.json({
       response: response.text,
       subject: response.subject,
-      suggestions: generateContextualSuggestions(session),
+      suggestions: generateDynamicSuggestions(session),
       encouragement: response.encouragement,
       status: 'success',
       sessionStats: {
@@ -350,84 +358,88 @@ function generateSafeSuggestions(grade) {
   return currentSuggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
-// Generate contextual suggestions based on current conversation
-function generateContextualSuggestions(session) {
-  const currentTopic = session.currentTopic;
-  const recentMessagesLower = session.conversationContext.map(c => c.message.toLowerCase()).join(' ');
+function generateDynamicSuggestions(session) {
+    // Get the last 3 user messages with topic/subtopic context
+    const ctx = (session.conversationContext || []).slice(-5); // recent context
+    const recentUser = ctx.filter(e => e.role === 'user');
+    const lastUser = recentUser[recentUser.length - 1] || {};
+    const topic = lastUser.topic || session.currentTopic || null;
+    const subtopic = lastUser.subtopic || null;
 
-  // If we have a current topic, generate related suggestions
-  if (currentTopic) {
-    const topicSuggestions = {
-      math: [
-        'Let\'s try another math problem!',
-        'Want to see math in real life?',
-        'How about a fun math challenge?',
-        'Let\'s explore different math concepts!'
-      ],
-      reading: [
-        'Let\'s read more together!',
-        'Want to learn new vocabulary?',
-        'How about writing our own story?',
-        'Let\'s practice reading skills!'
-      ],
-      science: [
-        'Let\'s explore more science!',
-        'Want to learn about nature?',
-        'How about a cool experiment?',
-        'Let\'s discover something amazing!'
-      ],
-      writing: [
-        'Let\'s practice writing!',
-        'Want to be creative with words?',
-        'How about a writing challenge?',
-        'Let\'s improve our writing skills!'
-      ],
-      history: [
-        'Let\'s explore more history!',
-        'Want to learn about the past?',
-        'How about famous historical figures?',
-        'Let\'s discover historical events!'
-      ],
-      art: [
-        'Let\'s be creative!',
-        'Want to learn about artists?',
-        'How about making something?',
-        'Let\'s explore different art forms!'
-      ]
-    };
+    // Super basic "struggling" detection: 2+ repeated questions or same topic
+    const struggling = recentUser.length >= 2 &&
+        recentUser[recentUser.length-1].topic === recentUser[recentUser.length-2].topic &&
+        recentUser[recentUser.length-1].subtopic === recentUser[recentUser.length-2].subtopic;
 
-    // Check for specific subtopics in recent messages
-    if (currentTopic === 'math') {
-      if (recentMessagesLower.includes('multiply') || recentMessagesLower.includes('times')) {
-        return ['Let\'s practice more multiplication!', 'Want to learn multiplication tricks?', 'How about multiplication word problems!'];
-      }
-      if (recentMessagesLower.includes('add') || recentMessagesLower.includes('plus')) {
-        return ['Let\'s try more addition!', 'Want to add bigger numbers?', 'How about addition games!'];
-      }
-      if (recentMessagesLower.includes('story') && recentMessagesLower.includes('problem')) {
-        return ['Let\'s solve another story problem!', 'Want to create our own math story?', 'How about a different type of problem?'];
-      }
+    // Examples for core subjects
+    if (topic === 'math') {
+        if (subtopic === 'addition') {
+            if (struggling) return [
+                "Want to review some addition tips together?",
+                "Need help with addition? Try using your fingers or objects around you!",
+                "Let’s slow down and try a different example."
+            ];
+            return [
+                "Ready to try a harder addition problem?",
+                "Want to switch to subtraction for a bit?",
+                "Curious how addition works with bigger numbers?"
+            ];
+        }
+        if (subtopic === 'multiplication') {
+            return [
+                "Want a quick times table game?",
+                "Ready for a real-world multiplication problem?",
+                "Switch to division for a challenge?"
+            ];
+        }
+        // ... more subtopics
+        return [
+            "Want a math puzzle?",
+            "Switch to a different math topic?",
+            "Try a quick math quiz?"
+        ];
     }
-
-    if (currentTopic === 'reading') {
-      if (recentMessagesLower.includes('story')) {
-        return ['Let\'s read another story!', 'Want to create our own story?', 'How about discussing the characters?'];
-      }
+    if (topic === 'reading') {
+        if (subtopic === 'vocabulary') {
+            return [
+                "Want to learn new words?",
+                "Try using those words in a sentence?",
+                "Want to read a short story?"
+            ];
+        }
+        return [
+            "Want to read together?",
+            "Need help with tricky words?",
+            "Switch to a fun story?"
+        ];
     }
-
-    if (currentTopic === 'science') {
-      if (recentMessagesLower.includes('animal')) {
-        return ['Let\'s learn about more animals!', 'Want to explore animal habitats?', 'How about animal behavior?'];
-      }
-      if (recentMessagesLower.includes('space') || recentMessagesLower.includes('planet')) {
-        return ['Let\'s explore more space!', 'Want to learn about different planets?', 'How about space exploration?'];
-      }
+    if (topic === 'science') {
+        if (subtopic === 'animals') {
+            return [
+                "Want to learn about a different animal?",
+                "Curious about animal habitats?",
+                "How about animal adaptations?"
+            ];
+        }
+        if (subtopic === 'space') {
+            return [
+                "Want to learn about planets?",
+                "How about stars and galaxies?",
+                "What about astronauts and rockets?"
+            ];
+        }
+        return [
+            "Try a science experiment at home?",
+            "Explore another science topic?",
+            "Ask a big science question!"
+        ];
     }
-
-    return topicSuggestions[currentTopic] || getGeneralSuggestions(session.grade);
-  }
-
-  return getGeneralSuggestions(session.grade);
+    // Fallback/general
+    return [
+        "Pick a new topic to explore!",
+        "Ask me anything!",
+        "Want a fun learning game?"
+    ];
 }
 
 // Get general suggestions based on grade level
@@ -456,6 +468,31 @@ function getGeneralSuggestions(grade) {
 }
 
     function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
+function buildPersonalizedSummary(session) {
+  const lines = [];
+  for (const [subject, breakdown] of Object.entries(session.topicBreakdown)) {
+    const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
+    const [topSub, topCount] = Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0] || [];
+    if (topSub) {
+      lines.push(
+        `${session.studentName} focused mostly on ${capitalize(topSub)} in ${capitalize(subject)} (${Math.round((topCount / total) * 100)}% of their questions in this area).`
+      );
+    } else {
+      lines.push(`${session.studentName} showed an interest in ${capitalize(subject)}.`);
+    }
+  }
+  if (!lines.length) {
+    lines.push(`Showed curiosity and asked thoughtful questions.`);
+  }
+  return lines.join(' ');
+}
+
+function capitalize(str) {
+  if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -497,19 +534,15 @@ const suggestions = generateRecommendations(session);
 
 const summary = {
   duration: duration > 0 ? `${duration} minutes` : 'Less than a minute',
-  totalInteractions: session.totalInteractions,
   totalWarnings: session.totalWarnings || 0,
-  topicsExplored: `${session.studentName} showed most interest in: ${mostInterested}`,
+topicsExplored: buildPersonalizedSummary(session),
   studentName: session.studentName,
   grade: session.grade,
   highlights: highlights,
-  suggestions: suggestions,  // <-- use the correct variable
-  achievements: session.achievements,
+  suggestions: suggestions, 
   nextSteps: generateNextSteps(session)
 };
 
-
-    console.log(`📊 Generating summary for session ${sessionId.slice(-6)}. Duration: ${duration} mins, Interactions: ${session.totalInteractions}`);
 
     res.json(summary);
   } catch (error) {
@@ -540,45 +573,82 @@ app.post('/api/session/:sessionId/end', (req, res) => {
 
 // Generate personalized recommendations
 function generateRecommendations(session) {
-  const topics = Array.from(session.topicsDiscussed);
+    const breakdown = session.topicBreakdown || {};
+    const recs = [];
 
-  if (topics.length === 0) {
-    return `Continue exploring topics that spark your curiosity, ${session.studentName}!`;
-  }
+    // Helper to get most discussed subtopic for a subject
+    function getTopSubtopic(subject) {
+        if (!breakdown[subject]) return null;
+        const subs = Object.entries(breakdown[subject]);
+        if (!subs.length) return null;
+        subs.sort((a, b) => b[1] - a[1]);
+        return subs[0][0]; // return subtopic string
+    }
 
-  const recommendations = [];
+    // Math
+    if (breakdown.math) {
+        const top = getTopSubtopic('math');
+        if (top) {
+            recs.push(`Keep practicing ${top} problems—you're making awesome progress!`);
+        } else {
+            recs.push('Practice math problems regularly to build confidence.');
+        }
+    }
+    // Reading
+    if (breakdown.reading) {
+        const top = getTopSubtopic('reading');
+        if (top) {
+            recs.push(`Explore more stories about ${top}—you seem to love that!`);
+        } else {
+            recs.push('Keep reading different types of books to expand vocabulary.');
+        }
+    }
+    // Science
+    if (breakdown.science) {
+        const top = getTopSubtopic('science');
+        if (top) {
+            recs.push(`Dive deeper into ${top}—you asked lots of great questions!`);
+        } else {
+            recs.push('Try simple science experiments at home.');
+        }
+    }
+    // Add more subjects here if you want, following the same pattern
 
-  if (topics.includes('math')) {
-    recommendations.push('Practice math problems regularly to build confidence');
-  }
-  if (topics.includes('reading')) {
-    recommendations.push('Keep reading different types of books to expand vocabulary');
-  }
-  if (topics.includes('science')) {
-    recommendations.push('Try simple science experiments at home');
-  }
-
-  return recommendations.length > 0
-    ? recommendations.join('. ') + '.'
-    : `Great job exploring ${topics.join(' and ')}, ${session.studentName}! Keep asking questions and staying curious.`;
+    // General fallback if no main subject
+    if (recs.length === 0) {
+        return `Continue exploring topics that spark your curiosity, ${session.studentName}!`;
+    }
+    return recs;
 }
 
 // Generate next steps for continued learning
 function generateNextSteps(session) {
-  const steps = [
-    'Continue asking questions about topics that interest you',
-    'Try to connect what you learn to things you see in everyday life',
-    'Share what you\'ve learned with family or friends'
-  ];
+    // If there’s a specific struggle, address it
+    if (session.strugglingAreas && session.strugglingAreas.length > 0) {
+        // Use only the most recent or most frequent
+        const lastStruggle = session.strugglingAreas[session.strugglingAreas.length - 1];
+        return [`You could use some extra practice on ${lastStruggle}. Let's focus more on this next time.`];
+    }
 
-  if (session.topicsDiscussed.has('math')) {
-    steps.push('Practice math concepts with real-world examples');
-  }
-  if (session.topicsDiscussed.has('reading')) {
-    steps.push('Read for at least 15 minutes each day');
-  }
+    // Otherwise, use main subtopic (most discussed)
+    const breakdown = session.topicBreakdown || {};
+    let bestSubject = null, bestSub = null, bestCount = 0;
 
-  return steps.slice(0, 3); // Return a maximum of 3 general next steps
+    for (const [subject, subs] of Object.entries(breakdown)) {
+        for (const [sub, count] of Object.entries(subs)) {
+            if (count > bestCount) {
+                bestSubject = subject;
+                bestSub = sub;
+                bestCount = count;
+            }
+        }
+    }
+    if (bestSubject && bestSub) {
+        return [`Great job with ${bestSub} in ${bestSubject}! Try more exercises to master it.`];
+    }
+
+    // General fallback
+    return ['Keep exploring and practicing what interests you most!'];
 }
 
 // Enhanced AI response generation with better engagement
@@ -676,26 +746,142 @@ if (session.messages.length > 100) session.messages = session.messages.slice(-50
   }
 }
 
-// Enhanced subject classification
-function classifySubject(input) {
-  const subjects = {
-    math: ['math', 'number', 'count', 'add', 'subtract', 'multiply', 'divide', 'calculation', 'algebra', 'geometry', 'fraction', 'decimal', 'percent', 'equation', 'problem', 'plus', 'minus', 'times'],
-    reading: ['read', 'book', 'story', 'word', 'letter', 'spell', 'sentence', 'paragraph', 'chapter', 'author', 'character', 'plot', 'vocabulary'],
-    science: ['science', 'animal', 'plant', 'space', 'earth', 'experiment', 'biology', 'chemistry', 'physics', 'nature', 'weather', 'ocean', 'planet'],
-    history: ['history', 'past', 'ancient', 'president', 'country', 'war', 'culture', 'civilization', 'timeline', 'historical'],
-    art: ['art', 'draw', 'paint', 'create', 'music', 'dance', 'creative', 'design', 'color', 'artist'],
-    writing: ['write', 'essay', 'poem', 'story', 'creative writing', 'journal', 'composition', 'grammar'],
-    social: ['social', 'community', 'friendship', 'family', 'culture', 'society', 'people', 'relationship']
-  };
+// UNIVERSAL K-12 SUBJECTS & SUBTOPICS CLASSIFIER
 
+const subjects = {
+  math: {
+    keywords: ['math', 'number', 'add', 'subtract', 'plus', 'minus', 'multiply', 'times', 'divide', 'calculation', 'fraction', 'decimal', 'percent', 'equation', 'algebra', 'geometry', 'graph', 'problem', 'count', 'multiplication', 'division'],
+    subtopics: {
+      counting: ['count', 'number', 'numbers', 'how many'],
+      addition: ['add', 'addition', 'plus'],
+      subtraction: ['subtract', 'subtraction', 'minus'],
+      multiplication: ['multiply', 'multiplication', 'times'],
+      division: ['divide', 'division', 'divided'],
+      fractions: ['fraction', 'fractions'],
+      decimals: ['decimal', 'decimals'],
+      percentages: ['percent', 'percentage'],
+      algebra: ['algebra', 'equation', 'variable', 'expression'],
+      geometry: ['geometry', 'shape', 'angle', 'area', 'perimeter', 'circle', 'triangle', 'square'],
+      graphing: ['graph', 'chart', 'plot'],
+      wordProblems: ['story problem', 'word problem'],
+    }
+  },
+  reading: {
+    keywords: ['read', 'reading', 'book', 'story', 'chapter', 'comprehension', 'vocabulary', 'sentence', 'phonics', 'letter', 'word', 'paragraph', 'main idea', 'summarize', 'author', 'character'],
+    subtopics: {
+      phonics: ['phonics', 'letter sound', 'sound it out'],
+      vocabulary: ['vocabulary', 'word', 'definition'],
+      comprehension: ['comprehension', 'understand', 'main idea', 'summary', 'summarize'],
+      stories: ['story', 'chapter', 'book', 'author'],
+      characters: ['character', 'who'],
+      fluency: ['fluency', 'read aloud', 'speed'],
+      writing: ['write', 'writing', 'sentence', 'paragraph', 'essay'],
+    }
+  },
+  science: {
+    keywords: ['science', 'experiment', 'nature', 'animal', 'plant', 'biology', 'earth', 'space', 'physics', 'chemistry', 'weather', 'ecosystem', 'habitat', 'energy', 'force', 'motion', 'life cycle', 'observe'],
+    subtopics: {
+      animals: ['animal', 'mammal', 'reptile', 'amphibian', 'insect', 'bird', 'fish', 'habitat'],
+      plants: ['plant', 'tree', 'flower', 'seed', 'photosynthesis'],
+      space: ['space', 'planet', 'star', 'moon', 'solar system'],
+      weather: ['weather', 'rain', 'cloud', 'storm', 'temperature'],
+      earthScience: ['earth', 'rock', 'soil', 'volcano', 'ocean', 'mountain', 'landform'],
+      physics: ['force', 'motion', 'gravity', 'energy', 'push', 'pull'],
+      chemistry: ['chemistry', 'atom', 'molecule', 'element', 'mixture', 'solution'],
+      lifeCycles: ['life cycle', 'grow', 'change', 'metamorphosis'],
+      scientificMethod: ['experiment', 'observe', 'hypothesis', 'investigate'],
+    }
+  },
+  socialStudies: {
+    keywords: ['history', 'government', 'president', 'country', 'community', 'citizen', 'geography', 'culture', 'economy', 'vote', 'map', 'war', 'historical'],
+    subtopics: {
+      history: ['history', 'past', 'historical', 'war', 'revolution', 'event'],
+      geography: ['map', 'globe', 'continent', 'country', 'state', 'city', 'river', 'mountain'],
+      government: ['government', 'president', 'law', 'vote', 'election'],
+      citizenship: ['citizen', 'citizenship', 'rights', 'responsibility'],
+      culture: ['culture', 'custom', 'tradition'],
+      economics: ['economy', 'money', 'trade', 'goods', 'services', 'market'],
+    }
+  },
+  art: {
+    keywords: ['art', 'draw', 'paint', 'sculpt', 'color', 'shape', 'design', 'picture', 'creative', 'artist'],
+    subtopics: {
+      drawing: ['draw', 'sketch'],
+      painting: ['paint', 'painting'],
+      sculpture: ['sculpt', 'sculpture', 'clay'],
+      colorTheory: ['color', 'primary color', 'mix'],
+      design: ['design', 'create', 'creative'],
+      artists: ['artist', 'famous artist', 'art history'],
+    }
+  },
+  music: {
+    keywords: ['music', 'song', 'sing', 'instrument', 'note', 'melody', 'rhythm', 'band', 'choir'],
+    subtopics: {
+      singing: ['sing', 'singing', 'choir', 'voice'],
+      instruments: ['instrument', 'piano', 'guitar', 'drum', 'violin'],
+      rhythm: ['rhythm', 'beat'],
+      melody: ['melody', 'tune'],
+      musicTheory: ['note', 'scale', 'key'],
+      composers: ['composer', 'musician', 'band', 'artist'],
+    }
+  },
+  pe: {
+    keywords: ['pe', 'gym', 'exercise', 'physical', 'activity', 'sports', 'run', 'jump', 'game', 'fitness', 'health'],
+    subtopics: {
+      fitness: ['fitness', 'exercise', 'workout'],
+      sports: ['sports', 'basketball', 'soccer', 'baseball', 'football', 'volleyball'],
+      games: ['game', 'tag', 'relay'],
+      health: ['health', 'nutrition', 'food'],
+      movement: ['run', 'jump', 'skip', 'throw', 'catch'],
+    }
+  },
+  technology: {
+    keywords: ['computer', 'technology', 'robot', 'coding', 'program', 'type', 'internet', 'website', 'device', 'app'],
+    subtopics: {
+      coding: ['code', 'coding', 'programming', 'scratch', 'python', 'javascript'],
+      robotics: ['robot', 'robotics'],
+      typing: ['type', 'typing'],
+      internetSafety: ['internet', 'safety', 'cyber', 'online', 'website'],
+      devices: ['device', 'tablet', 'laptop', 'desktop', 'app'],
+    }
+  },
+  language: {
+    keywords: ['language', 'spanish', 'french', 'german', 'english', 'word', 'phrase', 'translate', 'conversation'],
+    subtopics: {
+      vocabulary: ['word', 'vocabulary', 'definition'],
+      grammar: ['grammar', 'sentence', 'verb', 'noun', 'adjective'],
+      conversation: ['speak', 'talk', 'conversation'],
+      translation: ['translate', 'translation'],
+      culture: ['culture', 'country'],
+    }
+  },
+  // Add any more (life skills, SEL, etc) as needed
+};
+
+// Classifier function
+function classifySubject(input) {
+  if (!input) return { subject: null, subtopic: null };
   const lowerInput = input.toLowerCase();
-  for (const [subject, keywords] of Object.entries(subjects)) {
-    if (keywords.some(keyword => lowerInput.includes(keyword))) {
-      return subject;
+
+  for (const [subject, data] of Object.entries(subjects)) {
+    // Use RegExp for word boundaries for higher precision
+    if (data.keywords.some(keyword => new RegExp(`\\b${keyword}\\b`).test(lowerInput))) {
+      let bestSub = null, bestLength = 0;
+      for (const [subtopic, subwords] of Object.entries(data.subtopics || {})) {
+        for (const subword of subwords) {
+          if (new RegExp(`\\b${subword}\\b`).test(lowerInput) && subword.length > bestLength) {
+            bestSub = subtopic;
+            bestLength = subword.length;
+          }
+        }
+      }
+      return { subject, subtopic: bestSub }; // Return null if no subtopic matched
     }
   }
-  return null;
+  return { subject: null, subtopic: null };
 }
+
+
 
 // Generate encouragement based on session progress
 function generateEncouragement(session) {
@@ -710,10 +896,7 @@ function generateEncouragement(session) {
     `I can see you're really engaged in learning!`
   ];
 
-  if (session.totalInteractions >= 10) {
-    encouragements.push(`Wow! You've been so engaged in our conversation!`);
-  }
-
+ 
   return encouragements[Math.floor(Math.random() * encouragements.length)];
 }
 
@@ -736,6 +919,33 @@ function generateFallbackResponse(message) {
   return "I'm having trouble right now, but I'm still here to help you learn! What would you like to explore together?";
 }
 
+
+const textToSpeech = require('@google-cloud/text-to-speech');
+const gTTSClient = new textToSpeech.TextToSpeechClient();
+
+app.post('/api/speak', async (req, res) => {
+  const { text, voice, languageCode } = req.body;
+
+  try {
+    const request = {
+      input: { text },
+      voice: {
+        languageCode: languageCode || 'en-US',
+        name: voice || 'en-US-Neural2-F'
+      },
+      audioConfig: { audioEncoding: 'MP3' },
+    };
+    const [response] = await gTTSClient.synthesizeSpeech(request);
+    return res.json({ success: true, audioContent: response.audioContent.toString('base64'), engine: 'google' });
+  } catch (err) {
+    console.warn('Google TTS failed:', err.message);
+    // Instead of trying OpenAI or throwing, just fail gracefully
+    return res.json({ success: false, audioContent: null, error: 'Google TTS failed.' });
+  }
+});
+
+
+
 // Session management endpoints
 app.get('/api/session/:sessionId/status', (req, res) => {
   const { sessionId } = req.params;
@@ -748,7 +958,6 @@ app.get('/api/session/:sessionId/status', (req, res) => {
   res.json({
     active: true,
     duration: Math.floor((Date.now() - session.startTime.getTime()) / 60000),
-    interactions: session.totalInteractions,
     topics: Array.from(session.topicsDiscussed)
   });
 });
@@ -763,18 +972,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down gracefully...');
-  process.exit(0);
-});
-
-// Start server
-app.listen(config.PORT, () => {
+// Start server and keep reference for shutdown
+const server = app.listen(config.PORT, () => {
   console.log(`🎓 Enhanced AI Tutor Backend running on port ${config.PORT}`);
-  console.log(`📊 Health check: http://localhost:${config.PORT}/api/health`);
+  console.log(`📊 Health check: https://ai-tutor-ww9f.onrender.com/api/health`);
   console.log(`🚀 Ready to help students learn safely!`);
   console.log(`🛡️ Content filtering active for child safety`);
+});
+
+// Graceful shutdown (SIGTERM and Ctrl+C)
+['SIGTERM', 'SIGINT'].forEach(signal => {
+  process.on(signal, () => {
+    console.log(`Received ${signal}, shutting down gracefully...`);
+    server.close(() => {
+      console.log('Server closed.');
+      process.exit(0);
+    });
+  });
 });
 
 module.exports = app;
