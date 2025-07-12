@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sophia's AI Tutor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .mascot {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: gentle-float 3s ease-in-out infinite;
+        }
+
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .start-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 50px;
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            font-family: inherit;
+            margin: 1rem;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+        }
+
+        .voice-button {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            border: none;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            margin: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-button:hover {
+            transform: scale(1.05);
+        }
+
+        .voice-button.listening {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            min-height: 3rem;
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .session-summary {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            text-align: left;
+        }
+
+        .summary-item {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .hidden { display: none; }
+
+        .end-session-btn {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            margin: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .end-session-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .suggestions {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .suggestion-item {
+            background: rgba(255,255,255,0.2);
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            border-radius: 20px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .conversation-area {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .conversation-item {
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .user-message {
+            background: rgba(76, 175, 80, 0.3);
+            margin-left: 2rem;
+        }
+
+        .tutor-message {
+            background: rgba(33, 150, 243, 0.3);
+            margin-right: 2rem;
+        }
+
+        .student-info {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .student-info input, .student-info select {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .student-info input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .student-info select {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .student-info select option {
+            background: #764ba2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen">
+            <div class="mascot">🎓</div>
+            <h1>Hi! I'm your AI Tutor!</h1>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
+            
+            <div class="student-info">
+                <h3>Tell me about yourself!</h3>
+                <input type="text" id="student-name" placeholder="What's your name?" maxlength="50">
+                <select id="student-grade">
+                    <option value="">Select your grade</option>
+                    <option value="PreK">Pre-K</option>
+                    <option value="K">Kindergarten</option>
+                    <option value="1">1st Grade</option>
+                    <option value="2">2nd Grade</option>
+                    <option value="3">3rd Grade</option>
+                    <option value="4">4th Grade</option>
+                    <option value="5">5th Grade</option>
+                    <option value="6">6th Grade</option>
+                    <option value="7">7th Grade</option>
+                    <option value="8">8th Grade</option>
+                    <option value="9">9th Grade</option>
+                    <option value="10">10th Grade</option>
+                    <option value="11">11th Grade</option>
+                    <option value="12">12th Grade</option>
+                </select>
+            </div>
+            
+            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
+        </div>
+
+        <!-- Main Tutoring Interface -->
+        <div id="tutor-interface" class="hidden">
+            <div class="mascot">🤖</div>
+            <h2>Let's Learn Together!</h2>
+            
+            <div class="status" id="status">Press the microphone to start talking!</div>
+            
+            <div class="voice-controls">
+                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
+                <button class="end-session-btn" onclick="endSession()">End Session</button>
+            </div>
+
+            <div id="suggestions" class="suggestions">
+                <h3>🎯 What sounds fun today?</h3>
+                <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
+                <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
+                <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
+                <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
+                <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
+                <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
+            </div>
+
+            <div class="conversation-area hidden" id="conversation-area">
+                <h3>💬 Our Chat</h3>
+                <div id="conversation-messages"></div>
+            </div>
+        </div>
+
+        <!-- Session Summary -->
+        <div id="session-summary" class="hidden">
+            <div class="mascot">✨</div>
+            <h2>Great Learning Session!</h2>
+            <div class="session-summary" id="summary-content"></div>
+            <button class="start-button" onclick="startNewSession()">Start New Session</button>
+        </div>
+    </div>
+
+    <script>
+        // App State
+        let isListening = false;
+        let recognition;
+        let speechSynthesis = window.speechSynthesis;
+        let currentSessionId = null;
+        let isProcessing = false;
+        let sessionStarted = false;
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        // Initialize speech recognition
+        function initializeSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.log('Speech recognition not supported');
+                return false;
+            }
+
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                updateMicButton();
+                updateStatus("I'm listening! Go ahead and speak.");
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                updateMicButton();
+                if (!isProcessing) {
+                    updateStatus("Press the microphone to continue our conversation!");
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.trim();
+                if (transcript && !isProcessing) {
+                    handleUserInput(transcript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                isProcessing = false;
+                updateMicButton();
+                updateStatus("I didn't catch that clearly. Please try speaking again!");
+            };
+
+            return true;
+        }
+
+        // Start tutoring session
+        async function startTutoring() {
+            // Stop any current speech
+            stopSpeech();
+            
+            const speechSupported = initializeSpeechRecognition();
+            if (!speechSupported) {
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge for the best experience.');
+                return;
+            }
+
+            const studentName = document.getElementById('student-name').value.trim();
+            const studentGrade = document.getElementById('student-grade').value;
+
+            try {
+                updateStatus("Starting your session...");
+                
+                const response = await fetch(`${API_BASE_URL}/session/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentName: studentName || 'Student',
+                        grade: studentGrade || 'K',
+
+
+                        subjects: []
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to start session');
+
+                const data = await response.json();
+                currentSessionId = data.sessionId;
+                sessionStarted = true;
+                
+                // Show interface
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('tutor-interface').classList.remove('hidden');
+                
+                // Speak welcome message and add to conversation
+                const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+                speak(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
+
+            } catch (error) {
+                console.error('Error starting session:', error);
+                // Start offline mode
+alert("Failed to start session. Please try again later.");
+return;
+
+                sessionStarted = true;
+                
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('tutor-interface').classList.remove('hidden');
+                
+                const welcomeMessage = `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+                speak(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
+            }
+        }
+
+        // Handle user input
+        async function handleUserInput(input) {
+            if (isProcessing || !sessionStarted) return;
+            
+            isProcessing = true;
+            updateStatus("Processing your request...");
+            
+            addToConversation('user', input);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        message: input,
+                        context: {}
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to get response');
+
+                const data = await response.json();
+                const tutorResponse = data.response;
+                
+                speak(tutorResponse);
+                addToConversation('tutor', tutorResponse);
+
+                if (data.suggestions?.length > 0) {
+                    updateSuggestions(data.suggestions);
+                }
+
+            } catch (error) {
+                console.error('Error getting response:', error);
+                const fallbackResponse = generateFallbackResponse(input);
+                addToConversation('tutor', fallbackResponse);
+                speak(fallbackResponse);
+            } finally {
+                isProcessing = false;
+                updateStatus("Press the microphone to continue our conversation!");
+            }
+        }
+
+        // Generate fallback response
+        function generateFallbackResponse(input) {
+            const lower = input.toLowerCase();
+            
+            if (lower.includes('math') || lower.includes('number')) {
+                return "I love math! Let's work on this together. Can you tell me more about what you'd like to practice?";
+            } else if (lower.includes('read') || lower.includes('story') || lower.includes('book')) {
+                return "Reading is so much fun! What kind of stories do you enjoy?";
+            } else if (lower.includes('animal') || lower.includes('pet')) {
+                return "Animals are amazing! Do you have a favorite animal?";
+            } else {
+                return "That sounds really interesting! Can you tell me more about what you're thinking?";
+            }
+        }
+
+        // Add to conversation display
+        function addToConversation(sender, message) {
+            const conversationArea = document.getElementById('conversation-area');
+            const messagesContainer = document.getElementById('conversation-messages');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `conversation-item ${sender}-message`;
+            messageDiv.textContent = message;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Show conversation area after first message
+            if (messagesContainer.children.length === 1) {
+                conversationArea.classList.remove('hidden');
+            }
+
+            // Keep only last 10 messages
+            while (messagesContainer.children.length > 10) {
+                messagesContainer.removeChild(messagesContainer.firstChild);
+            }
+        }
+
+        // Update suggestions
+        function updateSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('suggestions');
+            const currentSuggestions = suggestionsDiv.querySelectorAll('.suggestion-item');
+            
+            currentSuggestions.forEach(item => item.remove());
+            
+            suggestions.forEach(suggestion => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item';
+                suggestionDiv.textContent = suggestion;
+                suggestionDiv.onclick = () => speakSuggestion(suggestion);
+                suggestionsDiv.appendChild(suggestionDiv);
+            });
+        }
+
+        // Text-to-speech
+        function speak(text) {
+            stopSpeech();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 1;
+            
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.name.includes('Female') || 
+                voice.name.includes('Samantha') || 
+                voice.name.includes('Karen') ||
+                (voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female'))
+            );
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Stop speech
+        function stopSpeech() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+        }
+
+        // Toggle listening
+        function toggleListening() {
+            if (!recognition) {
+                updateStatus("Speech recognition not available. Try Chrome or Edge!");
+                return;
+            }
+            
+            if (isProcessing) {
+                updateStatus("Please wait, I'm still processing your last message...");
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        // Update microphone button
+        function updateMicButton() {
+            const micBtn = document.getElementById('mic-btn');
+            if (isListening) {
+                micBtn.classList.add('listening');
+                micBtn.innerHTML = '🔴';
+            } else {
+                micBtn.classList.remove('listening');
+                micBtn.innerHTML = '🎤';
+            }
+        }
+
+        // Update status
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Handle suggestion clicks
+        function speakSuggestion(suggestion) {
+            if (!isProcessing) {
+                handleUserInput(suggestion);
+            }
+        }
+
+        // End session
+        async function endSession() {
+            stopSpeech();
+            
+            if (isListening) {
+                recognition.stop();
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
+                await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
+
+                const summary = response.ok ? await response.json() : null;
+                showSessionSummary(summary);
+            } catch (error) {
+                console.error('Error getting session summary:', error);
+                showSessionSummary(null);
+            }
+        }
+
+        // Show session summary
+        function showSessionSummary(summary) {
+            document.getElementById('tutor-interface').classList.add('hidden');
+            document.getElementById('session-summary').classList.remove('hidden');
+            
+            const summaryContent = document.getElementById('summary-content');
+            
+            if (summary) {
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
+                    <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
+                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+                    <div class="summary-item"><strong>Learning Highlights:</strong> 
+                        <ul style="margin-top: 0.5rem;">
+                            ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="summary-item"><strong>Recommendations:</strong> ${summary.recommendations}</div>
+                `;
+            } else {
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+                `;
+            }
+            
+            speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
+        }
+
+        // Start new session
+        function startNewSession() {
+            // Stop any speech and reset state
+            stopSpeech();
+            currentSessionId = null;
+            isProcessing = false;
+            sessionStarted = false;
+            isListening = false;
+            
+            // Reset UI
+            document.getElementById('session-summary').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            document.getElementById('conversation-area').classList.add('hidden');
+            document.getElementById('conversation-messages').innerHTML = '';
+            
+            // Clear form
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-grade').value = '';
+            
+            // Reset microphone button
+            updateMicButton();
+            updateStatus("Ready to start a new session!");
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            // Load voices
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = function() {};
+            }
+        };
+    </script>
+</body>
+</html>
