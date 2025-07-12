@@ -89,16 +89,6 @@ function containsInappropriateContent(text) {
 }
 
 
-const regex = new RegExp(`\\b${word}\\b`, 'i');
-if (regex.test(lowerText)) {
-  // False positive exceptions (tweak as needed)
-  const exceptions = ['class', 'assistant', 'pass', 'assignment'];
-  for (const exc of exceptions) {
-    if (lowerText.includes(exc)) return { inappropriate: false };
-  }
-  return { inappropriate: true, category, word };
-}
-
 
 // Generate session ID
 function getTutorSystemPrompt(grade, studentName) {
