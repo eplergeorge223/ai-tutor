@@ -982,31 +982,6 @@ if (summary) {
             console.log('✅ App loaded successfully');
         };
 
-// Handle page visibility changes (fixes freeze when switching tabs)
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        // Page is hidden, pause speech
-        if (speechSynthesis.speaking && !speechSynthesis.paused) {
-            speechSynthesis.pause();
-        }
-    } else {
-        // Page is visible again, resume speech if needed
-        setTimeout(() => {
-            // Chrome bug: resume() is async and sometimes needs to be called twice
-            if (speechSynthesis.paused) {
-                speechSynthesis.resume();
-            }
-            // If that fails, cancel and replay the last message
-            if (speechSynthesis.paused) {
-                try {
-                    speechSynthesis.cancel();
-                    // Optionally replay the last message here if needed
-                    // e.g., speak(lastSpokenMessage);
-                } catch (e) {}
-            }
-        }, 100);
-    }
-});
 
     </script>
 </body>
