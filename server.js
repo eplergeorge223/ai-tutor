@@ -682,7 +682,7 @@ async function generateAIResponse(sessionId, userMessage) {
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
       // Add stop sequences to prevent rambling
-      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,", "In conclusion,"]
+      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
     });
 
     const aiResponse = completion.choices[0].message.content.trim();
