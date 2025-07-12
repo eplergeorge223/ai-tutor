@@ -451,7 +451,8 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="status" id="status">Press the microphone to start talking!</div>
+        <div class="status" id="status" aria-live="polite">Press the microphone to start talking!</div>
+
             
             <div class="voice-controls">
                 <button class="voice-button" id="mic-btn">🎤</button>
@@ -484,6 +485,8 @@
             <button class="start-button" id="new-session-btn">Start New Session</button>
         </div>
     </div>
+
+
 
     <script>
         // App State
@@ -842,7 +845,7 @@
                 speechSynthesis.cancel();
             }
         }
-        
+
         function toggleListening() {
             if (!recognition) {
                 updateStatus("Speech recognition not available. Try Chrome or Edge!");
@@ -971,13 +974,15 @@ async function showSessionSummary(summary) {
             document.getElementById('welcome-screen').classList.remove('hidden');
             document.getElementById('conversation-area').classList.add('hidden');
             document.getElementById('conversation-messages').innerHTML = '';
+
+            conversationContext = [];
+            currentSubject = null;
+
             
             // Clear form
             document.getElementById('student-name').value = '';
             document.getElementById('student-grade').value = '';
             
-            // Reset audio status
-            document.getElementById('audio-status').textContent = 'Click "Test Audio" to make sure you can hear me!';
             
             // Reset microphone button
             updateMicButton();
@@ -990,6 +995,15 @@ async function showSessionSummary(summary) {
             
             // Initialize speech synthesis
             await initializeSpeechSynthesis();
+
+                // Speech support check (this disables mic before any user tries to use it)
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.disabled = true;
+            micBtn.title = "Speech recognition not supported in this browser. Use Chrome or Edge.";
+        }
+    }
             
             // Test basic functionality
             console.log('Speech synthesis supported:', 'speechSynthesis' in window);

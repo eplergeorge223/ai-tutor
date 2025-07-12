@@ -35,8 +35,14 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(helmet()); // Add Helmet for security headers
+app.use(express.json({ limit: '4kb' }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      scriptSrc: ["'self'", "'unsafe-inline'"]
+    }
+  }
+}));
 
 // Rate limiting - more generous for educational use
 app.use(rateLimit({
@@ -179,6 +185,11 @@ app.post('/api/session/start', async (req, res) => {
   try {
     const sessionId = generateSessionId();
     const { studentName, grade, subjects } = req.body;
+
+    if (typeof studentName !== 'string' || typeof grade !== 'string' || (subjects && !Array.isArray(subjects))) {
+  return res.status(400).json({ error: 'Invalid session parameters.' });
+}
+
 
     // Validate inputs
     const validatedGrade = config.VALID_GRADES.includes(grade) ? grade : 'K';
@@ -486,18 +497,24 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
 });
 
 app.post('/api/session/:sessionId/end', (req, res) => {
-  const { sessionId } = req.params;
-  const session = sessions.get(sessionId);
+  try {
+    const { sessionId } = req.params;
+    const session = sessions.get(sessionId);
 
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found.' });
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found.' });
+    }
+
+    sessions.delete(sessionId);
+    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user.`);
+
+    res.json({ status: 'ended', message: 'Session successfully closed.' });
+  } catch (error) {
+    console.error('❌ Error ending session:', error.message);
+    res.status(500).json({ error: 'Internal error ending session.' });
   }
-
-  sessions.delete(sessionId);
-  console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user.`);
-
-  res.json({ status: 'ended', message: 'Session successfully closed.' });
 });
+
 
 // Generate learning highlights based on session data
 function generateLearningHighlights(session) {
@@ -573,12 +590,13 @@ async function generateAIResponse(sessionId, userMessage) { // Removed 'context'
   if (!session) throw new Error('Session not found');
 
   // Add user message to session
-  session.messages.push({
-    role: 'user',
-    content: userMessage,
-    timestamp: new Date()
-  });
-  session.totalInteractions++;
+ session.messages.push({
+  role: 'user',
+  content: userMessage,
+  timestamp: new Date()
+});
+if (session.messages.length > 100) session.messages = session.messages.slice(-50);
+
 
   // Get the dynamic system prompt for the current session state
   const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName);
@@ -625,11 +643,13 @@ async function generateAIResponse(sessionId, userMessage) { // Removed 'context'
     const aiResponse = completion.choices[0].message.content;
 
     // Add AI response to session history
-    session.messages.push({
-      role: 'assistant',
-      content: aiResponse,
-      timestamp: new Date()
-    });
+session.messages.push({
+  role: 'assistant',
+  content: aiResponse,
+  timestamp: new Date()
+});
+if (session.messages.length > 100) session.messages = session.messages.slice(-50); // Only keep last 50
+
 
     // Analyze response for additional features
     const subject = classifySubject(userMessage); // Use user message to classify
