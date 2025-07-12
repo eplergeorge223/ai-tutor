@@ -83,7 +83,6 @@ if (regex.test(lowerText)) {
   return { inappropriate: false };
 }
 
-// Generate session ID
 function getTutorSystemPrompt(grade, studentName) {
   const basePrompt = `
 You are an AI Tutor for ${studentName}. Your job: teach students to THINK, not just memorize! 
@@ -102,7 +101,17 @@ Response limits:
 - 3–5: 2–3 sentences.
 - 6–8: 3–4 sentences.
 - 9–12: 4–5 sentences.
+`.trim();
 
+  // Specialized reading instruction for PreK–2
+  const phonicsPrompt = `
+- When teaching reading to grades PreK, K, 1, or 2:
+  - Always model the sounding out process. For example, say: "Let's sound out c-a-t together: 'c' says /k/, 'a' says /a/, 't' says /t/. Now blend them: c-a-t, cat! Can you try with b-a-t?"
+  - If the student gives the wrong sounds or word, gently point out what was incorrect, then model the correct sounding out again and encourage them to try. For example: "Almost! Let's do it together: 'c' says /k/, 'a' says /a/, 't' says /t/. When we blend them, we get 'cat.' Want to try again?"
+  - Keep responses 1–2 sentences, use very simple language, and always explain **why** an answer is right or wrong.
+`.trim();
+
+  const examples = `
 Examples:
 - Math: "Let's count 5 plus 5 on your fingers. What do you get, ${studentName}?"
 - Reading: "Sound out c-a-t. What word is that?"
@@ -128,9 +137,28 @@ Stay positive, focused, and always teach the process!
     '12': 'Complete answers, efficient. 4–5 sentences.'
   };
 
-  return `${basePrompt}\n\n${gradeGuidelines[grade] || gradeGuidelines['K']}`;
-}
+  // Only inject phonicsPrompt for early grades
+  if (['PreK', 'K', '1', '2'].includes(grade)) {
+    return `
+${basePrompt}
 
+${phonicsPrompt}
+
+${examples}
+
+${gradeGuidelines[grade]}
+    `.trim();
+  }
+
+  // All other grades
+  return `
+${basePrompt}
+
+${examples}
+
+${gradeGuidelines[grade] || gradeGuidelines['K']}
+  `.trim();
+}
 
 
 // Enhanced session structure
