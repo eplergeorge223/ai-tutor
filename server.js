@@ -738,12 +738,13 @@ async function generateAIResponse(sessionId, userMessage) {
       stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
     });
 
-
+    // ---- FIX IS HERE ----
+    const aiText = completion.choices[0].message.content.trim();
 
     // Add AI response to session
     session.messages.push({
       role: 'assistant',
-      content: aiResponse,
+      content: aiText,
       timestamp: new Date()
     });
 
@@ -751,7 +752,7 @@ async function generateAIResponse(sessionId, userMessage) {
     const encouragement = generateEncouragement(session);
 
     return {
-      text: aiResponse,
+      text: aiText,
       subject: subject,
       encouragement: encouragement
     };
