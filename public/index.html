@@ -443,7 +443,7 @@
                 </select>
             </div>
             
-            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
+            <button class="start-button" id="start-btn">Start Learning!</button>
         </div>
 
         <!-- Main Tutoring Interface -->
@@ -454,19 +454,19 @@
             <div class="status" id="status">Press the microphone to start talking!</div>
             
             <div class="voice-controls">
-                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
-                <button class="end-session-btn" onclick="endSession()">End Session</button>
+                <button class="voice-button" id="mic-btn">🎤</button>
+                <button class="end-session-btn" id="end-session-btn">End Session</button>
             </div>
 
             <div id="suggestions" class="suggestions">
                 <h3>🎯 What sounds fun today?</h3>
                 <div class="suggestion-grid" id="suggestion-grid">
-                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Math</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Animals</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Creative</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Stories</div>
+                    <div class="suggestion-item" data-query="Can you help me with math?">🔢 Math</div>
+                    <div class="suggestion-item" data-query="I want to practice reading">📖 Reading</div>
+                    <div class="suggestion-item" data-query="Tell me about animals">🦁 Animals</div>
+                    <div class="suggestion-item" data-query="Can we do a creative activity?">🎨 Creative</div>
+                    <div class="suggestion-item" data-query="I have a question about homework">📚 Homework</div>
+                    <div class="suggestion-item" data-query="Tell me a story">📚 Stories</div>
                 </div>
             </div>
 
@@ -481,7 +481,7 @@
             <div class="mascot">✨</div>
             <h2>Great Learning Session!</h2>
             <div class="session-summary" id="summary-content"></div>
-            <button class="start-button" onclick="startNewSession()">Start New Session</button>
+            <button class="start-button" id="new-session-btn">Start New Session</button>
         </div>
     </div>
 
@@ -799,7 +799,7 @@
                 const suggestionDiv = document.createElement('div');
                 suggestionDiv.className = 'suggestion-item';
                 suggestionDiv.textContent = suggestion.text;
-                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
+                suggestionDiv.dataset.query = suggestion.query;
                 suggestionGrid.appendChild(suggestionDiv);
             });
         }
@@ -842,7 +842,7 @@
                 speechSynthesis.cancel();
             }
         }
-
+        
         function toggleListening() {
             if (!recognition) {
                 updateStatus("Speech recognition not available. Try Chrome or Edge!");
