@@ -74,21 +74,14 @@ function containsInappropriateContent(text) {
   const lowerText = text.toLowerCase();
   for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
     for (const word of words) {
-      const regex = new RegExp(`\\b${word}\\b`, 'i');
-      if (regex.test(lowerText)) {
-        // False positive exceptions (tweak as needed)
-        const exceptions = ['class', 'assistant', 'pass', 'assignment'];
-        for (const exc of exceptions) {
-          if (lowerText.includes(exc)) return { inappropriate: false };
-        }
+const regex = new RegExp(`\\b${word}\\b`, 'i');
+if (regex.test(lowerText)) {
         return { inappropriate: true, category, word };
       }
     }
   }
   return { inappropriate: false };
 }
-
-
 
 // Generate session ID
 function getTutorSystemPrompt(grade, studentName) {
@@ -679,36 +672,26 @@ async function generateAIResponse(sessionId, userMessage) {
     if (lowerMessage.includes('tell me a story') || lowerMessage.includes('story about')) {
       maxTokens = Math.min(maxTokens * 2, 300); // Cap even stories
     }
-const completion = await openai.chat.completions.create({
-  model: config.GPT_MODEL,
-  messages: messagesToSendToAI,
-  max_tokens: maxTokens,
-  temperature: config.GPT_TEMPERATURE,
-  presence_penalty: config.GPT_PRESENCE_PENALTY,
-  frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-  stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
-});
 
-const aiResponse = completion.choices[0].message.content.trim();
-const sentenceLimits = { PreK: 1, K: 2, '1': 2, '2': 2, '3': 3, '4': 3, '5': 3, '6': 4, '7': 4, '8': 4, '9': 5, '10': 5, '11': 5, '12': 5 };
-const maxSentences = sentenceLimits[session.grade] || 2;
-const sentences = aiResponse.match(/[^.!?]+[.!?]+/g) || [aiResponse];
-const trimmedResponse = sentences.slice(0, maxSentences).join(' ').trim();
+    const completion = await openai.chat.completions.create({
+      model: config.GPT_MODEL,
+      messages: messagesToSendToAI,
+      max_tokens: maxTokens,
+      temperature: config.GPT_TEMPERATURE,
+      presence_penalty: config.GPT_PRESENCE_PENALTY,
+      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+      // Add stop sequences to prevent rambling (max 4 allowed)
+      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
+    });
 
-// Output filtering
-const aiContentCheck = containsInappropriateContent(trimmedResponse);
-let finalResponse = trimmedResponse;
-if (aiContentCheck.inappropriate) {
-  session.totalWarnings = (session.totalWarnings || 0) + 1;
-  finalResponse = generateRedirectResponse(aiContentCheck.category, session);
-  console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${aiContentCheck.word}" (Category: ${aiContentCheck.category}).`);
-}
+    const aiResponse = completion.choices[0].message.content.trim();
 
-session.messages.push({
-  role: 'assistant',
-  content: finalResponse,
-  timestamp: new Date()
-});
+    // Add AI response to session
+    session.messages.push({
+      role: 'assistant',
+      content: aiResponse,
+      timestamp: new Date()
+    });
 
     const subject = classifySubject(userMessage);
     const encouragement = generateEncouragement(session);
