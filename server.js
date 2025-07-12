@@ -141,12 +141,12 @@ Stay positive, focused, and always teach the process!
     '12': 'Complete answers, efficient. 4–5 sentences.'
   };
 
-  // Only inject phonicsPrompt for early grades
+  // Only inject readingCorrection for early grades
   if (['PreK', 'K', '1', '2'].includes(grade)) {
     return `
 ${basePrompt}
 
-${phonicsPrompt}
+${readingCorrection}
 
 ${examples}
 
