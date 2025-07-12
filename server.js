@@ -1,16 +1,3 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// Write Google credentials from env var to a temp file and set GOOGLE_APPLICATION_CREDENTIALS
-if (process.env.GOOGLE_CREDENTIALS_JSON) {
-  const tmpDir = os.tmpdir();
-  const credPath = path.join(tmpDir, 'google-credentials.json');
-  fs.writeFileSync(credPath, process.env.GOOGLE_CREDENTIALS_JSON);
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath;
-}
-
-
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
@@ -97,12 +84,9 @@ if (regex.test(lowerText)) {
 }
 
 // Generate session ID
-const { v4: uuidv4 } = require('uuid');
-
 function generateSessionId() {
-  return uuidv4();
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
-
 
 // Enhanced AI Tutor system prompt with stronger content filtering
 function getTutorSystemPrompt(grade, studentName) {
@@ -931,33 +915,6 @@ function generateContextualFallback(input, session) {
 function generateFallbackResponse(message) {
   return "I'm having trouble right now, but I'm still here to help you learn! What would you like to explore together?";
 }
-
-
-const textToSpeech = require('@google-cloud/text-to-speech');
-const gTTSClient = new textToSpeech.TextToSpeechClient();
-
-app.post('/api/speak', async (req, res) => {
-  const { text, voice, languageCode } = req.body;
-
-  try {
-    const request = {
-      input: { text },
-      voice: {
-        languageCode: languageCode || 'en-US',
-        name: voice || 'en-US-Neural2-F'
-      },
-      audioConfig: { audioEncoding: 'MP3' },
-    };
-    const [response] = await gTTSClient.synthesizeSpeech(request);
-    return res.json({ success: true, audioContent: response.audioContent.toString('base64'), engine: 'google' });
-  } catch (err) {
-    console.warn('Google TTS failed:', err.message);
-    // Instead of trying OpenAI or throwing, just fail gracefully
-    return res.json({ success: false, audioContent: null, error: 'Google TTS failed.' });
-  }
-});
-
-
 
 // Session management endpoints
 app.get('/api/session/:sessionId/status', (req, res) => {

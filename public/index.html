@@ -522,7 +522,6 @@
         let chatHistory = [];
         let currentSubject = null;
         
-        
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
         // Initialize speech synthesis
@@ -548,33 +547,6 @@
                 }
             });
         }
-
-async function playTTS(text) {
-  try {
-    const response = await fetch('/api/speak', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        text: text,
-        voice: 'en-US-Neural2-F', // or your preferred voice
-        languageCode: 'en-US'
-      })
-    });
-    
-    const data = await response.json();
-    if (data.success && data.audioContent) {
-      const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
-      showLiveCaption(text, 'bot');
-      await audio.play();
-      return;
-    }
-    throw new Error('No server audio');
-  } catch (err) {
-    // Fallback to browser speech synthesis
-    await speakWithPromise(text);
-  }
-}
-
 
         function selectBestVoice(voices) {
             const preferredVoices = [
@@ -744,7 +716,7 @@ setTimeout(() => {
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                await playTTS(welcomeMessage);
+                await speakWithPromise(welcomeMessage);
                 addToConversation('tutor', welcomeMessage);
                 updateStatus("Press the microphone to start talking!");
 
@@ -754,70 +726,51 @@ setTimeout(() => {
             }
         }
 
-async function handleUserInput(input) {
-    if (isProcessing) return;
-    
-    // Check if we have a valid session
-    if (!currentSessionId || !sessionStarted) {
-        console.log('No active session, starting new one...');
-        try {
-            await startNewSession();
-        } catch (error) {
-            console.error('Failed to start session:', error);
-            addToConversation('tutor', 'Sorry, I had trouble starting our session. Please try again!');
-            return;
+        async function handleUserInput(input) {
+            if (isProcessing || !sessionStarted) return;
+            
+            isProcessing = true;
+            updateStatus("Processing your request...");
+            
+            addToConversation('user', input);
+            conversationContext.push({ role: 'user', content: input });
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        message: input,
+                        context: {}
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to get response');
+
+                const data = await response.json();
+                const tutorResponse = data.response;
+                
+                await speakWithPromise(tutorResponse);
+                addToConversation('tutor', tutorResponse);
+                conversationContext.push({ role: 'assistant', content: tutorResponse });
+                
+                if (data.subject) {
+                    currentSubject = data.subject;
+                }
+                
+                updateDynamicSuggestions(input, tutorResponse);
+
+            } catch (error) {
+                console.error('Error getting response:', error);
+                const fallbackResponse = generateFallbackResponse(input);
+                addToConversation('tutor', fallbackResponse);
+                await speakWithPromise(fallbackResponse);
+            } finally {
+                isProcessing = false;
+                updateStatus("Press the microphone to continue our conversation!");
+            }
         }
-    }
-    
-    isProcessing = true;
-    updateStatus("Processing your request...");
-    
-    addToConversation('user', input);
-    conversationContext.push({ role: 'user', content: input });
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sessionId: currentSessionId,
-                message: input,
-                context: {}
-            })
-        });
-
-        if (!response.ok) {
-            // Log the actual error response
-            const errorText = await response.text();
-            console.error('API Error:', response.status, errorText);
-            throw new Error(`API Error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const tutorResponse = data.response;
-        
-
-        await playTTS(tutorResponse);
-        addToConversation('tutor', tutorResponse);
-        conversationContext.push({ role: 'assistant', content: tutorResponse });
-        
-        if (data.subject) {
-            currentSubject = data.subject;
-        }
-        
-        updateDynamicSuggestions(input, tutorResponse);
-
-    } catch (error) {
-        console.error('Error getting response:', error);
-        const fallbackResponse = generateFallbackResponse(input);
-        addToConversation('tutor', fallbackResponse);
-        await playTTS(fallbackResponse);
-
-    } finally {
-        isProcessing = false;
-        updateStatus("Press the microphone to continue our conversation!");
-    }
-}
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = document.getElementById('suggestion-grid');
@@ -1006,61 +959,32 @@ if (summary) {
 
 
             
-            await playTTS("You had a wonderful learning session today! Keep being curious and asking great questions.");
+            await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
 
         }
 
- async function startNewSession() {
-    try {
-        // Stop any speech and reset state (do BEFORE fetch)
-        speechSynthesis.cancel();
-        isProcessing = false;
-        sessionStarted = false;
-        isListening = false;
+        // Start new session
+        function startNewSession() {
+            // Stop any speech and reset state
+            speechSynthesis.cancel();
+            currentSessionId = null;
+            isProcessing = false;
+            sessionStarted = false;
+            isListening = false;
+            
+            // Reset UI
+            document.getElementById('session-summary').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            
+            // Clear form
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-grade').value = '';
+            
 
-        // Get form values
-        const studentName = document.getElementById('student-name').value || 'Student';
-        const grade = document.getElementById('student-grade').value || 'K';
-
-        // Start session via API
-        const response = await fetch(`${API_BASE_URL}/session/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                studentName,
-                grade,
-                subjects: []
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to start session');
-
-        const data = await response.json();
-
-        // Set session state
-        currentSessionId = data.sessionId;
-        sessionStarted = true;
-
-        // Reset UI (show welcome, hide summary)
-        document.getElementById('session-summary').classList.add('hidden');
-        document.getElementById('welcome-screen').classList.remove('hidden');
-
-        // Clear form fields
-        document.getElementById('student-name').value = '';
-        document.getElementById('student-grade').value = '';
-
-        // Reset mic and status
-        updateMicButton();
-        updateStatus("Ready to start a new session!");
-
-        console.log('Session started:', currentSessionId);
-        return data;
-    } catch (error) {
-        console.error('Failed to start session:', error);
-        updateStatus('Error: Could not start a new session.');
-        throw error;
-    }
-}
+            // Reset microphone button
+            updateMicButton();
+            updateStatus("Ready to start a new session!");
+        }
 
         // Initialize on load
         window.onload = async function() {
