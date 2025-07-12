@@ -103,18 +103,14 @@ Response limits:
 - 9–12: 4–5 sentences.
 `.trim();
 
-const readingCorrection = `
-For reading practice with young students (PreK–2):
-
-- Show the student a word (e.g., "cat").
-- Ask: "Can you read this word?"
-- If the student reads it correctly, praise them and offer another word.
-- If they get it wrong, gently say: "Good try! This word is 'cat.' It starts with 'c.' Want to try another?"
-- Focus on helping them recognize the correct word and its first letter.
-- Use simple, encouraging language.
-- Ask short follow-up questions to guide their thinking, like: "Can you find another word that starts with 'c'?" or "What animal is a cat?"
-- Avoid phonics or 'sounding out' instructions.
-- Keep everything positive and age-appropriate.
+const readingDisplayInstruction = `
+For reading activities (PreK–2), NEVER say the target word in your message. 
+Instead, reply in JSON format like this:
+{
+  "message": "Can you read this word?",
+  "READING_WORD": "cat"
+}
+Pick any age-appropriate word you want for each turn.
 `.trim();
 
 
@@ -151,7 +147,7 @@ Stay positive, focused, and always teach the process!
     return `
 ${basePrompt}
 
-${readingCorrection}
+${readingDisplayInstruction}
 
 ${examples}
 
@@ -294,6 +290,7 @@ app.post('/api/chat', async (req, res) => {
     console.log(`💬 Chat message received for session ${sessionId.slice(-6)} from ${session.studentName} (Grade: ${session.grade}). Message: "${message.substring(0, Math.min(message.length, 50))}..."`);
 
     const response = await generateAIResponse(sessionId, message.trim()); // No 'context' param
+    const aiResponse = completion.choices[0].message.content.trim();
 
     const aiContentCheck = containsInappropriateContent(response.text);
 if (aiContentCheck.inappropriate) {
@@ -335,17 +332,34 @@ if (subject) {
       session.conversationContext = session.conversationContext.slice(-5);
     }
 
-    res.json({
-      response: response.text,
-      subject: response.subject,
-      suggestions: generateDynamicSuggestions(session),
-      encouragement: response.encouragement,
-      status: 'success',
-      sessionStats: {
-        totalWarnings: session.totalWarnings || 0,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
-      }
-    });
+let messageText = response.text;
+let readingWord = null;
+
+// Try to parse JSON for reading prompt (PreK-2)
+// This allows AI to send: { "message": "...", "READING_WORD": "..." }
+try {
+  const maybeJson = JSON.parse(messageText);
+  if (maybeJson && maybeJson.READING_WORD) {
+    messageText = maybeJson.message;
+    readingWord = maybeJson.READING_WORD;
+  }
+} catch (e) {
+  // Not JSON; keep as regular text
+}
+
+res.json({
+  response: messageText,
+  readingWord: readingWord, // Will be null unless present
+  subject: response.subject,
+  suggestions: generateDynamicSuggestions(session),
+  encouragement: response.encouragement,
+  status: 'success',
+  sessionStats: {
+    totalWarnings: session.totalWarnings || 0,
+    topicsDiscussed: Array.from(session.topicsDiscussed)
+  }
+});
+
   } catch (error) {
     console.error(`❌ Error processing chat for session: ${req.body.sessionId ? req.body.sessionId.slice(-6) : 'N/A'}:`, error.message);
     const fallback = generateFallbackResponse(req.body.message || '');
@@ -725,7 +739,7 @@ async function generateAIResponse(sessionId, userMessage) {
       stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
     });
 
-    const aiResponse = completion.choices[0].message.content.trim();
+
 
     // Add AI response to session
     session.messages.push({

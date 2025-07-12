@@ -524,6 +524,49 @@
         
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
+        function showReadingWordPrompt(prompt, word) {
+    // Remove any previous prompt
+    let existing = document.getElementById('reading-word-prompt');
+    if (existing) existing.remove();
+
+    // Create a new prompt
+    const container = document.createElement('div');
+    container.id = 'reading-word-prompt';
+    container.style.position = 'relative';
+    container.style.margin = '2rem 0';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
+
+    // Prompt text
+    const promptDiv = document.createElement('div');
+    promptDiv.textContent = prompt;
+    promptDiv.style.fontSize = '1.4rem';
+    promptDiv.style.marginBottom = '1.3rem';
+    promptDiv.style.fontWeight = 'bold';
+
+    // The BIG word display
+    const wordDiv = document.createElement('div');
+    wordDiv.textContent = word;
+    wordDiv.style.fontSize = '3.2rem';
+    wordDiv.style.letterSpacing = '0.15em';
+    wordDiv.style.background = 'linear-gradient(90deg,#fff8,#fffb)';
+    wordDiv.style.color = '#764ba2';
+    wordDiv.style.padding = '1.1rem 3.4rem';
+    wordDiv.style.borderRadius = '1.1em';
+    wordDiv.style.boxShadow = '0 4px 30px rgba(33,150,243,0.18)';
+    wordDiv.style.fontWeight = '900';
+    wordDiv.style.border = '3px solid #eee';
+
+    container.appendChild(promptDiv);
+    container.appendChild(wordDiv);
+
+    // Insert at the top of tutor interface
+    const tutorInterface = document.getElementById('tutor-interface');
+    tutorInterface.insertBefore(container, tutorInterface.children[2] || null);
+}
+
+
         // Initialize speech synthesis
         function initializeSpeechSynthesis() {
             return new Promise((resolve) => {
@@ -730,51 +773,67 @@ setTimeout(() => {
             }
         }
 
-        async function handleUserInput(input) {
-            if (isProcessing || !sessionStarted) return;
-            
-            isProcessing = true;
-            updateStatus("Processing your request...");
-            
-            addToConversation('user', input);
-            conversationContext.push({ role: 'user', content: input });
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        message: input,
-                        context: {}
-                    })
-                });
+async function handleUserInput(input) {
+    if (isProcessing || !sessionStarted) return;
 
-                if (!response.ok) throw new Error('Failed to get response');
+    isProcessing = true;
+    updateStatus("Processing your request...");
 
-                const data = await response.json();
-                const tutorResponse = data.response;
-                
-                await speakWithPromise(tutorResponse);
-                addToConversation('tutor', tutorResponse);
-                conversationContext.push({ role: 'assistant', content: tutorResponse });
-                
-                if (data.subject) {
-                    currentSubject = data.subject;
-                }
-                
-                updateDynamicSuggestions(input, tutorResponse);
+    addToConversation('user', input);
+    conversationContext.push({ role: 'user', content: input });
 
-            } catch (error) {
-                console.error('Error getting response:', error);
-                const fallbackResponse = generateFallbackResponse(input);
-                addToConversation('tutor', fallbackResponse);
-                await speakWithPromise(fallbackResponse);
-            } finally {
-                isProcessing = false;
-                updateStatus("Press the microphone to continue our conversation!");
-            }
+    try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: currentSessionId,
+                message: input,
+                context: {}
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to get response');
+
+        const data = await response.json();
+        let tutorResponse = data.response;
+
+        // ===== MOVE THIS BLOCK *HERE* =====
+        if (!data.readingWord) {
+            let existing = document.getElementById('reading-word-prompt');
+            if (existing) existing.remove();
         }
+        // ===================================
+
+        // If AI sent a reading word, handle display and speech separately
+        if (data.readingWord) {
+            showReadingWordPrompt(tutorResponse, data.readingWord);
+            await speakWithPromise(tutorResponse);
+            addToConversation('tutor', tutorResponse + ' (See word above)');
+            conversationContext.push({ role: 'assistant', content: tutorResponse });
+        } else {
+            await speakWithPromise(tutorResponse);
+            addToConversation('tutor', tutorResponse);
+            conversationContext.push({ role: 'assistant', content: tutorResponse });
+        }
+
+        if (data.subject) {
+            currentSubject = data.subject;
+        }
+
+        updateDynamicSuggestions(input, tutorResponse);
+
+    } catch (error) {
+        console.error('Error getting response:', error);
+        const fallbackResponse = generateFallbackResponse(input);
+        addToConversation('tutor', fallbackResponse);
+        await speakWithPromise(fallbackResponse);
+    } finally {
+        isProcessing = false;
+        updateStatus("Press the microphone to continue our conversation!");
+    }
+}
+
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = document.getElementById('suggestion-grid');
