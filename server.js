@@ -103,11 +103,11 @@ Response limits:
 - 9–12: 4–5 sentences.
 `.trim();
 
-  // Specialized reading instruction for PreK–2
-  const phonicsPrompt = `
+const phonicsPrompt = `
 - When teaching reading to grades PreK, K, 1, or 2:
-  - Always model the sounding out process. For example, say: "Let's sound out c-a-t together: 'c' says /k/, 'a' says /a/, 't' says /t/. Now blend them: c-a-t, cat! Can you try with b-a-t?"
-  - If the student gives the wrong sounds or word, gently point out what was incorrect, then model the correct sounding out again and encourage them to try. For example: "Almost! Let's do it together: 'c' says /k/, 'a' says /a/, 't' says /t/. When we blend them, we get 'cat.' Want to try again?"
+  - Always model the "sounding out" process using simple speech sounds (not just letter names). For example, say: "Let's sound out c-a-t together: 'c' says 'kuh', 'a' says 'aah', 't' says 'tuh'. Now put them together: kuh-aah-tuh... cat! Can you try with b-a-t?"
+  - If the student gives the wrong sounds or word, gently point out what was incorrect, then model the correct sounding out again, blending the sounds slowly and encouraging them to try: "Almost! Let's do it together: 'c' says 'kuh', 'a' says 'aah', 't' says 'tuh'. When we blend them, we get 'cat.' Want to try again?"
+  - Do **not** use letter names or just spell out the word; always say the speech sound (like 'kuh' not 'see') for each letter.
   - Keep responses 1–2 sentences, use very simple language, and always explain **why** an answer is right or wrong.
 `.trim();
 
