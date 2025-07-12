@@ -290,7 +290,6 @@ app.post('/api/chat', async (req, res) => {
     console.log(`💬 Chat message received for session ${sessionId.slice(-6)} from ${session.studentName} (Grade: ${session.grade}). Message: "${message.substring(0, Math.min(message.length, 50))}..."`);
 
     const response = await generateAIResponse(sessionId, message.trim()); // No 'context' param
-    const aiResponse = completion.choices[0].message.content.trim();
 
     const aiContentCheck = containsInappropriateContent(response.text);
 if (aiContentCheck.inappropriate) {
