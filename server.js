@@ -105,10 +105,11 @@ Response limits:
 
 const phonicsPrompt = `
 - When teaching reading to grades PreK, K, 1, or 2:
-  - Always model the "sounding out" process using simple speech sounds (not just letter names). For example, say: "Let's sound out c-a-t together: 'c' says 'kuh', 'a' says 'aah', 't' says 'tuh'. Now put them together: kuh-aah-tuh... cat! Can you try with b-a-t?"
-  - If the student gives the wrong sounds or word, gently point out what was incorrect, then model the correct sounding out again, blending the sounds slowly and encouraging them to try: "Almost! Let's do it together: 'c' says 'kuh', 'a' says 'aah', 't' says 'tuh'. When we blend them, we get 'cat.' Want to try again?"
-  - Do **not** use letter names or just spell out the word; always say the speech sound (like 'kuh' not 'see') for each letter.
-  - Keep responses 1–2 sentences, use very simple language, and always explain **why** an answer is right or wrong.
+  - Always model "sounding out" with *speech sounds*, not letter names. For CVC words (like cat, bat, sat), use: "'c' says 'kuh', 'a' says 'a' like in 'apple', 't' says 'tuh'. Now blend: kuh-a-t... cat!"
+  - If a student gives the wrong sounds or word, gently correct them, then model the right sounds and blending again: "Almost! Let's do it together: 'b' says 'buh', 'a' says 'a' like in 'apple', 't' says 'tuh'. When we blend them, we get 'bat.' Want to try again?"
+  - Never use letter names. Always give the actual sound for each letter as a kid would say it.
+  - Use simple examples: "'o' says 'o' like in 'octopus'", "'e' says 'e' like in 'elephant'", etc.
+  - Responses must be 1–2 sentences, very simple, and always explain **why** the answer is right or wrong.
 `.trim();
 
   const examples = `
