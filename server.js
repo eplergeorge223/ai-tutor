@@ -74,7 +74,7 @@ function containsInappropriateContent(text) {
   for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
     for (const word of words) {
 const regex = new RegExp(`\\b${word}\\b`, 'i');
-if (regex.test(text)) {
+if (regex.test(lowerText)) {
         return { inappropriate: true, category, word };
       }
     }
@@ -163,6 +163,7 @@ function createSession(sessionId, studentName, grade, subjects) {
         lastActivity: Date.now(),
         messages: [{ role: 'system', content: initialSystemMessageContent, timestamp: new Date() }], // Pre-populate with system message
         totalInteractions: 0,
+        totalWarnings: 0,
         topicsDiscussed: new Set(),
         currentTopic: null,
         conversationContext: [],
@@ -258,6 +259,7 @@ app.post('/api/chat', async (req, res) => {
     // Check for inappropriate content
     const contentCheck = containsInappropriateContent(message);
     if (contentCheck.inappropriate) {
+          session.totalWarnings = (session.totalWarnings || 0) + 1;
       const redirectResponse = generateRedirectResponse(contentCheck.category, session);
 
       // Log the inappropriate attempt
@@ -302,7 +304,7 @@ app.post('/api/chat', async (req, res) => {
       encouragement: response.encouragement,
       status: 'success',
       sessionStats: {
-        totalInteractions: session.totalInteractions,
+        totalWarnings: session.totalWarnings || 0,
         topicsDiscussed: Array.from(session.topicsDiscussed)
       }
     });
@@ -453,6 +455,11 @@ function getGeneralSuggestions(grade) {
   }
 }
 
+    function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
 // Get session summary with enhanced details
 app.get('/api/session/:sessionId/summary', (req, res) => {
   try {
@@ -463,24 +470,44 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
       return res.status(404).json({ error: 'Session not found.' });
     }
 
+    // Add this inside summary route, before building summary:
+const topicCounts = {};
+session.conversationContext.forEach(c => {
+  if (!c.topic) return;
+  topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
+});
+const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]);
+const mostInterested = sortedTopics.length > 0 ? sortedTopics[0][0] : 'various topics';
+const totalTopicMentions = sortedTopics.reduce((acc, curr) => acc + curr[1], 0);
+let highlights = [];
+if (sortedTopics.length > 0) {
+  highlights.push(`${session.studentName} showed interest in: ` + sortedTopics
+    .map(([topic, count]) => `${capitalize(topic)} (${Math.round((count / totalTopicMentions) * 100)}%)`)
+    .join(', ')
+  );
+} else {
+  highlights.push('Showed curiosity and asked thoughtful questions');
+}
+
+
     const duration = Math.floor((Date.now() - session.startTime.getTime()) / 60000);
     const topics = Array.from(session.topicsDiscussed);
 
-    // Generate learning highlights based on interaction
-    const highlights = generateLearningHighlights(session);
-    const recommendations = generateRecommendations(session);
+const suggestions = generateRecommendations(session);
 
-    const summary = {
-      duration: duration > 0 ? `${duration} minutes` : 'Less than a minute',
-      totalInteractions: session.totalInteractions,
-      topicsExplored: topics.length > 0 ? topics.join(', ') : 'General conversation',
-      studentName: session.studentName,
-      grade: session.grade,
-      highlights: highlights,
-      recommendations: recommendations,
-      achievements: session.achievements,
-      nextSteps: generateNextSteps(session)
-    };
+const summary = {
+  duration: duration > 0 ? `${duration} minutes` : 'Less than a minute',
+  totalInteractions: session.totalInteractions,
+  totalWarnings: session.totalWarnings || 0,
+  topicsExplored: `${session.studentName} showed most interest in: ${mostInterested}`,
+  studentName: session.studentName,
+  grade: session.grade,
+  highlights: highlights,
+  suggestions: suggestions,  // <-- use the correct variable
+  achievements: session.achievements,
+  nextSteps: generateNextSteps(session)
+};
+
 
     console.log(`📊 Generating summary for session ${sessionId.slice(-6)}. Duration: ${duration} mins, Interactions: ${session.totalInteractions}`);
 
@@ -510,31 +537,6 @@ app.post('/api/session/:sessionId/end', (req, res) => {
   }
 });
 
-
-// Generate learning highlights based on session data
-function generateLearningHighlights(session) {
-  const highlights = [];
-
-  if (session.totalInteractions >= 10) {
-    highlights.push('Had an engaged and lengthy learning conversation');
-  } else if (session.totalInteractions >= 5) {
-    highlights.push('Participated actively in the learning discussion');
-  } else {
-    highlights.push('Started exploring new learning topics');
-  }
-
-  if (session.topicsDiscussed.size > 1) {
-    highlights.push(`Explored multiple subjects: ${Array.from(session.topicsDiscussed).join(', ')}`);
-  }
-
-  if (session.achievements.length > 0) {
-    highlights.push(...session.achievements);
-  } else {
-    highlights.push('Showed curiosity and asked thoughtful questions');
-  }
-
-  return highlights;
-}
 
 // Generate personalized recommendations
 function generateRecommendations(session) {

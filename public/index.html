@@ -287,6 +287,70 @@
             }
         }
 
+        .live-captions {
+    position: fixed;
+    bottom: 8vh;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    max-width: 90vw;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 1.3rem;
+    padding: 1.1rem 2rem;
+    border-radius: 30px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    text-align: center;
+    z-index: 100;
+    opacity: 0.97;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.history-btn {
+    display: block;
+    margin: 1rem auto 0 auto;
+    background: linear-gradient(45deg, #ffcc00, #ffa500);
+    color: #333;
+    border: none;
+    border-radius: 18px;
+    padding: 0.7rem 2rem;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.history-btn:hover {
+    background: linear-gradient(45deg, #ffa500, #ffcc00);
+}
+
+.chat-history-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.55);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    color: #333;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 95vw; max-width: 540px;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.3);
+    position: relative;
+}
+.close-btn {
+    position: absolute; top: 14px; right: 18px;
+    background: none; border: none; font-size: 2rem; color: #888; cursor: pointer;
+    transition: color 0.2s;
+}
+.close-btn:hover { color: #f44336; }
+
+
         /* Mobile optimizations */
         @media (max-width: 480px) {
             .container {
@@ -331,27 +395,30 @@
             <h1>Hi! I'm your AI Tutor!</h1>
             <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
-            <div class="student-info">
-                <h3>Tell me about yourself!</h3>
-                <input type="text" id="student-name" placeholder="What's your name?" maxlength="50">
-                <select id="student-grade">
-                    <option value="">Select your grade</option>
-                    <option value="PreK">Pre-K</option>
-                    <option value="K">Kindergarten</option>
-                    <option value="1">1st Grade</option>
-                    <option value="2">2nd Grade</option>
-                    <option value="3">3rd Grade</option>
-                    <option value="4">4th Grade</option>
-                    <option value="5">5th Grade</option>
-                    <option value="6">6th Grade</option>
-                    <option value="7">7th Grade</option>
-                    <option value="8">8th Grade</option>
-                    <option value="9">9th Grade</option>
-                    <option value="10">10th Grade</option>
-                    <option value="11">11th Grade</option>
-                    <option value="12">12th Grade</option>
-                </select>
-            </div>
+<div class="student-info">
+    <label for="student-name" style="display:block; text-align:left; margin-bottom:0.2rem;">Name</label>
+    <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
+
+    <label for="student-grade" style="display:block; text-align:left; margin-top:1rem; margin-bottom:0.2rem;">Grade</label>
+    <select id="student-grade">
+        <option value="">Select your grade</option>
+        <option value="PreK">Pre-K</option>
+        <option value="K">Kindergarten</option>
+        <option value="1">1st Grade</option>
+        <option value="2">2nd Grade</option>
+        <option value="3">3rd Grade</option>
+        <option value="4">4th Grade</option>
+        <option value="5">5th Grade</option>
+        <option value="6">6th Grade</option>
+        <option value="7">7th Grade</option>
+        <option value="8">8th Grade</option>
+        <option value="9">9th Grade</option>
+        <option value="10">10th Grade</option>
+        <option value="11">11th Grade</option>
+        <option value="12">12th Grade</option>
+    </select>
+</div>
+
             
             <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
@@ -380,20 +447,21 @@
                 </div>
             </div>
 
-            <div class="conversation-area hidden" id="conversation-area">
-                <h3>💬 Our Chat</h3>
-                <div id="conversation-messages"></div>
-            </div>
-        </div>
+ <!-- Live Captions area (add after controls/buttons section) -->
+<div id="live-captions" class="live-captions hidden"></div>
 
-        <!-- Session Summary -->
-        <div id="session-summary" class="hidden">
-            <div class="mascot">✨</div>
-            <h2>Great Learning Session!</h2>
-            <div class="session-summary" id="summary-content"></div>
-            <button class="start-button" onclick="startNewSession()">Start New Session</button>
-        </div>
+<!-- Add this button somewhere visible under the controls or at the bottom of .container -->
+<button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+
+<!-- Modal for chat history (add at the end of .container, before </div>) -->
+<div id="chat-history-modal" class="chat-history-modal hidden">
+    <div class="modal-content">
+        <button onclick="closeHistory()" class="close-btn">&times;</button>
+        <h3>Chat History</h3>
+        <div id="full-chat-history"></div>
     </div>
+</div>
+
 
     <script>
         // App State
@@ -406,6 +474,7 @@
         let audioInitialized = false;
         let selectedVoice = null;
         let conversationContext = [];
+        let chatHistory = []; // Stores all messages
         let currentSubject = null;
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
@@ -487,6 +556,17 @@
                         console.error('❌ Speech error:', event.error);
                         resolve(); // Resolve anyway to prevent hanging
                     };
+
+                    utterance.onstart = () => {
+    showLiveCaption(text);
+};
+utterance.onend = () => {
+    setTimeout(() => {
+        document.getElementById('live-captions').classList.add('hidden');
+    }, 600);
+    resolve();
+};
+
                     
                     try {
                         speechSynthesis.speak(utterance);
@@ -728,24 +808,39 @@
             }
         }
 
-        function addToConversation(sender, message) {
-            const conversationArea = document.getElementById('conversation-area');
-            const messagesContainer = document.getElementById('conversation-messages');
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `conversation-item ${sender}-message`;
-            messageDiv.textContent = message;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+function addToConversation(sender, message) {
+    chatHistory.push({ sender, message });
 
-            if (messagesContainer.children.length === 1) {
-                conversationArea.classList.remove('hidden');
-            }
+    // Show as live caption if it's tutor's turn to speak
+    if (sender === 'tutor') {
+        showLiveCaption(message);
+    }
+}
+function showLiveCaption(text) {
+    const captionsDiv = document.getElementById('live-captions');
+    captionsDiv.textContent = text;
+    captionsDiv.classList.remove('hidden');
+    // Hide after speech is done (you can also tie this to speech end for more precision)
+    setTimeout(() => {
+        captionsDiv.classList.add('hidden');
+    }, Math.max(3500, text.length * 45)); // Keeps up longer for long text
+}
 
-            while (messagesContainer.children.length > 10) {
-                messagesContainer.removeChild(messagesContainer.firstChild);
-            }
-        }
+function showHistory() {
+    const fullHistoryDiv = document.getElementById('full-chat-history');
+    fullHistoryDiv.innerHTML = chatHistory.map(msg =>
+        `<div class="${msg.sender}-message" style="margin:0.5rem 0;">
+            <b>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</b> ${msg.message}
+        </div>`
+    ).join('');
+    document.getElementById('chat-history-modal').classList.remove('hidden');
+}
+
+function closeHistory() {
+    document.getElementById('chat-history-modal').classList.add('hidden');
+}
+
+
 
         function stopSpeech() {
             if (speechSynthesis.speaking) {
@@ -826,24 +921,42 @@
             
             const summaryContent = document.getElementById('summary-content');
             
-            if (summary) {
-                summaryContent.innerHTML = `
-                    <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
-                    <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
-                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-                    <div class="summary-item"><strong>Learning Highlights:</strong> 
-                        <ul style="margin-top: 0.5rem;">
-                            ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
-                        </ul>
-                    </div>
-                    <div class="summary-item"><strong>Recommendations:</strong> ${summary.recommendations}</div>
-                `;
-            } else {
-                summaryContent.innerHTML = `
-                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-                `;
+if (summary) {
+    summaryContent.innerHTML = `
+        <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
+        <div class="summary-item"><strong>Total Interactions:</strong> ${summary.totalInteractions}</div>
+        <div class="summary-item"><strong>Number of Inappropriate or Off-topic Requests:</strong> ${summary.totalWarnings}</div>
+        <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+        <div class="summary-item"><strong>Learning Highlights:</strong> 
+            <ul style="margin-top: 0.5rem;">
+                ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
+            </ul>
+        </div>
+        <div class="summary-item"><strong>Suggestions:</strong> ${Array.isArray(summary.suggestions) 
+            ? `<ul>${summary.suggestions.map(s => `<li>${s}</li>`).join('')}</ul>` 
+            : summary.suggestions}
+        </div>
+        <div class="summary-item"><strong>Achievements:</strong>
+            ${summary.achievements && summary.achievements.length 
+                ? `<ul style="margin-top: 0.5rem;">${summary.achievements.map(a => `<li>${a}</li>`).join('')}</ul>`
+                : '<span>None recorded this session.</span>'
             }
+        </div>
+        <div class="summary-item"><strong>Next Steps:</strong>
+            ${summary.nextSteps && summary.nextSteps.length
+                ? `<ul style="margin-top: 0.5rem;">${summary.nextSteps.map(ns => `<li>${ns}</li>`).join('')}</ul>`
+                : '<span>Keep asking great questions!</span>'
+            }
+        </div>
+    `;
+} else {
+    summaryContent.innerHTML = `
+        <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+        <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+    `;
+}
+
+
             
             await speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
         }
@@ -889,20 +1002,32 @@
             console.log('✅ App loaded successfully');
         };
 
-        // Handle page visibility changes (helps with mobile audio)
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                // Page is hidden, pause speech
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.pause();
-                }
-            } else {
-                // Page is visible, resume speech
-                if (speechSynthesis.paused) {
-                    speechSynthesis.resume();
-                }
+// Handle page visibility changes (fixes freeze when switching tabs)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Page is hidden, pause speech
+        if (speechSynthesis.speaking && !speechSynthesis.paused) {
+            speechSynthesis.pause();
+        }
+    } else {
+        // Page is visible again, resume speech if needed
+        setTimeout(() => {
+            // Chrome bug: resume() is async and sometimes needs to be called twice
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
             }
-        });
+            // If that fails, cancel and replay the last message
+            if (speechSynthesis.paused) {
+                try {
+                    speechSynthesis.cancel();
+                    // Optionally replay the last message here if needed
+                    // e.g., speak(lastSpokenMessage);
+                } catch (e) {}
+            }
+        }, 100);
+    }
+});
+
     </script>
 </body>
 </html>
