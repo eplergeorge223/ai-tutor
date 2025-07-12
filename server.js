@@ -73,7 +73,8 @@ function containsInappropriateContent(text) {
   const lowerText = text.toLowerCase();
   for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
     for (const word of words) {
-      if (lowerText.includes(word)) {
+const regex = new RegExp(`\\b${word}\\b`, 'i');
+if (regex.test(text)) {
         return { inappropriate: true, category, word };
       }
     }
