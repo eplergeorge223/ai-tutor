@@ -875,7 +875,7 @@
         }
 
         async function endSession() {
-            stopSpeech();
+        speechSynthesis.cancel();
             
             if (isListening) {
                 recognition.stop();
@@ -944,7 +944,7 @@ if (summary) {
         // Start new session
         function startNewSession() {
             // Stop any speech and reset state
-            stopSpeech();
+            speechSynthesis.cancel();
             currentSessionId = null;
             isProcessing = false;
             sessionStarted = false;
