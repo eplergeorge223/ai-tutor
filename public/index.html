@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sophia's AI Tutor</title>
+    <title>AI Tutor</title>
     <style>
         * {
             margin: 0;
@@ -19,12 +19,14 @@
             justify-content: center;
             align-items: center;
             color: white;
+            padding: 1rem;
         }
 
         .container {
             text-align: center;
             max-width: 800px;
-            padding: 2rem;
+            width: 100%;
+            padding: 1rem;
         }
 
         .mascot {
@@ -40,6 +42,12 @@
 
         h1 {
             font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 2rem;
             margin-bottom: 1rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
@@ -79,10 +87,17 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .voice-button:hover {
             transform: scale(1.05);
+        }
+
+        .voice-button:active {
+            transform: scale(0.95);
         }
 
         .voice-button.listening {
@@ -152,21 +167,48 @@
             backdrop-filter: blur(10px);
         }
 
+        .suggestions h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .suggestion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .suggestion-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+        }
+
         .suggestion-item {
             background: rgba(255,255,255,0.2);
-            padding: 0.75rem 1.5rem;
-            margin: 0.5rem;
+            padding: 0.75rem 1rem;
             border-radius: 20px;
-            display: inline-block;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         .suggestion-item:hover {
             background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
             border-color: rgba(255,255,255,0.5);
+        }
+
+        .suggestion-item:active {
+            transform: translateY(0);
         }
 
         .conversation-area {
@@ -184,16 +226,17 @@
             padding: 0.5rem 1rem;
             border-radius: 10px;
             text-align: left;
+            font-size: 0.9rem;
         }
 
         .user-message {
             background: rgba(76, 175, 80, 0.3);
-            margin-left: 2rem;
+            margin-left: 1rem;
         }
 
         .tutor-message {
             background: rgba(33, 150, 243, 0.3);
-            margin-right: 2rem;
+            margin-right: 1rem;
         }
 
         .student-info {
@@ -212,6 +255,8 @@
             margin: 0.5rem;
             color: white;
             font-size: 1rem;
+            width: 100%;
+            max-width: 300px;
         }
 
         .student-info input::placeholder {
@@ -228,37 +273,53 @@
             color: white;
         }
 
-        .audio-controls {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
-            backdrop-filter: blur(10px);
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .audio-test-btn {
-            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
-            border: none;
-            border-radius: 25px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-            margin: 0.5rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
+        @media (min-width: 768px) {
+            .voice-controls {
+                flex-direction: row;
+                justify-content: center;
+            }
         }
 
-        .audio-test-btn:hover {
-            transform: translateY(-2px);
-        }
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.5rem;
+            }
 
-        .audio-status {
-            font-size: 0.9rem;
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .voice-button {
+                width: 100px;
+                height: 100px;
+                font-size: 1.5rem;
+            }
+
+            .start-button {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .status {
+                font-size: 1rem;
+                padding: 0.75rem;
+            }
+
+            .conversation-area {
+                max-height: 200px;
+            }
         }
     </style>
 </head>
@@ -291,14 +352,6 @@
                     <option value="12">12th Grade</option>
                 </select>
             </div>
-
-            <!-- Audio Test Section -->
-            <div class="audio-controls">
-                <h3>🔊 Audio Test</h3>
-                <p style="font-size: 0.9rem; margin-bottom: 1rem;">Test your audio before we start!</p>
-                <button class="audio-test-btn" onclick="testAudio()">Test Audio</button>
-                <div class="audio-status" id="audio-status">Click "Test Audio" to make sure you can hear me!</div>
-            </div>
             
             <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
@@ -317,12 +370,14 @@
 
             <div id="suggestions" class="suggestions">
                 <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
-                <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
-                <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
-                <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
-                <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
-                <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
+                <div class="suggestion-grid" id="suggestion-grid">
+                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
+                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
+                </div>
             </div>
 
             <div class="conversation-area hidden" id="conversation-area">
@@ -350,11 +405,12 @@
         let sessionStarted = false;
         let audioInitialized = false;
         let selectedVoice = null;
+        let conversationContext = [];
+        let currentSubject = null;
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
         // Initialize speech synthesis with mobile fixes
         function initializeSpeechSynthesis() {
-            // Wait for voices to load
             return new Promise((resolve) => {
                 let voices = speechSynthesis.getVoices();
                 
@@ -362,14 +418,12 @@
                     selectBestVoice(voices);
                     resolve();
                 } else {
-                    // Wait for voices to load
                     speechSynthesis.onvoiceschanged = () => {
                         voices = speechSynthesis.getVoices();
                         selectBestVoice(voices);
                         resolve();
                     };
                     
-                    // Fallback timeout
                     setTimeout(() => {
                         voices = speechSynthesis.getVoices();
                         selectBestVoice(voices);
@@ -379,18 +433,15 @@
             });
         }
 
-        // Select the best voice for the tutor
         function selectBestVoice(voices) {
             console.log('Available voices:', voices.map(v => v.name));
             
-            // Priority order for voice selection
             const preferredVoices = [
                 'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
                 'Google UK English Female', 'Google US English', 'Microsoft Zira',
                 'Alex', 'Daniel', 'Fred'
             ];
             
-            // Try to find preferred voice
             for (let preferred of preferredVoices) {
                 selectedVoice = voices.find(voice => 
                     voice.name.includes(preferred) || 
@@ -399,7 +450,6 @@
                 if (selectedVoice) break;
             }
             
-            // Fallback to first English voice
             if (!selectedVoice) {
                 selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
             }
@@ -407,78 +457,48 @@
             console.log('Selected voice:', selectedVoice?.name || 'Default');
         }
 
-        // Test audio function
-        async function testAudio() {
-            const statusDiv = document.getElementById('audio-status');
-            statusDiv.textContent = 'Testing audio...';
-            
-            try {
-                await initializeSpeechSynthesis();
-                
-                // Test with a simple phrase
-                const testPhrase = "Hello! Can you hear me clearly?";
-                await speakWithPromise(testPhrase);
-                
-                statusDiv.textContent = '✅ Audio test successful! You should hear me speaking.';
-                audioInitialized = true;
-                
-            } catch (error) {
-                console.error('Audio test failed:', error);
-                statusDiv.textContent = '❌ Audio test failed. Please check your device volume and try again.';
-            }
-        }
-
-        // Enhanced speak function with mobile support
         function speak(text) {
             return speakWithPromise(text);
         }
 
-        // Promise-based speech function
         function speakWithPromise(text) {
             return new Promise((resolve, reject) => {
-                // Stop any current speech
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel();
                 }
 
-                // Short delay to ensure cancellation
                 setTimeout(() => {
                     const utterance = new SpeechSynthesisUtterance(text);
                     
-                    // Mobile-optimized settings
                     utterance.rate = 0.8;
                     utterance.pitch = 1.0;
                     utterance.volume = 1.0;
                     
-                    // Use selected voice
                     if (selectedVoice) {
                         utterance.voice = selectedVoice;
                     }
                     
-                    // Event handlers
                     utterance.onend = () => {
-                        console.log('✅ Speech completed:', text.substring(0, 50) + '...');
+                        console.log('✅ Speech completed');
                         resolve();
                     };
                     
                     utterance.onerror = (event) => {
                         console.error('❌ Speech error:', event.error);
-                        reject(event.error);
+                        resolve(); // Resolve anyway to prevent hanging
                     };
                     
-                    // Start speaking
                     try {
                         speechSynthesis.speak(utterance);
-                        console.log('🎤 Speaking:', text.substring(0, 50) + '...');
+                        console.log('🎤 Speaking...');
                     } catch (error) {
                         console.error('Speech synthesis error:', error);
-                        reject(error);
+                        resolve();
                     }
                 }, 100);
             });
         }
 
-        // Initialize speech recognition
         function initializeSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 console.log('Speech recognition not supported');
@@ -489,14 +509,17 @@
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
+                console.log('🎤 Recognition started');
                 isListening = true;
                 updateMicButton();
                 updateStatus("I'm listening! Go ahead and speak.");
             };
 
             recognition.onend = () => {
+                console.log('🎤 Recognition ended');
                 isListening = false;
                 updateMicButton();
                 if (!isProcessing) {
@@ -506,29 +529,42 @@
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript.trim();
-                if (transcript && !isProcessing) {
+                const confidence = event.results[0][0].confidence;
+                
+                console.log('🎤 Recognition result:', transcript, 'Confidence:', confidence);
+                
+                if (transcript && transcript.length > 0 && !isProcessing) {
                     handleUserInput(transcript);
+                } else if (!isProcessing) {
+                    updateStatus("I didn't catch that clearly. Please try speaking again!");
                 }
             };
 
             recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
+                console.error('🎤 Recognition error:', event.error);
                 isListening = false;
                 isProcessing = false;
                 updateMicButton();
-                updateStatus("I didn't catch that clearly. Please try speaking again!");
+                
+                const errorMessages = {
+                    'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
+                    'audio-capture': "I couldn't access your microphone. Please check your permissions.",
+                    'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
+                    'network': "Network error. Please check your internet connection.",
+                    'aborted': "Speech recognition was cancelled.",
+                    'service-not-allowed': "Speech recognition service is not available."
+                };
+                
+                const message = errorMessages[event.error] || "I didn't catch that clearly. Please try speaking again!";
+                updateStatus(message);
             };
 
             return true;
         }
 
-        // Start tutoring session
         async function startTutoring() {
-            // Initialize audio first
-            if (!audioInitialized) {
-                await initializeSpeechSynthesis();
-                audioInitialized = true;
-            }
+            await initializeSpeechSynthesis();
+            audioInitialized = true;
             
             const speechSupported = initializeSpeechRecognition();
             
@@ -559,11 +595,9 @@
                 currentSessionId = data.sessionId;
                 sessionStarted = true;
                 
-                // Show interface
                 document.getElementById('welcome-screen').classList.add('hidden');
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
-                // Speak welcome message and add to conversation
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
                 await speak(welcomeMessage);
                 addToConversation('tutor', welcomeMessage);
@@ -576,7 +610,6 @@
             }
         }
 
-        // Handle user input
         async function handleUserInput(input) {
             if (isProcessing || !sessionStarted) return;
             
@@ -584,6 +617,7 @@
             updateStatus("Processing your request...");
             
             addToConversation('user', input);
+            conversationContext.push({ role: 'user', content: input });
             
             try {
                 const response = await fetch(`${API_BASE_URL}/chat`, {
@@ -603,10 +637,14 @@
                 
                 await speak(tutorResponse);
                 addToConversation('tutor', tutorResponse);
-
-                if (data.suggestions?.length > 0) {
-                    updateSuggestions(data.suggestions);
+                conversationContext.push({ role: 'assistant', content: tutorResponse });
+                
+                // Update current subject and suggestions
+                if (data.subject) {
+                    currentSubject = data.subject;
                 }
+                
+                updateDynamicSuggestions(input, tutorResponse);
 
             } catch (error) {
                 console.error('Error getting response:', error);
@@ -619,7 +657,62 @@
             }
         }
 
-        // Generate fallback response
+        function updateDynamicSuggestions(userInput, tutorResponse) {
+            const suggestionGrid = document.getElementById('suggestion-grid');
+            
+            // Analyze the conversation to generate contextual suggestions
+            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
+            let suggestions = [];
+            
+            if (combined.includes('math') || combined.includes('number') || combined.includes('add') || combined.includes('subtract') || combined.includes('multiply') || combined.includes('divide')) {
+                suggestions = [
+                    { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
+                    { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
+                    { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
+                    { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
+                ];
+            } else if (combined.includes('read') || combined.includes('book') || combined.includes('story') || combined.includes('word')) {
+                suggestions = [
+                    { text: '📖 Read together', query: 'Can we read something together?' },
+                    { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
+                    { text: '✍️ Write a story', query: 'Help me write a creative story' },
+                    { text: '🎭 Act out the story', query: 'Can we act out this story?' }
+                ];
+            } else if (combined.includes('science') || combined.includes('animal') || combined.includes('plant') || combined.includes('space') || combined.includes('experiment')) {
+                suggestions = [
+                    { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
+                    { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
+                    { text: '🐾 Explore animals', query: 'I want to learn about animals' },
+                    { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
+                ];
+            } else if (combined.includes('art') || combined.includes('draw') || combined.includes('create') || combined.includes('music')) {
+                suggestions = [
+                    { text: '🎨 Creative projects', query: 'Can we do an art project?' },
+                    { text: '🖌️ Drawing tips', query: 'Teach me how to draw better' },
+                    { text: '🎵 Music exploration', query: 'Let\'s learn about music' },
+                    { text: '🎭 Drama activities', query: 'Can we do something dramatic?' }
+                ];
+            } else {
+                // Default suggestions based on conversation flow
+                suggestions = [
+                    { text: '❓ Ask me anything', query: 'I have a question about something' },
+                    { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
+                    { text: '🔍 Explore more', query: 'Can you tell me more about this?' },
+                    { text: '🎉 Try something fun', query: 'Let\'s do something fun and educational' }
+                ];
+            }
+            
+            // Update the suggestion grid
+            suggestionGrid.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item';
+                suggestionDiv.textContent = suggestion.text;
+                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
+                suggestionGrid.appendChild(suggestionDiv);
+            });
+        }
+
         function generateFallbackResponse(input) {
             const lower = input.toLowerCase();
             
@@ -634,7 +727,6 @@
             }
         }
 
-        // Add to conversation display
         function addToConversation(sender, message) {
             const conversationArea = document.getElementById('conversation-area');
             const messagesContainer = document.getElementById('conversation-messages');
@@ -645,41 +737,21 @@
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Show conversation area after first message
             if (messagesContainer.children.length === 1) {
                 conversationArea.classList.remove('hidden');
             }
 
-            // Keep only last 10 messages
             while (messagesContainer.children.length > 10) {
                 messagesContainer.removeChild(messagesContainer.firstChild);
             }
         }
 
-        // Update suggestions
-        function updateSuggestions(suggestions) {
-            const suggestionsDiv = document.getElementById('suggestions');
-            const currentSuggestions = suggestionsDiv.querySelectorAll('.suggestion-item');
-            
-            currentSuggestions.forEach(item => item.remove());
-            
-            suggestions.forEach(suggestion => {
-                const suggestionDiv = document.createElement('div');
-                suggestionDiv.className = 'suggestion-item';
-                suggestionDiv.textContent = suggestion;
-                suggestionDiv.onclick = () => speakSuggestion(suggestion);
-                suggestionsDiv.appendChild(suggestionDiv);
-            });
-        }
-
-        // Stop speech
         function stopSpeech() {
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
             }
         }
 
-        // Toggle listening
         function toggleListening() {
             if (!recognition) {
                 updateStatus("Speech recognition not available. Try Chrome or Edge!");
@@ -692,13 +764,19 @@
             }
             
             if (isListening) {
+                console.log('🎤 Stopping recognition...');
                 recognition.stop();
             } else {
-                recognition.start();
+                console.log('🎤 Starting recognition...');
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('🎤 Error starting recognition:', error);
+                    updateStatus("Error starting microphone. Please try again.");
+                }
             }
         }
 
-        // Update microphone button
         function updateMicButton() {
             const micBtn = document.getElementById('mic-btn');
             if (isListening) {
@@ -710,19 +788,16 @@
             }
         }
 
-        // Update status
         function updateStatus(message) {
             document.getElementById('status').textContent = message;
         }
 
-        // Handle suggestion clicks
         async function speakSuggestion(suggestion) {
-            if (!isProcessing) {
+            if (!isProcessing && !isListening) {
                 handleUserInput(suggestion);
             }
         }
 
-        // End session
         async function endSession() {
             stopSpeech();
             
@@ -741,6 +816,7 @@
                 showSessionSummary(null);
             }
         }
+
 
         // Show session summary
         async function showSessionSummary(summary) {
