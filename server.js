@@ -472,12 +472,27 @@ function generateSafeSuggestions(grade) {
   return currentSuggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
+// Add this function to your code (place it near the other suggestion functions)
+function generateDynamicSuggestions(session) {
+  // First try contextual suggestions based on recent conversation
+  const contextualSuggestions = generateContextualSuggestions(session);
+  
+  // If we have good contextual suggestions, use them
+  if (contextualSuggestions && contextualSuggestions.length > 0) {
+    return contextualSuggestions;
+  }
+  
+  // Fall back to general suggestions based on grade level
+  return getGeneralSuggestions(session.grade);
+}
+
+// Also, make sure generateContextualSuggestions handles edge cases better
 function generateContextualSuggestions(session) {
   const recentContext = (session.conversationContext || []).slice(-3);
   const lastUserMessage = recentContext.filter(c => c.role === 'user').pop();
   
   if (!lastUserMessage) {
-    return ["Tell me more!", "What else?", "Keep going!"];
+    return getGeneralSuggestions(session.grade);
   }
   
   const suggestions = [];
@@ -485,14 +500,32 @@ function generateContextualSuggestions(session) {
   const message = lastUserMessage.message.toLowerCase();
   
   // Generate contextual follow-ups based on what was actually said
-  if (topic === 'math' && message.includes('add')) {
-    suggestions.push("Can you try another addition problem?");
-  }
-  if (topic === 'reading' && message.includes('word')) {
-    suggestions.push("Can you use that word in a sentence?");
-  }
-  if (topic === 'science' && message.includes('animal')) {
-    suggestions.push("Can you tell me more about that animal?");
+  if (topic === 'math') {
+    if (message.includes('add')) {
+      suggestions.push("Can you try another addition problem?");
+    } else if (message.includes('subtract')) {
+      suggestions.push("Want to try subtraction next?");
+    } else if (message.includes('count')) {
+      suggestions.push("Let's count higher numbers!");
+    } else {
+      suggestions.push("Want to try more math problems?");
+    }
+  } else if (topic === 'reading') {
+    if (message.includes('word')) {
+      suggestions.push("Can you use that word in a sentence?");
+    } else if (message.includes('story')) {
+      suggestions.push("What happened next in the story?");
+    } else {
+      suggestions.push("Want to read something else?");
+    }
+  } else if (topic === 'science') {
+    if (message.includes('animal')) {
+      suggestions.push("Can you tell me more about that animal?");
+    } else if (message.includes('plant')) {
+      suggestions.push("What do plants need to grow?");
+    } else {
+      suggestions.push("Want to explore more science?");
+    }
   }
   
   // Fill remaining slots with adaptive responses
@@ -500,7 +533,10 @@ function generateContextualSuggestions(session) {
     const fallbacks = [
       "Can you tell me more about that?",
       "What do you think about that?",
-      "Can you explain that differently?"
+      "That's interesting! What else?",
+      "Can you explain that differently?",
+      "What questions do you have?",
+      "Want to try something similar?"
     ];
     const fallback = fallbacks[suggestions.length % fallbacks.length];
     if (!suggestions.includes(fallback)) {
