@@ -7,14 +7,7 @@ const helmet = require('helmet');
 
 const leven = require('leven');
 
-// Build a “vocabulary” of all known tutor words
-const VOCABULARY = [
-  // all subject keywords
-  ...Object.values(config.SUBJECTS).flat(),
-  // plus any extra curriculum words you care about
-  'painting','reading','algebra','geometry','fraction','biology','physics','history','government'
-  // ← you can extend this list as you spot new mis-hearings
-];
+
 // --- Unified Configuration ---
 const config = {
   PORT: process.env.PORT || 3000,
@@ -33,6 +26,34 @@ const config = {
     music: ['music', 'song', 'sing', 'instrument', 'rhythm', 'melody']
   }
 };
+
+// --- now that config exists, build your vocabulary + fuzzyCorrect ---
+
+const VOCABULARY = [
+  ...Object.values(config.SUBJECTS).flat(),
+  // any extra curriculum words you care about:
+  'painting','reading','algebra','geometry','fraction',
+  'biology','physics','history','government'
+];
+
+/**
+ * Splits the user’s text into words and swaps any that
+ * are a Levenshtein distance ≤2 from our VOCABULARY.
+ */
+function fuzzyCorrect(text) {
+  return text
+    .split(/\s+/)
+    .map(word => {
+      let best = {w: word, d: Infinity};
+      for (const cand of VOCABULARY) {
+        const d = leven(word.toLowerCase(), cand.toLowerCase());
+        if (d < best.d) best = {w: cand, d};
+      }
+      return best.d <= 2 ? best.w : word;
+    })
+    .join(' ');
+}
+
 
 if (!process.env.OPENAI_API_KEY) {
   console.error('❌ Missing OPENAI_API_KEY');
