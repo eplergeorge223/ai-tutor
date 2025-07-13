@@ -670,6 +670,7 @@ async function speakWithPromise(text) {
     });
 }
 
+
         async function startTutoring() {
 
             
@@ -719,6 +720,81 @@ async function speakWithPromise(text) {
                 alert("Failed to start session. Please try again later.");
             }
         }
+
+           function initializeSpeechRecognition() {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            updateStatus("Sorry, your browser doesn't support speech recognition. Try Chrome or Edge!");
+            return false;
+        }
+
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            isListening = true;
+            updateMicButton();
+            updateStatus("I'm listening! Go ahead and speak.");
+            // Add user caption style
+            document.getElementById('live-captions').classList.add('user-caption');
+            document.getElementById('live-captions').classList.remove('bot-caption');
+        };
+
+        recognition.onend = () => {
+            isListening = false;
+            updateMicButton();
+            if (!isProcessing) {
+                updateStatus("Press the microphone to continue our conversation!");
+            }
+            // Hide and clear user caption after handling
+            setTimeout(() => {
+                document.getElementById('live-captions').classList.add('hidden');
+                document.getElementById('live-captions').textContent = ''; // Clear text
+            }, 600); // Give a little time for user to see their final input
+            document.getElementById('live-captions').classList.remove('user-caption'); // Remove user style
+        };
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+            // Show live interim or final user caption
+            showLiveCaption(transcript, 'user');
+
+            // If it's final (user stopped speaking)
+            if (event.results[event.results.length - 1].isFinal) {
+                if (transcript.trim().length > 0 && !isProcessing) {
+                    handleUserInput(transcript.trim());
+                } else if (!isProcessing) {
+                    updateStatus("I didn't catch that clearly. Please try speaking again!");
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            isListening = false;
+            isProcessing = false;
+            updateMicButton();
+            
+            const errorMessages = {
+                'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
+                'audio-capture': "I couldn't access your microphone. Please check your permissions.",
+                'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
+                'network': "Network error. Please check your internet connection.",
+                'service-not-allowed': "Your browser may not support speech recognition. Try using Chrome and allow microphone access."
+            };
+            
+            const message = errorMessages[event.error] || "I didn't catch that clearly. Please try speaking again!";
+            updateStatus(message);
+            document.getElementById('live-captions').classList.add('hidden'); // Ensure captions hide on error
+            document.getElementById('live-captions').classList.remove('user-caption'); // Remove user style on error
+        };
+
+        return true;
+    }
 
 async function handleUserInput(input) {
     if (isProcessing || !sessionStarted) return;
