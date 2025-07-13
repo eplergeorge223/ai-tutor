@@ -34,20 +34,36 @@ if (!process.env.OPENAI_API_KEY) {
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '4kb' }));
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://ai-tutor-ww9f.onrender.com'], // Add your actual frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json({ 
+  limit: '10kb',
+  type: 'application/json'
+}));
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // Rate limiting - more generous for educational use
 app.use(rateLimit({
   windowMs: 60_000,
-  max: 50,
+  max: 100, // Increased limit
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS', // Skip preflight requests
   message: { error: 'Too many requests, please try again later.' }
 }));
 
 app.use(express.static('public'));
+
+// Add request timeout
+app.use((req, res, next) => {
+  req.setTimeout(30000); // 30 seconds
+  res.setTimeout(30000);
+  next();
+});
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -213,14 +229,18 @@ app.post('/api/session/start', async (req, res) => {
     const sessionId = generateSessionId();
     const { studentName, grade, subjects } = req.body;
 
-    if (typeof studentName !== 'string' || typeof grade !== 'string' || (subjects && !Array.isArray(subjects))) {
-  return res.status(400).json({ error: 'Invalid session parameters.' });
-}
+    // More lenient validation
+    if (!studentName || typeof studentName !== 'string' || studentName.trim().length === 0) {
+      return res.status(400).json({ error: 'Student name is required.' });
+    }
 
+    if (!grade || typeof grade !== 'string') {
+      return res.status(400).json({ error: 'Grade is required.' });
+    }
 
     // Validate inputs
     const validatedGrade = config.VALID_GRADES.includes(grade) ? grade : 'K';
-    const validatedName = studentName && studentName.trim() ? studentName.trim() : 'Student';
+    const validatedName = studentName.trim();
 
     const session = createSession(sessionId, validatedName, validatedGrade, subjects);
     sessions.set(sessionId, session);
@@ -242,7 +262,10 @@ app.post('/api/session/start', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error starting session:', error.message);
-    res.status(500).json({ error: 'Failed to start session. Please try again.' });
+    res.status(500).json({ 
+      error: 'Failed to start session. Please try again.',
+      details: error.message // Add this for debugging
+    });
   }
 });
 
