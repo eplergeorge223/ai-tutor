@@ -466,49 +466,42 @@
             });
         }
 
-function speakWithPromise(text) {
-    return new Promise(resolve => {
-        if (state.speechSynthesis.speaking) {
-            state.speechSynthesis.cancel();
-        }
-
-
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.8;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            
-            if (state.selectedVoice) {
-                utterance.voice = state.selectedVoice;
-            }
-            
-utterance.onstart = () => {
-  showLiveCaption(text, 'bot');
-};
-utterance.onend = () => {
-  hideLiveCaption();
-  if (state.sessionStarted && !state.isListening && !state.isProcessing) {
+// 1) A helper that only starts recognition when it isn’t already running
+function safeStartRecognition() {
+  if (state.recognition && !state.isListening) {
     try {
       state.recognition.start();
-    } catch(e) {
+    } catch (e) {
       console.warn('Recognition start error:', e);
     }
   }
-  resolve();
-};
+}
 
+// 2) Updated speakWithPromise to use safeStartRecognition after speaking
+function speakWithPromise(text) {
+  return new Promise(resolve => {
+    if (state.speechSynthesis.speaking) state.speechSynthesis.cancel();
 
-            utterance.onerror = () => resolve();
-            
-            try {
-                state.speechSynthesis.speak(utterance);
-            } catch (error) {
-                console.error('Speech synthesis error:', error);
-                resolve();
-            }
-        }, 100);
-    });
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.8;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+    if (state.selectedVoice) utter.voice = state.selectedVoice;
+
+    utter.onstart = () => {
+      showLiveCaption(text, 'bot');
+    };
+    utter.onend = () => {
+      hideLiveCaption();
+      setTimeout(() => {
+        safeStartRecognition();
+        resolve();
+      }, 500);  // small pause so it doesn’t pick up its own voice
+    };
+    utter.onerror = () => resolve();
+
+    state.speechSynthesis.speak(utter);
+  });
 }
         function initializeSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
@@ -679,16 +672,13 @@ utterance.onend = () => {
             }
         }
 
-// FRONTEND: handleUserInput with proper try/catch/finally for your streaming fetch
+// 3) handleUserInput with proper SSE parsing (no “{data}” tokens) and try/catch/finally
 async function handleUserInput(input) {
   if (state.isProcessing || !state.sessionStarted) return;
 
   if (state.isListening) {
-    try {
-      state.recognition.stop();
-    } catch (e) {
-      console.warn('Recognition stop error:', e);
-    }
+    try { state.recognition.stop(); }
+    catch (e) { console.warn('Recognition stop error:', e); }
     state.isListening = false;
   }
 
@@ -697,36 +687,40 @@ async function handleUserInput(input) {
   addToConversation('user', input);
 
   try {
-    // — STREAMING FETCH BEGIN —
     const res = await fetch(`${API_BASE_URL}/chat`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ sessionId: state.currentSessionId, message: input })
     });
-    if (!res.ok) throw new Error('Failed to get response');
+    if (!res.ok) throw new Error('Network error');
 
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
-    let done = false, fullResponse = '';
+    let buffer = '', fullText = '';
 
-    while (!done) {
-      const { value, done: d } = await reader.read();
-      done = d;
-      if (value) {
-        const chunk = decoder.decode(value, { stream: true });
-        fullResponse += chunk;
-        await speakWithPromise(chunk.replace(/^data:\s?/, ''));
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();  // keep remainder
+
+      for (let part of parts) {
+        if (part.startsWith('data:')) {
+          const chunk = part.slice(5).trim();
+          if (chunk === '[DONE]') break;
+          fullText += chunk;
+          await speakWithPromise(chunk);
+        }
       }
     }
 
-    // parse JSON if readingWord
-    let readingWord = null;
-    let messageText = fullResponse.trim();
+    // handle JSON readingWord if early-grade
+    let readingWord = null, messageText = fullText.trim();
     try {
-      const parsed = JSON.parse(messageText);
-      readingWord = parsed.READING_WORD;
-      messageText = parsed.message;
-    } catch (_) { /* not JSON */ }
+      const j = JSON.parse(messageText);
+      readingWord = j.READING_WORD; messageText = j.message;
+    } catch {}
 
     if (readingWord) {
       showReadingWordPrompt(messageText, readingWord);
@@ -736,18 +730,18 @@ async function handleUserInput(input) {
     }
 
     updateDynamicSuggestions(input, messageText);
-    // — STREAMING FETCH END —
+
   } catch (err) {
     console.error('handleUserInput error:', err);
-    const fallback = generateFallbackResponse(input);
-    addToConversation('tutor', fallback);
-    await speakWithPromise(fallback);
+    const fb = generateFallbackResponse(input);
+    addToConversation('tutor', fb);
+    await speakWithPromise(fb);
+
   } finally {
     state.isProcessing = false;
     updateStatus("Continue our conversation!");
   }
 }
-
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = $('suggestion-grid');
