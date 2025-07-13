@@ -86,31 +86,6 @@
             justify-content: center;
         }
         
-        .suggestions h3 { margin-bottom: 1rem; font-size: 1.3rem; }
-        .suggestion-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        
-        .suggestion-item {
-            background: rgba(255,255,255,0.2);
-            padding: 0.75rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        
-        .suggestion-item:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-            border-color: rgba(255,255,255,0.5);
-        }
-        
         .live-captions {
             position: fixed;
             bottom: 8vh;
@@ -185,24 +160,144 @@
         .tutor-message { background: rgba(33, 150, 243, 0.2); margin-right: 1rem; }
         .hidden { display: none; }
         
-        .reading-word-display {
-            font-size: 3.2rem;
-            letter-spacing: 0.15em;
-            background: linear-gradient(90deg,#fff8,#fffb);
-            color: #764ba2;
-            padding: 1.1rem 3.4rem;
-            border-radius: 1.1em;
-            box-shadow: 0 4px 30px rgba(33,150,243,0.18);
-            font-weight: 900;
-            border: 3px solid #eee;
-            margin: 1rem 0;
+        /* Flashcard Styles */
+        .flashcard-container {
+            perspective: 1000px;
+            margin: 2rem auto;
+            width: 350px;
+            height: 200px;
+            position: relative;
+        }
+        
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-front,
+        .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+        
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-content {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .flashcard-type {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: normal;
+        }
+        
+        .flashcard-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #888;
+            font-style: italic;
+        }
+        
+        .flashcard-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .flashcard-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .flashcard-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* Input area for student responses */
+        .input-area {
+            margin: 2rem 0;
+        }
+        
+        .input-box {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem;
+            color: white;
+            font-size: 1.1rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .input-box::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .submit-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
         @media (max-width: 768px) {
-            .suggestion-grid { grid-template-columns: 1fr; }
             h1 { font-size: 2rem; }
             h2 { font-size: 1.5rem; }
             .btn { padding: 0.75rem 1.5rem; font-size: 1rem; }
+            .flashcard-container { width: 300px; height: 180px; }
+            .flashcard-content { font-size: 2rem; }
         }
     </style>
 </head>
@@ -250,15 +345,33 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="glass-panel status" id="status">Click the mic or tap suggestions to start!</div>
+            <div class="glass-panel status" id="status">Ready to start! Click 'Start Learning' above.</div>
             
-            <div id="reading-word-container" class="hidden">
-                <div class="reading-word-display" id="reading-word"></div>
+            <!-- Flashcard Display -->
+            <div id="flashcard-container" class="flashcard-container hidden">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-front">
+                        <div class="flashcard-type" id="flashcard-type-front">Math</div>
+                        <div class="flashcard-content" id="flashcard-front-content">2 + 2</div>
+                        <div class="flashcard-hint">Click to flip</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="flashcard-type" id="flashcard-type-back">Answer</div>
+                        <div class="flashcard-content" id="flashcard-back-content">4</div>
+                        <div class="flashcard-hint">Click to flip back</div>
+                    </div>
+                </div>
+                <div class="flashcard-controls">
+                    <button class="flashcard-btn" onclick="flipCard()">Flip Card</button>
+                    <button class="flashcard-btn" onclick="nextCard()">Next Question</button>
+                    <button class="flashcard-btn" onclick="hideFlashcard()">Hide Card</button>
+                </div>
             </div>
             
-            <div class="glass-panel suggestions">
-                <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-grid" id="suggestion-grid"></div>
+            <!-- Input Area (Optional - voice is primary) -->
+            <div class="input-area">
+                <input type="text" id="user-input" class="input-box" placeholder="Or type your message here..." onkeypress="handleKeyPress(event)" />
+                <button class="submit-btn" onclick="submitInput()">Send</button>
             </div>
             
             <button class="btn btn-warning" onclick="showHistory()">View Chat History</button>
@@ -296,7 +409,8 @@
             synthesis: window.speechSynthesis,
             selectedVoice: null,
             chatHistory: [],
-            currentSubject: null
+            currentSubject: null,
+            currentFlashcard: null
         };
 
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
@@ -331,7 +445,7 @@
             });
         }
         
-        // Enhanced TTS with interruption handling
+        // Enhanced TTS that resumes listening after speaking
         function speak(text, type = 'bot') {
             return new Promise(resolve => {
                 if (state.synthesis.speaking) state.synthesis.cancel();
@@ -348,9 +462,12 @@
                     utterance.onstart = () => showCaption(text, type);
                     utterance.onend = () => {
                         hideElement('live-captions');
-                        if (state.sessionStarted && !state.listening) {
-                            updateStatus("Listening for your response…");
-                            startListening();
+                        // Resume listening after tutor finishes speaking
+                        if (state.sessionStarted && !state.processing) {
+                            setTimeout(() => {
+                                updateStatus("I'm ready to listen!");
+                                startListening();
+                            }, 500);
                         }
                         resolve();
                     };
@@ -370,92 +487,47 @@
             if (type === 'user') setTimeout(() => hideElement('live-captions'), 2000);
         }
         
-        // Streamlined speech recognition
-        function initRecognition() {
-            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
-                return false;
-            }
+        // Flashcard functions
+        function showFlashcard(frontContent, backContent, type = 'Math') {
+            state.currentFlashcard = { frontContent, backContent, type };
             
-            state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            Object.assign(state.recognition, {
-                continuous: true,
-                interimResults: true,
-                lang: 'en-US',
-                maxAlternatives: 1
-            });
+            $('flashcard-front-content').textContent = frontContent;
+            $('flashcard-back-content').textContent = backContent;
+            $('flashcard-type-front').textContent = type;
+            $('flashcard-type-back').textContent = 'Answer';
             
-            state.recognition.onstart = () => {
-                state.listening = true;
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
-            
-            state.recognition.onend = () => state.listening = false;
-            
-            state.recognition.onresult = (event) => {
-                // Grab the best result
-                const result = event.results[event.resultIndex][0];
-                const transcript = result.transcript.trim();
-                const confidence = result.confidence;
-
-                // Show the live caption
-                const cap = $('live-captions');
-                cap.textContent = transcript;
-                cap.classList.remove('hidden');
-
-                // Only act on final results that are likely real speech
-                if (event.results[event.resultIndex].isFinal && !state.processing) {
-                    // Filter out low-confidence or too-short snippets
-                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
-                    if (isNoise) {
-                        updateStatus("Sorry, I didn't catch that. Please try again.");
-                    } else {
-                        // If the tutor is still speaking, cut them off
-                        if (state.synthesis.speaking) {
-                            state.synthesis.cancel();
-                        }
-                        handleUserInput(transcript);
-                    }
-
-                    // Hide caption after a brief moment
-                    setTimeout(() => cap.classList.add('hidden'), 600);
-                }
-            };
-            
-            state.recognition.onerror = event => {
-                state.processing = false;
-                const errorMsg = {
-                    'no-speech': "I didn't hear anything. Please try again.",
-                    'audio-capture': "Couldn't access microphone. Check permissions.",
-                    'not-allowed': "Microphone access denied. Please enable it.",
-                    'network': "Network error. Check your connection.",
-                    'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
-                }[event.error] || "Please try speaking again!";
-                
-                updateStatus(errorMsg);
-            };
-            
-            return true;
+            // Reset to front side
+            $('flashcard').classList.remove('flipped');
+            showElement('flashcard-container');
         }
         
-        function startListening() {
-            if (state.recognition && !state.listening && !state.processing) {
-                try { state.recognition.start(); }
-                catch (e) { console.warn('Recognition start error:', e); }
+        function flipCard() {
+            $('flashcard').classList.toggle('flipped');
+        }
+        
+        function nextCard() {
+            hideFlashcard();
+            handleUserInput('Give me another question');
+        }
+        
+        function hideFlashcard() {
+            hideElement('flashcard-container');
+            state.currentFlashcard = null;
+        }
+        
+        // Input handling
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                submitInput();
             }
         }
         
-        // Enhanced reading word display
-        function showReadingWord(prompt, word) {
-            const container = $('reading-word-container');
-            const wordDisplay = $('reading-word');
-            
-            wordDisplay.innerHTML = `
-                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">${prompt}</div>
-                <div>${word}</div>
-            `;
-            
-            showElement('reading-word-container');
+        function submitInput() {
+            const input = $('user-input').value.trim();
+            if (input) {
+                $('user-input').value = '';
+                handleUserInput(input);
+            }
         }
         
         // Streamlined user input handling
@@ -481,19 +553,18 @@
                 
                 const data = await response.json();
                 
-                // Handle reading word display
-                if (data.readingWord) {
-                    showReadingWord(data.response, data.readingWord);
+                // Handle flashcard display
+                if (data.flashcard) {
+                    showFlashcard(data.flashcard.front, data.flashcard.back, data.flashcard.type || 'Question');
                     await speak(data.response);
-                    addToHistory('tutor', data.response + ' (See word above)');
+                    addToHistory('tutor', data.response + ' (See flashcard above)');
                 } else {
-                    hideElement('reading-word-container');
+                    hideFlashcard();
                     await speak(data.response);
                     addToHistory('tutor', data.response);
                 }
                 
                 if (data.subject) state.currentSubject = data.subject;
-                updateSuggestions(input, data.response);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -502,61 +573,27 @@
                 await speak(fallback);
             } finally {
                 state.processing = false;
-                updateStatus("Ready for your next question!");
+                updateStatus("Ready for your next message!");
             }
-        }
-        
-        // Smart suggestion system
-        function updateSuggestions(userInput, tutorResponse) {
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
-            const grid = $('suggestion-grid');
-            
-            const suggestionSets = {
-                math: [
-                    {text: '🔢 More math problems', query: 'Give me another math problem'},
-                    {text: '📊 Explain this concept', query: 'Explain this math topic more'},
-                    {text: '🎲 Math games', query: 'Let\'s play a math game'},
-                    {text: '🧮 Real-world math', query: 'How is this used in real life?'}
-                ],
-                reading: [
-                    {text: '📖 Read together', query: 'Can we read something together?'},
-                    {text: '📝 New vocabulary', query: 'Teach me new words'},
-                    {text: '✍️ Write a story', query: 'Help me write a story'},
-                    {text: '🎭 Act it out', query: 'Can we act out this story?'}
-                ],
-                science: [
-                    {text: '🔬 Try experiment', query: 'Can we do a science experiment?'},
-                    {text: '🌟 Learn about space', query: 'Tell me about space'},
-                    {text: '🐾 Explore animals', query: 'I want to learn about animals'},
-                    {text: '🌱 Discover plants', query: 'Tell me about plants'}
-                ],
-                default: [
-                    {text: '❓ Ask anything', query: 'I have a question'},
-                    {text: '🎯 New topic', query: 'What should we learn next?'},
-                    {text: '🔍 Explore more', query: 'Tell me more about this'},
-                    {text: '🎉 Something fun', query: 'Let\'s do something fun'}
-                ]
-            };
-            
-            const suggestions = Object.keys(suggestionSets).find(key => 
-                combined.includes(key) || combined.includes(key.slice(0, -1))
-            ) || 'default';
-            
-            grid.innerHTML = suggestionSets[suggestions].map(s => 
-                `<div class="suggestion-item" onclick="handleUserInput('${s.query}')">${s.text}</div>`
-            ).join('');
         }
         
         function generateFallback(input) {
             const patterns = {
-                math: "I love math! Let's work on this together.",
+                math: "I love math! Let's work on this together. What's 5 + 3?",
                 read: "Reading is so much fun! What stories do you enjoy?",
                 animal: "Animals are amazing! Do you have a favorite?",
                 default: "That sounds interesting! Tell me more about what you're thinking."
             };
             
             const key = Object.keys(patterns).find(k => input.toLowerCase().includes(k)) || 'default';
-            return patterns[key];
+            const response = patterns[key];
+            
+            // Show a sample flashcard for math questions
+            if (key === 'math') {
+                showFlashcard('5 + 3', '8', 'Math');
+            }
+            
+            return response;
         }
         
         // Session management
@@ -589,8 +626,6 @@
                 const welcome = data.welcomeMessage || `Hi ${name}! I'm excited to learn with you today. What shall we explore?`;
                 await speak(welcome);
                 addToHistory('tutor', welcome);
-                
-                updateSuggestions('', welcome);
                 
             } catch (error) {
                 console.error('Session start error:', error);
@@ -643,13 +678,16 @@
         
         function startNewSession() {
             state.synthesis.cancel();
+            if (state.listening) state.recognition.stop();
+            
             Object.assign(state, {
                 sessionId: null,
                 processing: false,
                 sessionStarted: false,
                 listening: false,
                 chatHistory: [],
-                currentSubject: null
+                currentSubject: null,
+                currentFlashcard: null
             });
             
             hideElement('session-summary');
@@ -679,10 +717,6 @@
         window.onload = async function() {
             console.log('🚀 AI Tutor loading...');
             await initSpeech();
-            
-            // Initialize default suggestions
-            updateSuggestions('', 'Welcome');
-            
             console.log('✅ AI Tutor ready!');
         };
     </script>
