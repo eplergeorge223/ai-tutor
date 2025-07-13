@@ -578,7 +578,7 @@
 
     <script>
         // --- Constants & State Variables ---
-        const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
+        const API_BASE_URL = '/api';
         const DOM = {
             welcomeScreen: document.getElementById('welcome-screen'),
             tutorInterface: document.getElementById('tutor-interface'),
@@ -675,7 +675,8 @@
 
             // The BIG word display
             const wordDiv = document.createElement('div');
-            wordDiv.textContent = word;
+const dashed = word.split('').join('-').toUpperCase();
+wordDiv.textContent = `FLASHCARD: ${dashed}`;
 
             container.appendChild(promptDiv);
             container.appendChild(wordDiv);
@@ -730,7 +731,10 @@
                     if (!selectedVoice) {
                         selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
                     }
-                    resolve();
+                    resolve();4
+                    const unlock = new SpeechSynthesisUtterance(' ');
+                    window.speechSynthesis.speak(unlock);
+                    window.speechSynthesis.cancel();
                 };
 
                 if (speechSynthesis.getVoices().length > 0) {
@@ -870,6 +874,16 @@
 
         /** Handles user input, sends to API, and processes tutor's response. */
         async function handleUserInput(input) {
+              // Shortcut for “Can you hear me?”
+  if (input.trim().toLowerCase() === 'can you hear me') {
+    appState.isProcessing = true;
+    await speakWithPromise('Yes.');
+    addToConversation('tutor', 'Yes.');
+    appState.isProcessing = false;
+    updateStatus("Press the microphone to continue our conversation!");
+    return;
+  }
+
             if (appState.isProcessing || !appState.sessionStarted) return;
 
             appState.isProcessing = true;
@@ -892,7 +906,22 @@
                 if (!response.ok) throw new Error(`API error: ${response.statusText}`);
 
                 const data = await response.json();
-                let tutorResponse = data.response;
+let tutorResponse = data.response;
+// Truncate reply based on grade
+const maxByGrade = {
+  PreK:1, K:1, 1:1, 2:1,
+  3:2, 4:2, 5:2,
+  6:3, 7:3, 8:3,
+  9:4, 10:4, 11:4, 12:4
+}[appState.grade] || 3;
+
+function truncate(text, maxSents) {
+  const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+  return sentences.slice(0, maxSents).join(' ').trim();
+}
+
+tutorResponse = truncate(tutorResponse, maxByGrade);
+
 
                 // Clear reading word prompt if not provided in new response
                 if (!data.readingWord && readingWordPromptElement) {
@@ -936,6 +965,7 @@
 
             const studentName = DOM.studentNameInput.value.trim() || 'Student';
             const studentGrade = DOM.studentGradeSelect.value || 'K';
+            appState.grade = studentGrade;
 
             updateStatus("Starting your session...");
             
