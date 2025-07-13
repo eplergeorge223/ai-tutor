@@ -26,7 +26,7 @@
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border;
+            box-sizing: border-box;
         }
 
         body {
@@ -578,7 +578,9 @@
 
     <script>
         // --- Constants & State Variables ---
-        const API_BASE_URL = window.location.origin + '/api';
+       const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') 
+    ? window.location.origin + '/api' 
+    : '/api';
         const DOM = {
             welcomeScreen: document.getElementById('welcome-screen'),
             tutorInterface: document.getElementById('tutor-interface'),
@@ -731,8 +733,9 @@ wordDiv.textContent = `FLASHCARD: ${dashed}`;
                     if (!selectedVoice) {
                         selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
                     }
-                    resolve();4
-                    const unlock = new SpeechSynthesisUtterance(' ');
+// Mobile requires user interaction to unlock audio
+const unlock = new SpeechSynthesisUtterance(' ');
+unlock.volume = 0;
                     window.speechSynthesis.speak(unlock);
                     window.speechSynthesis.cancel();
                 };
@@ -785,12 +788,12 @@ wordDiv.textContent = `FLASHCARD: ${dashed}`;
 
         /** Initializes speech recognition. */
         function initializeSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            if (!('webkitSpeechRecognition' in window)) {
                 updateStatus(SPEECH_ERROR_MESSAGES['service-not-allowed']);
                 return false;
             }
 
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition = new window.webkitSpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
@@ -955,6 +958,7 @@ tutorResponse = truncate(tutorResponse, maxByGrade);
 
         /** Initiates a new tutoring session. */
         async function startTutoring() {
+            
             // Speech synthesis is now initialized once on window.onload
             const speechSupported = initializeSpeechRecognition();
             
