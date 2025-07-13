@@ -468,6 +468,10 @@
             
             <div class="status" id="status">Press the microphone to start talking!</div>
             
+            <div class="voice-controls">
+                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
+                <button class="end-session-btn" onclick="endSession()">End Session</button>
+            </div>
 
             <div id="suggestions" class="suggestions">
                 <h3>🎯 What sounds fun today?</h3>
@@ -556,22 +560,11 @@
 
     container.appendChild(promptDiv);
     container.appendChild(wordDiv);
-    
 
     // Insert at the top of tutor interface
     const tutorInterface = document.getElementById('tutor-interface');
     tutorInterface.insertBefore(container, tutorInterface.children[2] || null);
 }
-
-function showLiveCaption(text, role) {
-  const cap = document.getElementById('live-captions');
-  cap.textContent = text;
-  cap.className = 'live-captions' +
-    (role === 'user' ? ' user-caption' : ' bot-caption');
-  cap.classList.remove('hidden');
-  setTimeout(() => cap.classList.add('hidden'), 2000);
-}
-
 
 
         // Initialize speech synthesis
@@ -635,31 +628,14 @@ function showLiveCaption(text, role) {
                         utterance.voice = selectedVoice;
                     }
                     
-utterance.onstart = () => {
-   showLiveCaption(text);
-   showLiveCaption(text);
-   // As soon as tutor starts talking, begin listening for student interjections
-   if (!isListening) {
-     try { recognition.start(); }
-     catch(e){ console.warn('Recognition start error:',e); }
-   }
+                    utterance.onstart = () => {
+                        showLiveCaption(text);
+                    };
+                    
+                    utterance.onend = () => {
+    document.getElementById('live-captions').classList.add('hidden');
+    resolve();
 };
-utterance.onend = () => {
-
-  document.getElementById('live-captions').classList.add('hidden');
-  
-  if (sessionStarted && !isListening) {
-    updateStatus("Listening for your response…");
-    try {
-      recognition.start();
-    } catch(e) {
-      console.warn('Recognition start error:', e);
-    }
-  }
-  resolve();
-};
-
-
                     
                     utterance.onerror = () => {
                         resolve();
@@ -683,41 +659,54 @@ if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
 
 
             recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = true; 
+            recognition.continuous = false;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 1;
 
-recognition.onstart = () => {
-  isListening = true;
-   updateStatus("I'm listening! Go ahead and speak.");
-};
+            recognition.onstart = () => {
+                isListening = true;
+                updateMicButton();
+                updateStatus("I'm listening! Go ahead and speak.");
+            };
 
-recognition.onend = () => {
- isListening = false;
-   // we’ll restart from the TTS onend handler
-};
-
-
+            recognition.onend = () => {
+                isListening = false;
+                updateMicButton();
+                if (!isProcessing) {
+                    updateStatus("Press the microphone to continue our conversation!");
+                }
+            };
 
 recognition.onresult = (event) => {
     let transcript = '';
-    // build transcript...
-    // BEFORE you call handleUserInput, cancel any ongoing TTS
-   if (speechSynthesis.speaking) {
-     speechSynthesis.cancel();    // cut off the tutor
-  }
-    // existing code:
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+    }
+    // Show live, whether interim or final
     document.getElementById('live-captions').textContent = transcript;
-    // ...
+    document.getElementById('live-captions').classList.remove('hidden');
+
+    // If it's final (user stopped speaking)
     if (event.results[event.results.length - 1].isFinal) {
-        handleUserInput(transcript.trim());
+        if (transcript.trim().length > 0 && !isProcessing) {
+            handleUserInput(transcript.trim());
+        } else if (!isProcessing) {
+            updateStatus("I didn't catch that clearly. Please try speaking again!");
+        }
+        // Hide caption after handling (or keep for a second if you want)
+setTimeout(() => {
+    document.getElementById('live-captions').classList.add('hidden');
+}, 600);
+
     }
 };
 
 
             recognition.onerror = (event) => {
+                isListening = false;
                 isProcessing = false;
+                updateMicButton();
                 
                 const errorMessages = {
                     'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
@@ -774,17 +763,9 @@ recognition.onresult = (event) => {
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-await speakWithPromise(welcomeMessage);
-addToConversation('tutor', welcomeMessage);
-// → only start if not already listening
-if (!isListening) {
-  try {
-    recognition.start();
-  } catch (e) {
-    console.warn('Recognition start error:', e);
-  }
-}
-updateStatus("Listening for your response…");
+                await speakWithPromise(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
 
             } catch (error) {
                 console.error('Error starting session:', error);
@@ -963,6 +944,16 @@ function showLiveCaption(text, type = 'bot') {
             }
         }
 
+        function updateMicButton() {
+            const micBtn = document.getElementById('mic-btn');
+            if (isListening) {
+                micBtn.classList.add('listening');
+                micBtn.innerHTML = '🔴';
+            } else {
+                micBtn.classList.remove('listening');
+                micBtn.innerHTML = '🎤';
+            }
+        }
 
         function updateStatus(message) {
             document.getElementById('status').textContent = message;
@@ -1054,6 +1045,7 @@ if (summary) {
             
 
             // Reset microphone button
+            updateMicButton();
             updateStatus("Ready to start a new session!");
         }
 
