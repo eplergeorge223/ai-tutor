@@ -27,7 +27,7 @@ const config = {
 // Initialize app and middleware
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '4kb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({
   windowMs: 60_000,
@@ -392,119 +392,84 @@ app.post('/api/session/start', async (req, res) => {
 });
 
 app.post('/api/chat', async (req, res) => {
-  try {
-    const { sessionId, message } = req.body;
+  const { sessionId, message } = req.body;
 
-    if (!sessionId || !sessions.has(sessionId)) {
-      return res.status(400).json({ error: 'Invalid or expired session.' });
-    }
+  // 1. Validate sessionId and message…
+  if (!sessionId || !sessions.has(sessionId)) {
+    return res.status(400).json({ error: 'Invalid or expired session.' });
+  }
+  if (!message?.trim()) {
+    return res.status(400).json({ error: 'Message cannot be empty.' });
+  }
 
-    if (!message?.trim()) {
-      return res.status(400).json({ error: 'Message cannot be empty.' });
-    }
+  const session = sessions.get(sessionId);
+  session.lastActivity = Date.now();
 
-    const session = sessions.get(sessionId);
-    session.lastActivity = Date.now();
-
-    const cleanedMessage = message.trim();
-    
-    // Handle thinking pauses
-    if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
-      return res.json({
-        response: `I'm listening, ${session.studentName}! Take your time.`,
-        subject: null,
-        suggestions: ["Go ahead!", "I'm here!", "What were you thinking?"],
-        encouragement: "Take your time!",
-        status: 'listening'
-      });
-    }
-
-    // Content filtering
-    const contentCheck = containsInappropriateContent(message);
-    if (contentCheck.inappropriate) {
-      session.totalWarnings = (session.totalWarnings || 0) + 1;
-      const redirectResponse = generateRedirectResponse(contentCheck.category, session);
-      
-      console.warn(`🚨 Inappropriate content: ${sessionId.slice(-6)}: "${contentCheck.word}"`);
-      
-      return res.json({
-        response: redirectResponse,
-        subject: null,
-        suggestions: getGeneralSuggestions(session.grade),
-        encouragement: generateEncouragement(session),
-        status: 'redirected'
-      });
-    }
-
-    const response = await generateAIResponse(sessionId, cleanedMessage);
-
-    // Track conversation context
-    const subjectInfo = classifySubject(message);
-    session.conversationContext.push({
-      role: 'user',
-      message: message,
-      topic: subjectInfo.subject,
-      timestamp: Date.now()
-    });
-
-    session.conversationContext.push({
-      role: 'assistant',
-      message: response.text,
-      topic: subjectInfo.subject,
-      timestamp: Date.now()
-    });
-
-    if (session.conversationContext.length > 10) {
-      session.conversationContext = session.conversationContext.slice(-10);
-    }
-
-    // Update topic tracking
-    if (subjectInfo.subject) {
-      session.topicsDiscussed.add(subjectInfo.subject);
-      if (!session.topicBreakdown[subjectInfo.subject]) {
-        session.topicBreakdown[subjectInfo.subject] = {};
-      }
-      if (subjectInfo.subtopic) {
-        session.topicBreakdown[subjectInfo.subject][subjectInfo.subtopic] = 
-          (session.topicBreakdown[subjectInfo.subject][subjectInfo.subtopic] || 0) + 1;
-      }
-    }
-
-    // Handle reading word display for early grades
-    let messageText = response.text;
-    let readingWord = null;
-    
-    try {
-      const maybeJson = JSON.parse(messageText);
-      if (maybeJson?.READING_WORD) {
-        messageText = maybeJson.message;
-        readingWord = maybeJson.READING_WORD;
-      }
-    } catch (e) {
-      // Not JSON, continue normally
-    }
-
-    res.json({
-      response: messageText,
-      readingWord,
-      subject: response.subject,
-      suggestions: generateDynamicSuggestions(session),
-      encouragement: response.encouragement,
-      status: 'success',
-      sessionStats: {
-        totalWarnings: session.totalWarnings || 0,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
-      }
-    });
-
-  } catch (error) {
-    console.error(`❌ Chat error: ${req.body.sessionId?.slice(-6) || 'N/A'}:`, error.message);
-    res.status(500).json({
-      error: 'Failed to process message. Please try again.',
-      fallback: 'I\'m having trouble right now, but I\'m here to help you learn!'
+  // 2. Handle “thinking sounds”…
+  const cleaned = message.trim();
+  if (cleaned.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleaned)) {
+    return res.json({
+      response: `I'm listening, ${session.studentName}! Take your time.`,
+      subject: null,
+      suggestions: ["Go ahead!", "I'm here!", "What were you thinking?"],
+      encouragement: "Take your time!",
+      status: 'listening'
     });
   }
+
+  // 3. Content filter…
+  const bad = containsInappropriateContent(message);
+  if (bad.inappropriate) {
+    session.totalWarnings = (session.totalWarnings || 0) + 1;
+    return res.json({
+      response: generateRedirectResponse(bad.category, session),
+      subject: null,
+      suggestions: getGeneralSuggestions(session.grade),
+      encouragement: generateEncouragement(session),
+      status: 'redirected'
+    });
+  }
+
+  // 4. Switch to Server-Sent Events
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  // 5. Build the messages array for OpenAI
+  const systemPrompt = getTutorSystemPrompt(session.grade, session.studentName, session);
+  const history = session.messages
+    .filter(m => m.role !== 'system')
+    .slice(-6)
+    .map(m => ({ role: m.role, content: m.content }));
+
+  const openaiMessages = [
+    { role: 'system', content: systemPrompt },
+    ...history
+  ];
+
+  // 6. Kick off a streaming completion
+  const stream = await openai.chat.completions.create({
+    model: config.GPT_MODEL,
+    messages: openaiMessages,
+    max_tokens: getMaxTokensForGrade(session.grade),
+    temperature: config.GPT_TEMPERATURE,
+    presence_penalty: config.GPT_PRESENCE_PENALTY,
+    frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+    stream: true
+  });
+
+  // 7. Stream each chunk as an SSE "data:" event
+  for await (const part of stream) {
+    const chunk = part.choices[0].delta?.content;
+    if (chunk) {
+      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    }
+  }
+
+  // 8. Signal end-of-stream
+  res.write(`event: done\ndata: [DONE]\n\n`);
+  res.end();
 });
+
 
 app.get('/api/session/:sessionId/summary', (req, res) => {
   try {

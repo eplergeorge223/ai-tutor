@@ -472,15 +472,6 @@ function speakWithPromise(text) {
             state.speechSynthesis.cancel();
         }
 
-        // Stop any active recognition while speaking
-        if (state.isListening && state.recognition) {
-            try {
-                state.recognition.stop();
-                state.isListening = false;
-            } catch (e) {
-                console.warn('Recognition stop error:', e);
-            }
-        }
 
         setTimeout(() => {
             const utterance = new SpeechSynthesisUtterance(text);
@@ -492,26 +483,21 @@ function speakWithPromise(text) {
                 utterance.voice = state.selectedVoice;
             }
             
-            utterance.onstart = () => {
-                showLiveCaption(text, 'bot');
-                state.isListening = false; // Ensure we're not listening during speech
-            };
+utterance.onstart = () => {
+  showLiveCaption(text, 'bot');
+};
+utterance.onend = () => {
+  hideLiveCaption();
+  if (state.sessionStarted && !state.isListening && !state.isProcessing) {
+    try {
+      state.recognition.start();
+    } catch(e) {
+      console.warn('Recognition start error:', e);
+    }
+  }
+  resolve();
+};
 
-            utterance.onend = () => {
-                hideLiveCaption();
-                // Add a delay before starting to listen again
-                setTimeout(() => {
-                    if (state.sessionStarted && !state.isListening && !state.isProcessing) {
-                        updateStatus("Listening for your response…");
-                        try { 
-                            state.recognition.start();
-                        } catch(e) { 
-                            console.warn('Recognition start error:', e); 
-                        }
-                    }
-                }, 1000); // 1 second delay to prevent picking up own voice
-                resolve();
-            };
 
             utterance.onerror = () => resolve();
             
@@ -693,71 +679,80 @@ function speakWithPromise(text) {
             }
         }
 
- async function handleUserInput(input) {
-    if (state.isProcessing || !state.sessionStarted) return;
+async function handleUserInput(input) {
+  if (state.isProcessing || !state.sessionStarted) return;
 
-    // Stop listening immediately when processing starts
-    if (state.isListening) {
-        try {
-            state.recognition.stop();
-            state.isListening = false;
-        } catch (e) {
-            console.warn('Recognition stop error:', e);
-        }
-    }
-
-    state.isProcessing = true;
-    updateStatus("Processing your request...");
-
-    addToConversation('user', input);
-
+  // stop listening…
+  if (state.isListening) {
     try {
-        const response = await fetch(`${API_BASE_URL}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sessionId: state.currentSessionId,
-                message: input,
-                context: {}
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to get response');
-
-        const data = await response.json();
-        let tutorResponse = data.response;
-
-        // Handle reading word display
-        if (!data.readingWord) {
-            const existing = $('reading-word-prompt');
-            if (existing) existing.remove();
-        }
-
-        if (data.readingWord) {
-            showReadingWordPrompt(tutorResponse, data.readingWord);
-            await speakWithPromise(tutorResponse);
-            addToConversation('tutor', tutorResponse + ' (See word above)');
-        } else {
-            await speakWithPromise(tutorResponse);
-            addToConversation('tutor', tutorResponse);
-        }
-
-        if (data.subject) {
-            state.currentSubject = data.subject;
-        }
-
-        updateDynamicSuggestions(input, tutorResponse);
-
-    } catch (error) {
-        console.error('Error getting response:', error);
-        const fallbackResponse = generateFallbackResponse(input);
-        addToConversation('tutor', fallbackResponse);
-        await speakWithPromise(fallbackResponse);
-    } finally {
-        state.isProcessing = false;
-        updateStatus("Continue our conversation!");
+      state.recognition.stop();
+      state.isListening = false;
+    } catch (e) {
+      console.warn('Recognition stop error:', e);
     }
+  }
+
+  state.isProcessing = true;
+  updateStatus("Processing your request...");
+  addToConversation('user', input);
+
+  try {
+    // — STREAMING FETCH BEGIN —
+    const res = await fetch(`${API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: state.currentSessionId,
+        message: input
+      })
+    });
+    if (!res.ok) throw new Error('Failed to get response');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let done, chunk;
+    let fullResponse = '';
+
+    while (({ done, value: chunk } = await reader.read(), !done)) {
+      const text = decoder.decode(chunk, { stream: true });
+      fullResponse += text;
+      await speakWithPromise(text.replace(/^data:\s?/, ''));
+    }
+
+    // parse final JSON if any
+    let readingWord = null;
+    let messageText = fullResponse.trim();
+    try {
+      const parsed = JSON.parse(messageText);
+      readingWord = parsed.READING_WORD;
+      messageText = parsed.message;
+    } catch (_) {}
+
+    if (readingWord) {
+      showReadingWordPrompt(messageText, readingWord);
+      addToConversation('tutor', messageText + ' (See word above)');
+    } else {
+      addToConversation('tutor', messageText);
+    }
+
+    updateDynamicSuggestions(input, messageText);
+    // — STREAMING FETCH END —
+
+  } catch (error) {
+    console.error('Streaming error in handleUserInput:', error);
+    const fallback = generateFallbackResponse(input);
+    addToConversation('tutor', fallback);
+    await speakWithPromise(fallback);
+  } finally {
+    state.isProcessing = false;
+    updateStatus("Listening for your response…");
+    if (state.sessionStarted && !state.isListening) {
+      try { state.recognition.start(); }
+      catch (e) { console.warn('Recognition restart error:', e); }
+    }
+  }
 }
+
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = $('suggestion-grid');
