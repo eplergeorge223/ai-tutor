@@ -4,9 +4,7 @@ const OpenAI = require('openai');
 require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-
 const leven = require('leven');
-
 
 // --- Unified Configuration ---
 const config = {
@@ -18,42 +16,22 @@ const config = {
   VALID_GRADES: ['PreK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
   INAPPROPRIATE_TOPICS: ['breast', 'condom', 'erotic', 'intercourse', 'porn', 'sex', 'abuse', 'blood', 'bomb', 'death', 'gun', 'kill', 'murder', 'suicide', 'ass', 'fuck', 'shit', 'bitch', 'alcohol', 'drugs', 'cocaine', 'marijuana', 'dumb', 'stupid', 'hate', 'idiot'],
   SUBJECTS: {
-    math: ['math', 'number', 'add', 'subtract', 'multiply', 'divide', 'count', 'fraction', 'algebra', 'geometry'],
-    reading: ['read', 'book', 'story', 'word', 'phonics', 'vocabulary', 'comprehension', 'write'],
-    science: ['science', 'animal', 'plant', 'space', 'weather', 'experiment', 'nature', 'biology', 'physics'],
-    socialStudies: ['history', 'government', 'geography', 'culture', 'map', 'president', 'country'],
+    math: ['math', 'number', 'add', 'subtract', 'multiply', 'divide', 'count', 'fraction', 'algebra', 'geometry', 'calculate', 'solve', 'plus', 'minus', 'times', 'equation'],
+    reading: ['read', 'book', 'story', 'word', 'phonics', 'vocabulary', 'comprehension', 'write', 'spell', 'letter', 'sound'],
+    science: ['science', 'animal', 'plant', 'space', 'weather', 'experiment', 'nature', 'biology', 'physics', 'chemistry'],
+    socialStudies: ['history', 'government', 'geography', 'culture', 'map', 'president', 'country', 'capital'],
     art: ['art', 'draw', 'paint', 'color', 'creative', 'design'],
     music: ['music', 'song', 'sing', 'instrument', 'rhythm', 'melody']
   }
 };
 
-// --- now that config exists, build your vocabulary + fuzzyCorrect ---
-
+// Build vocabulary from subjects
 const VOCABULARY = [
   ...Object.values(config.SUBJECTS).flat(),
-  // any extra curriculum words you care about:
-  'painting','reading','algebra','geometry','fraction',
-  'biology','physics','history','government'
+  'painting', 'reading', 'algebra', 'geometry', 'fraction',
+  'biology', 'physics', 'history', 'government', 'capital',
+  'what', 'how', 'when', 'where', 'why', 'who', 'tell', 'explain', 'teach', 'learn'
 ];
-
-/**
- * Splits the user’s text into words and swaps any that
- * are a Levenshtein distance ≤2 from our VOCABULARY.
- */
-function fuzzyCorrect(text) {
-  return text
-    .split(/\s+/)
-    .map(word => {
-      let best = {w: word, d: Infinity};
-      for (const cand of VOCABULARY) {
-        const d = leven(word.toLowerCase(), cand.toLowerCase());
-        if (d < best.d) best = {w: cand, d};
-      }
-      return best.d <= 2 ? best.w : word;
-    })
-    .join(' ');
-}
-
 
 if (!process.env.OPENAI_API_KEY) {
   console.error('❌ Missing OPENAI_API_KEY');
@@ -105,8 +83,7 @@ const getMaxTokens = (grade) => {
 };
 
 /**
- * For each word in the user’s input, find the VOCABULARY entry
- * with the smallest Levenshtein distance ≤ 2 and swap it.
+ * Fuzzy correction using Levenshtein distance
  */
 function fuzzyCorrect(text) {
   return text
@@ -122,56 +99,185 @@ function fuzzyCorrect(text) {
     .join(' ');
 }
 
+/**
+ * Detect if response should generate a flashcard
+ */
+function shouldCreateFlashcard(response, grade) {
+  const mathPatterns = [
+    /what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+)/i,
+    /calculate\s+(\d+\s*[\+\-\*\/]\s*\d+)/i,
+    /solve\s+(\d+\s*[\+\-\*\/]\s*\d+)/i
+  ];
+  
+  const spellingPatterns = [
+    /spell\s+.*["""]?(\w+)["""]?/i,
+    /how\s+do\s+you\s+spell\s+(\w+)/i
+  ];
+  
+  const letterPatterns = [
+    /what\s+letter\s+comes\s+after\s+(\w)/i,
+    /what\s+comes\s+next\s+after\s+(\w)/i
+  ];
+  
+  const capitalPatterns = [
+    /what\s+is\s+the\s+capital\s+of\s+(\w+)/i,
+    /capital\s+of\s+(\w+)/i
+  ];
+  
+  return mathPatterns.some(p => p.test(response)) ||
+         spellingPatterns.some(p => p.test(response)) ||
+         letterPatterns.some(p => p.test(response)) ||
+         capitalPatterns.some(p => p.test(response));
+}
 
+/**
+ * Extract flashcard data from AI response
+ */
+function extractFlashcardData(response) {
+  // Math problems
+  const mathMatch = response.match(/what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+(?:\s*[\+\-\*\/]\s*\d+)*)/i);
+  if (mathMatch) {
+    const problem = mathMatch[1];
+    try {
+      const answer = eval(problem.replace(/\s/g, ''));
+      return {
+        prompt: "What is...",
+        front: problem,
+        back: answer.toString()
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // Spelling
+  const spellMatch = response.match(/(?:spell|how\s+do\s+you\s+spell)\s+.*["""]?(\w+)["""]?/i);
+  if (spellMatch) {
+    const word = spellMatch[1].toLowerCase();
+    const spelled = word.split('').join('-');
+    return {
+      prompt: "Spell the word:",
+      front: word,
+      back: spelled.toUpperCase()
+    };
+  }
+  
+  // Letter sequence
+  const letterMatch = response.match(/what\s+letter\s+comes\s+after\s+(\w)/i);
+  if (letterMatch) {
+    const letter = letterMatch[1].toUpperCase();
+    const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+    return {
+      prompt: "What letter comes after:",
+      front: letter,
+      back: nextLetter
+    };
+  }
+  
+  // Capital cities
+  const capitalMatch = response.match(/what\s+is\s+the\s+capital\s+of\s+(\w+)/i);
+  if (capitalMatch) {
+    const state = capitalMatch[1];
+    const capitals = {
+      'california': 'Sacramento',
+      'texas': 'Austin',
+      'florida': 'Tallahassee',
+      'newyork': 'Albany',
+      'illinois': 'Springfield'
+    };
+    const capital = capitals[state.toLowerCase()];
+    if (capital) {
+      return {
+        prompt: "What is the capital of:",
+        front: state,
+        back: capital
+      };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Check if we should show a reading word (for early grades)
+ */
+function extractReadingWord(response, grade) {
+  if (!['PreK', 'K', '1', '2'].includes(grade)) return null;
+  
+  const readingPatterns = [
+    /can\s+you\s+read\s+.*word\s+["""]?(\w+)["""]?/i,
+    /sound\s+out\s+.*word\s+["""]?(\w+)["""]?/i,
+    /try\s+reading\s+["""]?(\w+)["""]?/i
+  ];
+  
+  for (const pattern of readingPatterns) {
+    const match = response.match(pattern);
+    if (match) return match[1].toLowerCase();
+  }
+  
+  return null;
+}
 
 const getTutorPrompt = (grade, name) => {
-const responseLength = {
-  'PreK': '1 sentence max',
-  'K':   '1 sentence max',
-  '1':   '1 sentence max',
-  '2':   '1 sentence max',
-  '3':   '1-2 sentences',
-  '4':   '1-2 sentences',
-  '5':   '2 sentences max',
-  '6':   '2 sentences max',
-  '7':   '2 sentences max',
-  '8':   '2 sentences max',
-  '9':   '2-3 sentences',
-  '10':  '2-3 sentences',
-  '11':  '2-3 sentences',
-  '12':  '2-3 sentences'
-};
+  const responseLength = {
+    'PreK': '1 sentence max',
+    'K':   '1 sentence max',
+    '1':   '1 sentence max',
+    '2':   '1 sentence max',
+    '3':   '1-2 sentences',
+    '4':   '1-2 sentences',
+    '5':   '2 sentences max',
+    '6':   '2 sentences max',
+    '7':   '2 sentences max',
+    '8':   '2 sentences max',
+    '9':   '2-3 sentences',
+    '10':  '2-3 sentences',
+    '11':  '2-3 sentences',
+    '12':  '2-3 sentences'
+  };
 
+  const mathInstruction = `For math problems, phrase as questions like "What is 5 + 3?" or "Can you solve 12 ÷ 4?"`;
+  const spellingInstruction = `For spelling, ask "How do you spell 'cat'?" or "Can you spell 'dog'?"`;
   const readingInstruction = ['PreK', 'K', '1', '2'].includes(grade) ? 
-    'For reading activities, reply in JSON: {"message": "Can you read this word?", "READING_WORD": "cat"}' : '';
+    `For reading, ask "Can you read this word: 'sun'?" or "Try reading 'cat'"` : '';
 
-  return `You are an AI Tutor for ${name}. Teach students to THINK, not memorize!
+  return `You are an AI Tutor for ${name} (Grade ${grade}). Teach students to THINK, not memorize!
 - Keep responses ${responseLength[grade] || '2-3 sentences'}
-- Use age-appropriate language
+- Use age-appropriate language for grade ${grade}
 - Be encouraging and patient
 - If wrong answer, gently correct and explain why
 - Avoid inappropriate topics - redirect to learning
 - Show step-by-step thinking
-${readingInstruction}`;
+- ${mathInstruction}
+- ${spellingInstruction}
+- ${readingInstruction}
+- Ask engaging questions to keep them learning`;
 };
 
 const generateResponse = (type, name, grade) => {
   const responses = {
     welcome: {
-      'PreK': `Hi ${name}! Let's learn!`, 'K': `Hello ${name}! What's fun today?`,
-      '1': `Hi ${name}! Ready to learn?`, '2': `Hey ${name}! What should we explore?`,
-      '3': `Hi ${name}! What interests you?`, '4': `Hello ${name}! What's on your mind?`,
-      '5': `Hi ${name}! What would you like to learn?`, '6': `Hey ${name}! What interests you?`,
-      '7': `Hi ${name}! What can we explore?`, '8': `Hello ${name}! What should we discover?`,
-      '9': `Hi ${name}! What can I help with?`, '10': `Hey ${name}! What's your focus?`,
-      '11': `Hello ${name}! What topic interests you?`, '12': `Hi ${name}! What can we explore?`
+      'PreK': `Hi ${name}! Let's learn and play!`, 
+      'K': `Hello ${name}! What's fun to learn today?`,
+      '1': `Hi ${name}! Ready to explore?`, 
+      '2': `Hey ${name}! What should we discover?`,
+      '3': `Hi ${name}! What interests you today?`, 
+      '4': `Hello ${name}! What's on your curious mind?`,
+      '5': `Hi ${name}! What would you like to learn about?`, 
+      '6': `Hey ${name}! What topic interests you?`,
+      '7': `Hi ${name}! What can we explore together?`, 
+      '8': `Hello ${name}! What should we discover?`,
+      '9': `Hi ${name}! What can I help you learn?`, 
+      '10': `Hey ${name}! What's your focus today?`,
+      '11': `Hello ${name}! What topic would you like to explore?`, 
+      '12': `Hi ${name}! What can we dive into today?`
     },
     redirect: `I'm here to help you learn amazing things, ${name}! What would you like to explore today?`,
-    encourage: [`Great job, ${name}!`, `You're doing amazing!`, `Keep thinking!`, `I love your curiosity!`],
+    encourage: [`Great job, ${name}!`, `You're doing amazing!`, `Keep thinking!`, `I love your curiosity!`, `Excellent work!`, `You're so smart!`],
     suggestions: {
-      early: ['Let\'s count!', 'What about colors?', 'Animal sounds?'],
-      middle: ['Try some math!', 'Read a story!', 'Explore science!'],
-      high: ['Solve a problem!', 'Learn something new!', 'Dive deeper!']
+      early: ['Let\'s count to 10!', 'What about animal sounds?', 'Can you name colors?', 'Let\'s read simple words!'],
+      middle: ['Try some math problems!', 'Let\'s read a story!', 'Explore cool science!', 'Learn about animals!'],
+      high: ['Solve challenging problems!', 'Discover something new!', 'Dive deeper into topics!', 'Practice advanced skills!']
     }
   };
   
@@ -185,10 +291,16 @@ const generateResponse = (type, name, grade) => {
 };
 
 const createSession = (id, name, grade, subjects) => ({
-  id, studentName: name || 'Student', grade: grade || 'K', subjects: subjects || [],
-  startTime: new Date(), lastActivity: Date.now(), totalWarnings: 0,
+  id, 
+  studentName: name || 'Student', 
+  grade: grade || 'K', 
+  subjects: subjects || [],
+  startTime: new Date(), 
+  lastActivity: Date.now(), 
+  totalWarnings: 0,
   messages: [{ role: 'system', content: getTutorPrompt(grade, name), timestamp: new Date() }],
-  topicsDiscussed: new Set(), conversationContext: []
+  topicsDiscussed: new Set(), 
+  conversationContext: []
 });
 
 // Routes
@@ -209,14 +321,17 @@ app.post('/api/session/start', (req, res) => {
       sessionId,
       welcomeMessage: generateResponse('welcome', validatedName, validatedGrade),
       status: 'success',
-      sessionInfo: { studentName: validatedName, grade: validatedGrade, startTime: session.startTime }
+      sessionInfo: { 
+        studentName: validatedName, 
+        grade: validatedGrade, 
+        startTime: session.startTime 
+      }
     });
   } catch (error) {
     console.error('❌ Error starting session:', error.message);
     res.status(500).json({ error: 'Failed to start session' });
   }
 });
-
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -235,22 +350,20 @@ app.post('/api/chat', async (req, res) => {
     
     let cleanedMessage = fuzzyCorrect(message.trim());
 
-
-// special-case “can you hear me”
-if (/^can you hear me\??$/i.test(cleanedMessage)) {
-  return res.json({
-    response: 'Yes! I can hear you loud and clear.',
-    suggestions: [],
-    status: 'success'
-  });
-}
-
+    // Special case "can you hear me"
+    if (/^can you hear me\??$/i.test(cleanedMessage)) {
+      return res.json({
+        response: 'Yes! I can hear you loud and clear. What would you like to learn about?',
+        suggestions: generateResponse('suggestions', null, session.grade),
+        status: 'success'
+      });
+    }
     
     // Handle thinking pauses
     if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
       return res.json({
-        response: `I'm listening, ${session.studentName}! Take your time.`,
-        suggestions: ["Go ahead!", "I'm here!", "What were you thinking?"],
+        response: `Take your time, ${session.studentName}! I'm here when you're ready.`,
+        suggestions: ["What's on your mind?", "Ask me anything!", "I'm listening!"],
         status: 'listening'
       });
     }
@@ -284,16 +397,6 @@ if (/^can you hear me\??$/i.test(cleanedMessage)) {
     });
     
     let aiResponse = completion.choices[0].message.content.trim();
-    let readingWord = null;
-    
-    // Handle reading JSON format
-    try {
-      const parsed = JSON.parse(aiResponse);
-      if (parsed.READING_WORD) {
-        aiResponse = parsed.message;
-        readingWord = parsed.READING_WORD;
-      }
-    } catch (e) {}
     
     // Check AI response for inappropriate content
     if (containsInappropriate(aiResponse)) {
@@ -318,9 +421,14 @@ if (/^can you hear me\??$/i.test(cleanedMessage)) {
       session.conversationContext = session.conversationContext.slice(-6);
     }
     
-    res.json({
+    // Check for flashcard opportunity
+    const flashcardData = extractFlashcardData(aiResponse);
+    
+    // Check for reading word (early grades only)
+    const readingWord = extractReadingWord(aiResponse, session.grade);
+    
+    const responseData = {
       response: aiResponse,
-      readingWord,
       subject,
       suggestions: generateResponse('suggestions', null, session.grade),
       encouragement: generateResponse('encourage', session.studentName),
@@ -329,7 +437,19 @@ if (/^can you hear me\??$/i.test(cleanedMessage)) {
         totalWarnings: session.totalWarnings,
         topicsDiscussed: Array.from(session.topicsDiscussed)
       }
-    });
+    };
+    
+    // Add flashcard data if available
+    if (flashcardData) {
+      responseData.flashcard = flashcardData;
+    }
+    
+    // Add reading word if available
+    if (readingWord) {
+      responseData.readingWord = readingWord;
+    }
+    
+    res.json(responseData);
     
   } catch (error) {
     console.error('❌ Chat error:', error.message);
@@ -354,9 +474,21 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
       topicsExplored: topics.length ? `Explored: ${topics.join(', ')}` : 'General conversation',
       studentName: session.studentName,
       grade: session.grade,
-      highlights: [`${session.studentName} engaged well in learning!`],
-      suggestions: [`Keep practicing ${topics[0] || 'various topics'}!`],
-      nextSteps: ['Continue exploring topics that interest you!']
+      highlights: [
+        `${session.studentName} engaged wonderfully in learning!`,
+        `Great curiosity and participation shown`,
+        `Excellent questions asked during the session`
+      ],
+      suggestions: [
+        `Keep practicing ${topics[0] || 'various topics'}!`,
+        `Try exploring new areas of interest`,
+        `Continue asking great questions`
+      ],
+      nextSteps: [
+        'Continue exploring topics that interest you!',
+        'Practice what you learned today',
+        'Come back anytime to learn more!'
+      ]
     });
   } catch (error) {
     console.error('❌ Summary error:', error.message);
@@ -372,7 +504,11 @@ app.post('/api/session/:sessionId/end', (req, res) => {
     sessions.delete(req.params.sessionId);
     console.log(`🛑 Session ${req.params.sessionId.slice(-6)} ended`);
     
-    res.json({ status: 'ended', message: 'Session closed successfully' });
+    res.json({ 
+      status: 'ended', 
+      message: 'Session closed successfully',
+      finalMessage: `Great job learning today, ${session.studentName}!`
+    });
   } catch (error) {
     console.error('❌ End session error:', error.message);
     res.status(500).json({ error: 'Failed to end session' });
@@ -386,7 +522,9 @@ app.get('/api/session/:sessionId/status', (req, res) => {
   res.json({
     active: true,
     duration: Math.floor((Date.now() - session.startTime.getTime()) / 60000),
-    topics: Array.from(session.topicsDiscussed)
+    topics: Array.from(session.topicsDiscussed),
+    studentName: session.studentName,
+    grade: session.grade
   });
 });
 
