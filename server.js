@@ -433,44 +433,30 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 
-  // 4. Switch to Server-Sent Events
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-
-  // 5. Build the messages array for OpenAI
-  const systemPrompt = getTutorSystemPrompt(session.grade, session.studentName, session);
-  const history = session.messages
-    .filter(m => m.role !== 'system')
-    .slice(-6)
-    .map(m => ({ role: m.role, content: m.content }));
-
-  const openaiMessages = [
-    { role: 'system', content: systemPrompt },
-    ...history
-  ];
-
-  // 6. Kick off a streaming completion
-  const stream = await openai.chat.completions.create({
-    model: config.GPT_MODEL,
-    messages: openaiMessages,
-    max_tokens: getMaxTokensForGrade(session.grade),
-    temperature: config.GPT_TEMPERATURE,
-    presence_penalty: config.GPT_PRESENCE_PENALTY,
-    frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-    stream: true
-  });
-
-  // 7. Stream each chunk as an SSE "data:" event
-  for await (const part of stream) {
-    const chunk = part.choices[0].delta?.content;
-    if (chunk) {
-      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+// 4. Generate AI response using existing function
+  try {
+    const aiResponse = await generateAIResponse(sessionId, message);
+    const subject = classifySubject(message);
+    
+    // Track topic if classified
+    if (subject.subject) {
+      session.topicsDiscussed.add(subject.subject);
     }
+    
+    res.json({
+      response: aiResponse.text,
+      subject: subject,
+      suggestions: generateDynamicSuggestions(session),
+      encouragement: generateEncouragement(session),
+      status: 'success'
+    });
+  } catch (error) {
+    console.error(`❌ Chat error for session ${sessionId.slice(-6)}:`, error.message);
+    res.status(500).json({ 
+      error: 'Failed to process message. Please try again.',
+      status: 'error'
+    });
   }
-
-  // 8. Signal end-of-stream
-  res.write(`event: done\ndata: [DONE]\n\n`);
-  res.end();
 });
 
 
