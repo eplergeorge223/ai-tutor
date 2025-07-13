@@ -200,12 +200,7 @@ function createSession(sessionId, studentName, grade, subjects) {
         strugglingAreas: [],
         preferredLearningStyle: null,
         sessionNotes: [],
-        voiceState: {
-            isListening: false,
-            lastSpeechTime: null,
-            continuousMode: true,
-            speechPauses: 0
-        }
+
     };
 }
 function generateSessionId() {
@@ -272,21 +267,7 @@ function generateWelcomeMessage(studentName, grade) {
   return gradeMessages[grade] || gradeMessages['K'];
 }
 
-// Voice state management endpoint
-app.post('/api/session/:sessionId/voice-state', (req, res) => {
-  const { sessionId } = req.params;
-  const { isListening, lastSpeechTime } = req.body;
-  const session = sessions.get(sessionId);
-  
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found.' });
-  }
-  
-  session.voiceState.isListening = isListening;
-  session.voiceState.lastSpeechTime = lastSpeechTime;
-  
-  res.json({ status: 'updated' });
-});
+
 
 // Enhanced chat endpoint with content filtering
 app.post('/api/chat', async (req, res) => {
