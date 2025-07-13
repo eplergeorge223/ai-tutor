@@ -4,17 +4,514 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient-start: #6A82FB; /* Softer blue */
+            --primary-gradient-end: #FC5C7D;   /* Gentle pink/red */
+            --secondary-color: #4CAF50; /* Green for success/start */
+            --accent-color: #FFD700;    /* Gold for highlights */
+            --text-dark: #333;
+            --text-light: #fff;
+            --bg-card-light: rgba(255, 255, 255, 0.15); /* Lighter, more transparent */
+            --bg-card-dark: rgba(0, 0, 0, 0.6);
+            --border-radius-lg: 25px;
+            --border-radius-md: 15px;
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.2);
+            --shadow-strong: 0 12px 35px rgba(0, 0, 0, 0.3);
+            --transition-speed: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+    box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif; /* More modern and friendly */
+            background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-light);
+            padding: 1.5rem; /* Increased padding */
+            line-height: 1.6;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 850px; /* Slightly wider container */
+            width: 100%;
+            padding: 2rem; /* Increased padding */
+            background: rgba(255, 255, 255, 0.08); /* Subtle background for the whole container */
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-strong);
+            backdrop-filter: blur(12px); /* Stronger blur */
+        }
+
+        .mascot {
+            font-size: 5rem; /* Larger mascot */
+            margin-bottom: 1.5rem;
+            animation: gentle-float 3s ease-in-out infinite;
+            filter: drop-shadow(0 5px 8px rgba(0,0,0,0.3)); /* Shadow for mascot */
+        }
+
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); } /* Increased float */
+        }
+
+        h1, h2, h3 {
+            font-family: 'Poppins', sans-serif; /* Poppins for headings */
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+            font-weight: 700; /* Bolder headings */
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 3rem; /* Larger main heading */
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2.5rem; /* Larger sub-heading */
+            margin-bottom: 1.2rem;
+        }
+        
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .student-info, .session-summary { /* Removed .suggestions */
+            background: var(--bg-card-light);
+            padding: 2.2rem; /* Consistent padding */
+            border-radius: var(--border-radius-md);
+            margin: 2.5rem 0; /* More spacing */
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem; /* More space */
+            margin-bottom: 1.5rem; /* Space between form groups */
+        }
+
+        .form-group label {
+            font-weight: 600; /* Bolder label */
+            font-size: 1.2rem;
+            color: var(--text-light);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(255,255,255,0.25); /* Slightly less transparent */
+            border: 1px solid rgba(255,255,255,0.4); /* Defined border */
+            border-radius: 12px; /* Slightly more rounded */
+            padding: 0.9rem 1.2rem; /* More padding */
+            color: var(--text-light);
+            font-size: 1.1rem;
+            width: 100%;
+            max-width: 350px; /* Slightly wider input */
+            outline: none;
+            transition: all var(--transition-speed);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            background: rgba(255,255,255,0.35);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); /* Focus ring */
+        }
+
+        .form-group select option {
+            background: var(--primary-gradient-end); /* Better background for options */
+            color: var(--text-light);
+        }
+
+        /* General Button Styles */
+        button {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            transition: all var(--transition-speed);
+            border: none;
+            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px); /* More pronounced lift */
+            box-shadow: var(--shadow-strong);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .start-button {
+            background: linear-gradient(90deg, #28a745, #218838); /* More vibrant green */
+            border-radius: 50px;
+            padding: 1.6rem 3.5rem; /* Larger button */
+            font-size: 1.7rem;
+            color: var(--text-light);
+            box-shadow: var(--shadow-medium);
+            margin: 1.5rem 0;
+        }
+
+        .voice-button {
+            background: linear-gradient(90deg, #007bff, #0056b3); /* Deeper blue */
+            border-radius: 50%;
+            width: 140px; /* Larger microphone */
+            height: 140px;
+            font-size: 3rem; /* Larger icon */
+            color: var(--text-light);
+            box-shadow: var(--shadow-medium);
+            margin: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-button.listening {
+            background: linear-gradient(90deg, #dc3545, #b30000); /* Vibrant red */
+            animation: pulse 1.2s infinite ease-in-out; /* Slower, smoother pulse */
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); /* Outer pulse effect */
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { transform: scale(1.08); box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); } /* Larger pulse */
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .status {
+            font-size: 1.3rem; /* Larger status text */
+            margin: 1.8rem 0; /* More spacing */
+            min-height: 3.5rem;
+            background: var(--bg-card-light);
+            padding: 1.2rem;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .end-session-btn {
+            background: linear-gradient(90deg, #dc3545, #b30000); /* Same as listening red */
+            border-radius: 30px; /* More rounded */
+            padding: 0.9rem 1.8rem; /* More padding */
+            font-size: 1.1rem;
+            color: var(--text-light);
+            box-shadow: var(--shadow-light);
+            margin: 1.2rem;
+        }
+
+        /* Removed .suggestions h3, .suggestion-grid, .suggestion-item CSS */
+
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .live-captions {
+            /* Changed from fixed to absolute to avoid interfering with layout,
+               but still positioned relative to the viewport */
+            position: fixed; 
+            bottom: 6vh; /* Higher position */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            width: fit-content; /* Adjust width to content */
+            max-width: 80%; /* Prevent it from being too wide */
+            font-size: 1.5rem; /* Larger text */
+            padding: 1.3rem 2.5rem; /* More padding */
+            border-radius: 35px; /* More rounded */
+            box-shadow: var(--shadow-strong);
+            opacity: 0.98;
+            font-weight: 600;
+            text-align: center; /* Center text within caption */
+            z-index: 1000; /* Ensure it's on top */
+        }
+
+        .live-captions.user-caption {
+            background: linear-gradient(90deg, #28a745, #218838); /* Match start button green */
+            border: 2px solid #218838;
+        }
+        .live-captions.bot-caption {
+            background: linear-gradient(90deg, #007bff, #0056b3); /* Match mic button blue */
+            border: 2px solid #0056b3;
+        }
+
+        .history-btn {
+            background: linear-gradient(90deg, #FFD700, #FFA500); /* Gold to Orange */
+            color: var(--text-dark); /* Darker text for contrast */
+            border-radius: 22px; /* More rounded */
+            padding: 0.8rem 2.2rem;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-light);
+            /* margin-top: 2rem; Removed from here as it's now in .summary-actions */
+            display: inline-block; /* Make it respect margin auto */
+        }
+
+        .history-btn:hover {
+            background: linear-gradient(90deg, #FFA500, #FFD700);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .chat-history-modal {
+            background: rgba(0,0,0,0.7); /* Darker overlay */
+            position: fixed; /* Ensures it covers the whole screen */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Higher than live captions */
+        }
+
+        .modal-content {
+            background: var(--text-light); /* White background for modal content */
+            color: var(--text-dark);
+            border-radius: var(--border-radius-lg);
+            padding: 2.5rem;
+            max-width: 650px; /* Slightly wider modal */
+            max-height: 90vh; /* Taller modal */
+            box-shadow: var(--shadow-strong);
+            border: 1px solid rgba(0,0,0,0.1);
+            position: relative; /* For close button positioning */
+            overflow-y: auto; /* Enable scrolling for history */
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 2.5rem; /* Larger close button */
+            color: #666;
+            background: transparent; /* Ensure no background */
+            border: none; /* No border */
+            padding: 0; /* No padding */
+            line-height: 1; /* For vertical alignment */
+            cursor: pointer;
+            text-shadow: none; /* No text shadow */
+        }
+
+        .close-btn:hover {
+            color: var(--primary-gradient-end); /* Matches theme color */
+            transform: none; /* No transform on hover for close button */
+            box-shadow: none; /* No shadow on hover */
+        }
+
+        .chat-message {
+            margin: 0.7rem 0; /* More spacing */
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px; /* More rounded */
+            font-size: 1rem;
+        }
+
+        .user-message {
+            background: rgba(76, 175, 80, 0.15); /* Lighter background */
+            margin-left: 1.5rem; /* More indentation */
+            border-left: 4px solid #4CAF50; /* Solid border to denote user */
+        }
+
+        .tutor-message {
+            background: rgba(33, 150, 243, 0.15); /* Lighter background */
+            margin-right: 1.5rem;
+            border-right: 4px solid #2196F3; /* Solid border to denote tutor */
+        }
+
+        .session-summary {
+            text-align: left;
+            padding: 2.5rem;
+            display: flex; /* Use flexbox for summary content */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center horizontally */
+        }
+
+        .session-summary h2 {
+            width: 100%; /* Take full width */
+            text-align: center; /* Center the heading */
+            margin-bottom: 2rem;
+        }
+
+        #summary-content {
+            width: 100%; /* Ensure content takes full width */
+            margin-bottom: 2rem; /* Space between summary items and buttons */
+        }
+
+        .summary-item {
+            margin: 1.2rem 0;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.18); /* Slightly more opaque */
+            border-radius: var(--border-radius-md);
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .summary-actions { /* New div for organizing buttons in summary */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 350px; /* Control max width of buttons */
+        }
+        .summary-actions .start-button,
+        .summary-actions .history-btn {
+            margin: 0; /* Reset margins from general rules */
+            width: 100%;
+        }
+
+
+        #reading-word-prompt-display { /* Styles for the dynamic reading word prompt */
+            margin-top: 2.5rem;
+            margin-bottom: 2.5rem;
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        #reading-word-prompt-display div:first-child {
+            font-size: 1.6rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            color: var(--accent-color);
+        }
+
+        #reading-word-prompt-display div:last-child {
+            font-size: 4rem; /* Even bigger word */
+            letter-spacing: 0.2em; /* More spacing */
+            background: rgba(255,255,255,0.95); /* Nearly white background */
+            color: #5C5CFF; /* A vibrant blue for the word */
+            padding: 1.5rem 4rem;
+            border-radius: 1.5em; /* More rounded pill shape */
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            font-weight: 900;
+            border: 4px solid #eee;
+            text-shadow: none; /* No shadow on the word itself */
+            white-space: nowrap; /* Prevent word wrap */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        .hidden {
+            display: none !important; /* Use !important for consistent hiding */
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 2rem; }
+            .voice-button {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+            .start-button {
+                padding: 1.2rem 2.5rem;
+                font-size: 1.4rem;
+            }
+            .status { font-size: 1.1rem; padding: 1rem; }
+            .student-info, .session-summary { /* Removed .suggestions */
+                padding: 1.8rem;
+            }
+            .form-group input, .form-group select {
+                padding: 0.8rem 1rem;
+                font-size: 1rem;
+            }
+            /* Removed .suggestion-grid, .suggestion-item responsive CSS */
+            .live-captions {
+                font-size: 1.2rem;
+                padding: 1rem 1.8rem;
+                bottom: 4vh;
+            }
+            #reading-word-prompt-display div:last-child {
+                font-size: 2.5rem;
+                padding: 1rem 2rem;
+            }
+            .modal-content {
+                padding: 1.5rem;
+            }
+            .session-summary .start-button,
+            .session-summary .history-btn {
+                max-width: 250px; /* Smaller buttons on mobile in summary */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.7rem; }
+            .mascot { font-size: 4rem; }
+            .voice-button {
+                width: 90px;
+                height: 90px;
+                font-size: 2rem;
+            }
+            .end-session-btn, .history-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            .status {
+                font-size: 0.9rem;
+                min-height: 2.5rem;
+            }
+            /* Removed .suggestion-item responsive CSS */
+            .live-captions {
+                font-size: 1rem;
+                padding: 0.8rem 1.5rem;
+            }
+            #reading-word-prompt-display div:last-child {
+                font-size: 2rem;
+                padding: 0.8rem 1.5rem;
+                letter-spacing: 0.15em;
+            }
+            .session-summary .start-button,
+            .session-summary .history-btn {
+                max-width: 200px; /* Even smaller buttons on very small screens */
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Welcome Screen -->
         <div id="welcome-screen">
             <div class="mascot">🎓</div>
             <h1>Hi! I'm your AI Tutor!</h1>
             <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
-            <div class="glass-panel">
+            <div class="student-info">
                 <div class="form-group">
                     <label for="student-name">Name</label>
                     <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
@@ -40,43 +537,37 @@
                         <option value="12">12th Grade</option>
                     </select>
                 </div>
-                
-                <button class="btn btn-primary" onclick="startTutoring()">Start Learning!</button>
             </div>
+            
+            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
 
-        <!-- Main Tutoring Interface -->
         <div id="tutor-interface" class="hidden">
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="glass-panel status" id="status">Click the mic or tap suggestions to start!</div>
+            <div class="status" id="status">Press the microphone to start talking!</div>
             
-            <div id="reading-word-container" class="hidden">
-                <div class="reading-word-display" id="reading-word"></div>
+            <div class="voice-controls">
+                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
+                <button class="end-session-btn" onclick="endSession()">End Session</button>
             </div>
-            
-            <div class="glass-panel suggestions">
-                <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-grid" id="suggestion-grid"></div>
-            </div>
-            
-            <button class="btn btn-warning" onclick="showHistory()">View Chat History</button>
-            <button class="btn btn-danger" onclick="endSession()">End Session</button>
-        </div>
 
-        <!-- Session Summary -->
-        <div id="session-summary" class="glass-panel hidden">
+            </div>
+
+        <div id="session-summary" class="session-summary hidden">
             <h2>Session Complete! 🎉</h2>
             <div id="summary-content"></div>
-            <button class="btn btn-primary" onclick="startNewSession()">Start New Session</button>
+            <div class="summary-actions">
+                <button class="start-button" onclick="startNewSession()">Start New Session</button>
+                <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+            </div>
         </div>
 
-        <!-- Live Captions -->
         <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
 
-        <!-- Chat History Modal -->
-        <div id="chat-history-modal" class="modal hidden">
+
+        <div id="chat-history-modal" class="chat-history-modal hidden">
             <div class="modal-content">
                 <button onclick="closeHistory()" class="close-btn">&times;</button>
                 <h3>Chat History</h3>
@@ -86,405 +577,557 @@
     </div>
 
     <script>
-        // Consolidated state
-        const state = {
-            listening: false,
-            processing: false,
-            sessionStarted: false,
-            sessionId: null,
-            recognition: null,
-            synthesis: window.speechSynthesis,
-            selectedVoice: null,
-            chatHistory: [],
-            currentSubject: null
+        // --- Constants & State Variables ---
+        const API_BASE_URL = window.location.origin + '/api';
+        const DOM = {
+            welcomeScreen: document.getElementById('welcome-screen'),
+            tutorInterface: document.getElementById('tutor-interface'),
+            sessionSummary: document.getElementById('session-summary'),
+            studentNameInput: document.getElementById('student-name'),
+            studentGradeSelect: document.getElementById('student-grade'),
+            statusText: document.getElementById('status'),
+            micBtn: document.getElementById('mic-btn'),
+            liveCaptions: document.getElementById('live-captions'),
+            fullChatHistoryDiv: document.getElementById('full-chat-history'),
+            chatHistoryModal: document.getElementById('chat-history-modal'),
+            summaryContent: document.getElementById('summary-content')
         };
 
-        const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
-        
-        // Utility functions
-        const $ = id => document.getElementById(id);
-        const updateStatus = msg => $('status').textContent = msg;
-        const showElement = id => $(id).classList.remove('hidden');
-        const hideElement = id => $(id).classList.add('hidden');
-        const addToHistory = (sender, message) => state.chatHistory.push({sender, message});
-        
-        // Enhanced speech synthesis with better voice selection
-        async function initSpeech() {
-            return new Promise(resolve => {
-                const selectVoice = () => {
-                    const voices = state.synthesis.getVoices();
-                    const preferred = ['Samantha', 'Karen', 'Susan', 'Google UK English Female', 'Microsoft Zira'];
-                    
-                    state.selectedVoice = preferred.map(name => 
-                        voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()))
-                    ).find(v => v) || voices.find(v => v.lang.startsWith('en')) || voices[0];
-                    
-                    resolve();
-                };
-                
-                if (state.synthesis.getVoices().length > 0) {
-                    selectVoice();
-                } else {
-                    state.synthesis.onvoiceschanged = selectVoice;
-                    setTimeout(selectVoice, 1000);
-                }
-            });
+        let recognition = null; // SpeechRecognition object
+        let selectedVoice = null; // Preferred voice for TTS
+        let currentSessionId = null; // ID for the current backend session
+        let appState = {
+            isListening: false,
+            isProcessing: false,
+            sessionStarted: false,
+            chatHistory: [], // Stores {sender: 'user'/'tutor', message: 'text'}
+            conversationContext: [] // Stores {role: 'user'/'assistant', content: 'text'} for API
+        };
+
+        // This dynamically created element will be stored here if it exists.
+        let readingWordPromptElement = null; 
+
+        const SPEECH_ERROR_MESSAGES = {
+            'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
+            'audio-capture': "I couldn't access your microphone. Please check your permissions.",
+            'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
+            'network': "Network error. Please check your internet connection.",
+            'service-not-allowed': "Your browser may not support speech recognition. Try using Chrome and allow microphone access."
+        };
+
+        // --- Utility Functions ---
+
+        /** Updates the status text displayed to the user. */
+        function updateStatus(message) {
+            DOM.statusText.textContent = message;
         }
-        
-        // Enhanced TTS with interruption handling
-        function speak(text, type = 'bot') {
-            return new Promise(resolve => {
-                if (state.synthesis.speaking) state.synthesis.cancel();
-                
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    Object.assign(utterance, {
-                        rate: 0.8,
-                        pitch: 1.0,
-                        volume: 1.0,
-                        voice: state.selectedVoice
-                    });
-                    
-                    utterance.onstart = () => showCaption(text, type);
-                    utterance.onend = () => {
-                        hideElement('live-captions');
-                        if (state.sessionStarted && !state.listening) {
-                            updateStatus("Listening for your response…");
-                            startListening();
-                        }
-                        resolve();
-                    };
-                    utterance.onerror = resolve;
-                    
-                    state.synthesis.speak(utterance);
-                }, 100);
-            });
-        }
-        
-        // Enhanced caption system
-        function showCaption(text, type = 'bot') {
-            const caption = $('live-captions');
-            caption.textContent = text;
-            caption.className = `live-captions ${type}-caption`;
-            showElement('live-captions');
-            if (type === 'user') setTimeout(() => hideElement('live-captions'), 2000);
-        }
-        
-        // Streamlined speech recognition
-        function initRecognition() {
-            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
-                return false;
+
+        /** Updates the microphone button's visual state. */
+        function updateMicButton() {
+            if (appState.isListening) {
+                DOM.micBtn.classList.add('listening');
+                DOM.micBtn.innerHTML = '🔴';
+            } else {
+                DOM.micBtn.classList.remove('listening');
+                DOM.micBtn.innerHTML = '🎤';
             }
-            
-            state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            Object.assign(state.recognition, {
-                continuous: true,
-                interimResults: true,
-                lang: 'en-US',
-                maxAlternatives: 1
-            });
-            
-            state.recognition.onstart = () => {
-                state.listening = true;
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
-            
-            state.recognition.onend = () => state.listening = false;
-            
-            state.recognition.onresult = (event) => {
-                // Grab the best result
-                const result = event.results[event.resultIndex][0];
-                const transcript = result.transcript.trim();
-                const confidence = result.confidence;
+        }
 
-                // Show the live caption
-                const cap = $('live-captions');
-                cap.textContent = transcript;
-                cap.classList.remove('hidden');
+        /** Shows live captions for speech (user or bot). */
+        function showLiveCaption(text, type = 'bot') {
+            DOM.liveCaptions.textContent = text;
+            DOM.liveCaptions.classList.remove('hidden');
+            DOM.liveCaptions.classList[type === 'user' ? 'add' : 'remove']('user-caption');
+            DOM.liveCaptions.classList[type === 'bot' ? 'add' : 'remove']('bot-caption');
+        }
 
-                // Only act on final results that are likely real speech
-                if (event.results[event.resultIndex].isFinal && !state.processing) {
-                    // Filter out low-confidence or too-short snippets
-                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
-                    if (isNoise) {
-                        updateStatus("Sorry, I didn't catch that. Please try again.");
-                    } else {
-                        // If the tutor is still speaking, cut them off
-                        if (state.synthesis.speaking) {
-                            state.synthesis.cancel();
-                        }
-                        handleUserInput(transcript);
+        /** Hides live captions after a brief delay. */
+        function hideLiveCaption() {
+            // Give a small moment for the user to read the last word
+            setTimeout(() => {
+                DOM.liveCaptions.classList.add('hidden');
+                DOM.liveCaptions.textContent = ''; // Clear text
+                DOM.liveCaptions.classList.remove('user-caption', 'bot-caption'); // Clean up classes
+            }, 500); // Wait 0.5 seconds after speech ends
+        }
+
+
+        /** Adds a message to the chat history log. */
+        function addToConversation(sender, message) {
+            appState.chatHistory.push({ sender, message });
+        }
+
+        /** Handles displaying specific prompts for reading exercises. */
+        function showReadingWordPrompt(prompt, word) {
+            // Remove any previous prompt if it exists
+            if (readingWordPromptElement) {
+                readingWordPromptElement.remove();
+            }
+
+            // Create a new prompt container
+            const container = document.createElement('div');
+            container.id = 'reading-word-prompt-display'; // Changed ID to avoid conflict with initial DOM lookup
+            // CSS for this is now handled in the <style> block directly
+
+            // Prompt text
+            const promptDiv = document.createElement('div');
+            promptDiv.textContent = prompt;
+
+            // The BIG word display
+            const wordDiv = document.createElement('div');
+const dashed = word.split('').join('-').toUpperCase();
+wordDiv.textContent = `FLASHCARD: ${dashed}`;
+
+            container.appendChild(promptDiv);
+            container.appendChild(wordDiv);
+
+            // Update DOM reference for dynamic element
+            readingWordPromptElement = container;
+
+            // Insert at the top of tutor interface, after h2
+            const tutorInterfaceH2 = DOM.tutorInterface.querySelector('h2');
+            if (tutorInterfaceH2) {
+                 tutorInterfaceH2.after(container);
+            } else {
+                 DOM.tutorInterface.prepend(container);
+            }
+        }
+
+        /** Generates a generic fallback response if API call fails. */
+        function generateFallbackResponse(input) {
+            const lower = input.toLowerCase();
+            if (lower.includes('math') || lower.includes('number')) {
+                return "I love math! Let's work on this together. Can you tell me more about what you'd like to practice?";
+            } else if (lower.includes('read') || lower.includes('story')) {
+                return "Reading is so much fun! What kind of stories do you enjoy?";
+            } else if (lower.includes('animal') || lower.includes('science')) {
+                return "Animals and science are amazing! Do you have a favorite animal or scientific topic?";
+            } else {
+                return "That sounds really interesting! Can you tell me more about what you're thinking?";
+            }
+        }
+
+        // --- Speech Functions ---
+
+        /** Initializes speech synthesis (text-to-speech) voices. */
+        function initializeSpeechSynthesis() {
+            return new Promise((resolve) => {
+                const setVoice = () => {
+                    const voices = speechSynthesis.getVoices();
+                    const preferredVoices = [
+                        'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
+                        'Google UK English Female', 'Google US English', 'Microsoft Zira',
+                        'Alex', 'Daniel', 'Fred'
+                    ];
+
+                    for (const preferred of preferredVoices) {
+                        selectedVoice = voices.find(voice =>
+                            voice.name.includes(preferred) ||
+                            voice.name.toLowerCase().includes(preferred.toLowerCase())
+                        );
+                        if (selectedVoice) break;
                     }
 
-                    // Hide caption after a brief moment
-                    setTimeout(() => cap.classList.add('hidden'), 600);
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+                    }
+                    resolve();4
+                    const unlock = new SpeechSynthesisUtterance(' ');
+                    window.speechSynthesis.speak(unlock);
+                    window.speechSynthesis.cancel();
+                };
+
+                if (speechSynthesis.getVoices().length > 0) {
+                    setVoice();
+                } else {
+                    speechSynthesis.onvoiceschanged = setVoice;
+                    // Fallback for browsers that don't trigger onvoiceschanged immediately
+                    setTimeout(setVoice, 1000);
+                }
+            });
+        }
+
+        /** Speaks the given text using the selected voice. */
+        async function speakWithPromise(text) {
+            return new Promise((resolve) => {
+                speechSynthesis.cancel(); // ALWAYS cancel current speech to prevent queueing/speed-up
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.1; // Slightly faster for a more engaging tutor
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+
+                utterance.onstart = () => {
+                    showLiveCaption(text, 'bot');
+                };
+                utterance.onend = () => {
+                    hideLiveCaption(); // Hide caption ONLY when speech ends
+                    resolve();
+                };
+                utterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event.error);
+                    hideLiveCaption(); // Hide caption on error as well
+                    resolve(); // Resolve to not block the flow even on error
+                };
+
+                try {
+                    speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.error('Speech synthesis speak error:', error);
+                    hideLiveCaption(); // Hide caption on error
+                    resolve();
+                }
+            });
+        }
+
+        /** Initializes speech recognition. */
+        function initializeSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                updateStatus(SPEECH_ERROR_MESSAGES['service-not-allowed']);
+                return false;
+            }
+
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                appState.isListening = true;
+                updateMicButton();
+                updateStatus("I'm listening! Go ahead and speak.");
+                DOM.liveCaptions.classList.add('user-caption');
+                DOM.liveCaptions.classList.remove('bot-caption');
+            };
+
+            recognition.onend = () => {
+                appState.isListening = false;
+                updateMicButton();
+                if (!appState.isProcessing) {
+                    updateStatus("Press the microphone to continue our conversation!");
+                }
+                // hideLiveCaption(); // This was the old call, now it's done within the result/error handler
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    transcript += event.results[i][0].transcript;
+                }
+                showLiveCaption(transcript, 'user');
+
+                if (event.results[event.results.length - 1].isFinal) {
+                    if (transcript.trim().length > 0 && !appState.isProcessing) {
+                        hideLiveCaption(); // Hide user caption immediately after final result
+                        handleUserInput(transcript.trim());
+                    } else if (!appState.isProcessing) {
+                        hideLiveCaption(); // Hide user caption even if no clear speech
+                        updateStatus("I didn't catch that clearly. Please try speaking again!");
+                    }
                 }
             };
-            
-            state.recognition.onerror = event => {
-                state.processing = false;
-                const errorMsg = {
-                    'no-speech': "I didn't hear anything. Please try again.",
-                    'audio-capture': "Couldn't access microphone. Check permissions.",
-                    'not-allowed': "Microphone access denied. Please enable it.",
-                    'network': "Network error. Check your connection.",
-                    'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
-                }[event.error] || "Please try speaking again!";
-                
-                updateStatus(errorMsg);
+
+            recognition.onerror = (event) => {
+                appState.isListening = false;
+                appState.isProcessing = false;
+                updateMicButton();
+                const message = SPEECH_ERROR_MESSAGES[event.error] || "I didn't catch that clearly. Please try speaking again!";
+                updateStatus(message);
+                hideLiveCaption(); // Hide caption on error
             };
-            
+
             return true;
         }
-        
-        function startListening() {
-            if (state.recognition && !state.listening && !state.processing) {
-                try { state.recognition.start(); }
-                catch (e) { console.warn('Recognition start error:', e); }
+
+        /** Toggles the speech recognition listening state. */
+        function toggleListening() {
+            if (!recognition) {
+                updateStatus(SPEECH_ERROR_MESSAGES['service-not-allowed']);
+                return;
+            }
+            
+            if (appState.isProcessing) {
+                updateStatus("Please wait, I'm still processing your last message...");
+                return;
+            }
+            
+            if (appState.isListening) {
+                recognition.stop();
+            } else {
+                // Ensure any bot speech is cancelled before user starts speaking
+                speechSynthesis.cancel(); 
+                hideLiveCaption(); // Clear any lingering bot caption before listening
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    updateStatus("Error starting microphone. Please try again.");
+                }
             }
         }
-        
-        // Enhanced reading word display
-        function showReadingWord(prompt, word) {
-            const container = $('reading-word-container');
-            const wordDisplay = $('reading-word');
-            
-            wordDisplay.innerHTML = `
-                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">${prompt}</div>
-                <div>${word}</div>
-            `;
-            
-            showElement('reading-word-container');
-        }
-        
-        // Streamlined user input handling
+
+        // --- Core Logic Functions ---
+
+        /** Handles user input, sends to API, and processes tutor's response. */
         async function handleUserInput(input) {
-            if (state.processing || !state.sessionStarted) return;
-            
-            state.processing = true;
+              // Shortcut for “Can you hear me?”
+  if (input.trim().toLowerCase() === 'can you hear me') {
+    appState.isProcessing = true;
+    await speakWithPromise('Yes.');
+    addToConversation('tutor', 'Yes.');
+    appState.isProcessing = false;
+    updateStatus("Press the microphone to continue our conversation!");
+    return;
+  }
+
+            if (appState.isProcessing || !appState.sessionStarted) return;
+
+            appState.isProcessing = true;
             updateStatus("Processing your request...");
-            addToHistory('user', input);
-            
+
+            addToConversation('user', input);
+            appState.conversationContext.push({ role: 'user', content: input });
+
             try {
                 const response = await fetch(`${API_BASE_URL}/chat`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        sessionId: state.sessionId,
+                        sessionId: currentSessionId,
                         message: input,
-                        context: {}
+                        context: {} // Your context object structure here if needed
                     })
                 });
-                
-                if (!response.ok) throw new Error('API request failed');
-                
+
+                if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+
                 const data = await response.json();
-                
-                // Handle reading word display
+let tutorResponse = data.response;
+// Truncate reply based on grade
+const maxByGrade = {
+  PreK:1, K:1, 1:1, 2:1,
+  3:2, 4:2, 5:2,
+  6:3, 7:3, 8:3,
+  9:4, 10:4, 11:4, 12:4
+}[appState.grade] || 3;
+
+function truncate(text, maxSents) {
+  const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+  return sentences.slice(0, maxSents).join(' ').trim();
+}
+
+tutorResponse = truncate(tutorResponse, maxByGrade);
+
+
+                // Clear reading word prompt if not provided in new response
+                if (!data.readingWord && readingWordPromptElement) {
+                    readingWordPromptElement.remove();
+                    readingWordPromptElement = null; // Clear reference
+                }
+
                 if (data.readingWord) {
-                    showReadingWord(data.response, data.readingWord);
-                    await speak(data.response);
-                    addToHistory('tutor', data.response + ' (See word above)');
+                    showReadingWordPrompt(tutorResponse, data.readingWord);
+                    await speakWithPromise(tutorResponse);
+                    addToConversation('tutor', tutorResponse + ` (Reading word: "${data.readingWord}")`);
                 } else {
-                    hideElement('reading-word-container');
-                    await speak(data.response);
-                    addToHistory('tutor', data.response);
+                    await speakWithPromise(tutorResponse);
+                    addToConversation('tutor', tutorResponse);
                 }
                 
-                if (data.subject) state.currentSubject = data.subject;
-                updateSuggestions(input, data.response);
-                
+                appState.conversationContext.push({ role: 'assistant', content: tutorResponse });
+
             } catch (error) {
-                console.error('Error:', error);
-                const fallback = generateFallback(input);
-                addToHistory('tutor', fallback);
-                await speak(fallback);
+                console.error('Error getting response from AI Tutor API:', error);
+                const fallbackResponse = generateFallbackResponse(input);
+                addToConversation('tutor', fallbackResponse);
+                await speakWithPromise(fallbackResponse);
             } finally {
-                state.processing = false;
-                updateStatus("Ready for your next question!");
+                appState.isProcessing = false;
+                updateStatus("Press the microphone to continue our conversation!");
             }
         }
-        
-        // Smart suggestion system
-        function updateSuggestions(userInput, tutorResponse) {
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
-            const grid = $('suggestion-grid');
-            
-            const suggestionSets = {
-                math: [
-                    {text: '🔢 More math problems', query: 'Give me another math problem'},
-                    {text: '📊 Explain this concept', query: 'Explain this math topic more'},
-                    {text: '🎲 Math games', query: 'Let\'s play a math game'},
-                    {text: '🧮 Real-world math', query: 'How is this used in real life?'}
-                ],
-                reading: [
-                    {text: '📖 Read together', query: 'Can we read something together?'},
-                    {text: '📝 New vocabulary', query: 'Teach me new words'},
-                    {text: '✍️ Write a story', query: 'Help me write a story'},
-                    {text: '🎭 Act it out', query: 'Can we act out this story?'}
-                ],
-                science: [
-                    {text: '🔬 Try experiment', query: 'Can we do a science experiment?'},
-                    {text: '🌟 Learn about space', query: 'Tell me about space'},
-                    {text: '🐾 Explore animals', query: 'I want to learn about animals'},
-                    {text: '🌱 Discover plants', query: 'Tell me about plants'}
-                ],
-                default: [
-                    {text: '❓ Ask anything', query: 'I have a question'},
-                    {text: '🎯 New topic', query: 'What should we learn next?'},
-                    {text: '🔍 Explore more', query: 'Tell me more about this'},
-                    {text: '🎉 Something fun', query: 'Let\'s do something fun'}
-                ]
-            };
-            
-            const suggestions = Object.keys(suggestionSets).find(key => 
-                combined.includes(key) || combined.includes(key.slice(0, -1))
-            ) || 'default';
-            
-            grid.innerHTML = suggestionSets[suggestions].map(s => 
-                `<div class="suggestion-item" onclick="handleUserInput('${s.query}')">${s.text}</div>`
-            ).join('');
-        }
-        
-        function generateFallback(input) {
-            const patterns = {
-                math: "I love math! Let's work on this together.",
-                read: "Reading is so much fun! What stories do you enjoy?",
-                animal: "Animals are amazing! Do you have a favorite?",
-                default: "That sounds interesting! Tell me more about what you're thinking."
-            };
-            
-            const key = Object.keys(patterns).find(k => input.toLowerCase().includes(k)) || 'default';
-            return patterns[key];
-        }
-        
-        // Session management
+
+        // --- Session Management Functions ---
+
+        /** Initiates a new tutoring session. */
         async function startTutoring() {
-            await initSpeech();
+            // Speech synthesis is now initialized once on window.onload
+            const speechSupported = initializeSpeechRecognition();
             
-            if (!initRecognition()) return;
-            
-            const name = $('student-name').value.trim() || 'Student';
-            const grade = $('student-grade').value || 'K';
+            if (!speechSupported) {
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge for the best experience.');
+                return;
+            }
+
+            const studentName = DOM.studentNameInput.value.trim() || 'Student';
+            const studentGrade = DOM.studentGradeSelect.value || 'K';
+            appState.grade = studentGrade;
+
+            updateStatus("Starting your session...");
             
             try {
-                updateStatus("Starting session...");
-                
                 const response = await fetch(`${API_BASE_URL}/session/start`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({studentName: name, grade, subjects: []})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentName: studentName,
+                        grade: studentGrade,
+                        subjects: [] // Initial subjects can be empty or default
+                    })
                 });
-                
-                if (!response.ok) throw new Error('Session start failed');
-                
+
+                if (!response.ok) throw new Error('Failed to start session on backend');
+
                 const data = await response.json();
-                state.sessionId = data.sessionId;
-                state.sessionStarted = true;
+                currentSessionId = data.sessionId;
+                appState.sessionStarted = true;
                 
-                hideElement('welcome-screen');
-                showElement('tutor-interface');
+                DOM.welcomeScreen.classList.add('hidden');
+                DOM.tutorInterface.classList.remove('hidden');
                 
-                const welcome = data.welcomeMessage || `Hi ${name}! I'm excited to learn with you today. What shall we explore?`;
-                await speak(welcome);
-                addToHistory('tutor', welcome);
-                
-                updateSuggestions('', welcome);
-                
+                const welcomeMessage = data.welcomeMessage || `Hi ${studentName}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+                await speakWithPromise(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
+
             } catch (error) {
-                console.error('Session start error:', error);
-                alert("Failed to start session. Please try again.");
+                console.error('Error starting session:', error);
+                alert("Failed to start session. Please try again later. " + error.message);
+                updateStatus("Failed to start session. Please try again.");
             }
         }
-        
+
+        /** Ends the current tutoring session and shows a summary. */
         async function endSession() {
-            state.synthesis.cancel();
-            if (state.listening) state.recognition.stop();
+            speechSynthesis.cancel(); // Cancel any ongoing speech
+            if (appState.isListening) {
+                recognition.stop(); // Stop recognition
+            }
+            hideLiveCaption(); // Ensure captions are hidden
             
+            updateStatus("Ending session and generating summary...");
+
             try {
-                const [summaryRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/session/${state.sessionId}/summary`),
-                    fetch(`${API_BASE_URL}/session/${state.sessionId}/end`, {method: 'POST'})
-                ]);
-                
-                const summary = summaryRes.ok ? await summaryRes.json() : null;
-                showSessionSummary(summary);
+                const summaryResponse = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
+                const summaryData = summaryResponse.ok ? await summaryResponse.json() : null;
+
+                // Ensure session is formally ended on the backend
+                await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
+
+                showSessionSummary(summaryData);
             } catch (error) {
-                console.error('End session error:', error);
-                showSessionSummary(null);
+                console.error('Error during session end or summary retrieval:', error);
+                showSessionSummary(null); // Show generic summary if API fails
             }
         }
-        
-        function showSessionSummary(summary) {
-            hideElement('tutor-interface');
-            showElement('session-summary');
-            
-            const content = $('summary-content');
+
+        /** Displays the session summary screen. */
+        async function showSessionSummary(summary) {
+            DOM.tutorInterface.classList.add('hidden');
+            DOM.sessionSummary.classList.remove('hidden');
             
             if (summary) {
-                const suggestions = [
+                const allSuggestions = [
                     ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
                     ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
-                ].filter(Boolean);
-                
-                content.innerHTML = `
-                    <div><strong>Duration:</strong> ${summary.duration}</div>
-                    <div><strong>Topics:</strong> ${summary.topicsExplored}</div>
-                    <div><strong>Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
-                    <div><strong>Next Steps:</strong><br>${suggestions.length ? suggestions.join('<br>') : 'Keep asking great questions!'}</div>
+                ].filter(Boolean); // Filter out any null/undefined values
+
+                DOM.summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration || 'N/A'}</div>
+                    <div class="summary-item"><strong>Number of Inappropriate or Off-topic Requests:</strong> ${summary.totalWarnings !== undefined ? summary.totalWarnings : 'N/A'}</div>
+                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored || 'No specific topics recorded.'}</div>
+                    <div class="summary-item"><strong>Learning Highlights:</strong><br>
+                        ${summary.highlights && summary.highlights.length > 0
+                            ? summary.highlights.join('<br>')
+                            : 'No specific highlights recorded.'}
+                    </div>
+                    <div class="summary-item"><strong>Suggestions & Next Steps:</strong><br>
+                        ${allSuggestions.length > 0
+                            ? allSuggestions.join('<br>')
+                            : 'Keep asking great questions!'}
+                    </div>
                 `;
             } else {
-                content.innerHTML = '<div><strong>Session Complete!</strong> You had a wonderful learning session today!</div>';
+                DOM.summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+                `;
             }
             
-            speak("You had a wonderful learning session today! Keep being curious!");
+            await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
         }
-        
+
+        /** Starts a brand new tutoring session from the welcome screen. */
         function startNewSession() {
-            state.synthesis.cancel();
-            Object.assign(state, {
-                sessionId: null,
-                processing: false,
+            // Stop any ongoing processes
+            speechSynthesis.cancel();
+            if (recognition) {
+                recognition.stop();
+            }
+            hideLiveCaption(); // Ensure captions are hidden
+            
+            // Reset state variables
+            currentSessionId = null;
+            appState = {
+                isListening: false,
+                isProcessing: false,
                 sessionStarted: false,
-                listening: false,
                 chatHistory: [],
-                currentSubject: null
-            });
+                conversationContext: []
+            };
             
-            hideElement('session-summary');
-            showElement('welcome-screen');
+            // Reset UI elements
+            DOM.sessionSummary.classList.add('hidden');
+            DOM.tutorInterface.classList.add('hidden'); // Ensure tutor interface is hidden
+            DOM.welcomeScreen.classList.remove('hidden');
             
-            $('student-name').value = '';
-            $('student-grade').value = '';
+            DOM.studentNameInput.value = '';
+            DOM.studentGradeSelect.value = '';
             
+            // Clear any reading word prompt
+            if (readingWordPromptElement) {
+                readingWordPromptElement.remove();
+                readingWordPromptElement = null;
+            }
+
+            updateMicButton(); // Reset mic icon
             updateStatus("Ready to start a new session!");
         }
-        
-        // History management
+
+        /** Shows the full chat history modal. */
         function showHistory() {
-            $('full-chat-history').innerHTML = state.chatHistory.map(msg =>
+            DOM.fullChatHistoryDiv.innerHTML = appState.chatHistory.map(msg =>
                 `<div class="chat-message ${msg.sender}-message">
                     <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
                 </div>`
             ).join('');
-            showElement('chat-history-modal');
+            DOM.chatHistoryModal.classList.remove('hidden');
         }
-        
+
+        /** Closes the full chat history modal. */
         function closeHistory() {
-            hideElement('chat-history-modal');
+            DOM.chatHistoryModal.classList.add('hidden');
         }
-        
-        // Initialize on load
+
+        // --- Initialization ---
+
         window.onload = async function() {
-            console.log('🚀 AI Tutor loading...');
-            await initSpeech();
+            console.log('🚀 AI Tutor App loading...');
             
-            // Initialize default suggestions
-            updateSuggestions('', 'Welcome');
+            // Initializing speech synthesis once on load
+            await initializeSpeechSynthesis();
             
-            console.log('✅ AI Tutor ready!');
+            // Test browser support for debugging
+            console.log('Speech synthesis supported:', 'speechSynthesis' in window);
+            console.log('Speech recognition supported:', 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+            
+            console.log('✅ App loaded successfully');
         };
+
     </script>
 </body>
 </html>
