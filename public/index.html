@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -22,63 +16,30 @@
             color: white;
             padding: 1rem;
         }
-
-        .container {
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-            padding: 1rem;
-        }
-
-        .mascot {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            animation: gentle-float 3s ease-in-out infinite;
-        }
-
-        @keyframes gentle-float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .student-info {
+        .container { text-align: center; max-width: 800px; width: 100%; padding: 1rem; }
+        .mascot { font-size: 4rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        h2 { font-size: 2rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        
+        .glass-panel {
             background: rgba(255,255,255,0.1);
             padding: 2rem;
             border-radius: 15px;
             margin: 2rem 0;
             backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
         }
-
+        
         .form-group {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             gap: 0.5rem;
+            margin-bottom: 1rem;
         }
-
-        .form-group label {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: white;
-        }
-
-        .form-group input,
-        .form-group select {
+        
+        .form-group label { font-weight: bold; font-size: 1.1rem; }
+        .form-group input, .form-group select {
             background: rgba(255,255,255,0.2);
             border: none;
             border-radius: 10px;
@@ -88,130 +49,51 @@
             width: 100%;
             max-width: 300px;
         }
-
-        .form-group input::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-
-        .form-group select {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .form-group select option {
-            background: #764ba2;
-            color: white;
-        }
-
-        .start-button {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+        
+        .form-group input::placeholder { color: rgba(255,255,255,0.7); }
+        .form-group select, .form-group select option { background: #764ba2; color: white; }
+        
+        .btn {
             border: none;
-            border-radius: 50px;
-            padding: 1.5rem 3rem;
-            font-size: 1.5rem;
+            border-radius: 25px;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: white;
             cursor: pointer;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
             font-family: inherit;
-            margin: 1rem 0;
-        }
-
-        .start-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
-        }
-
-        .voice-button {
-            background: linear-gradient(45deg, #2196F3, #1976D2);
-            border: none;
-            border-radius: 50%;
-            width: 120px;
-            height: 120px;
-            font-size: 2rem;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
             margin: 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
         }
-
-        .voice-button:hover {
-            transform: scale(1.05);
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
         }
-
-        .voice-button:active {
-            transform: scale(0.95);
-        }
-
-        .voice-button.listening {
-            background: linear-gradient(45deg, #f44336, #d32f2f);
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
+        
+        .btn-danger { background: linear-gradient(45deg, #f44336, #d32f2f); }
+        .btn-warning { background: linear-gradient(45deg, #ffcc00, #ffa500); color: #333; }
+        .btn:hover { transform: translateY(-2px); }
+        
         .status {
             font-size: 1.2rem;
             margin: 1rem 0;
             min-height: 3rem;
-            background: rgba(255,255,255,0.1);
             padding: 1rem;
             border-radius: 20px;
-            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        .end-session-btn {
-            background: linear-gradient(45deg, #f44336, #d32f2f);
-            border: none;
-            border-radius: 25px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-            margin: 1rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .end-session-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .suggestions {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
-            backdrop-filter: blur(10px);
-        }
-
-        .suggestions h3 {
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-        }
-
+        
+        .suggestions h3 { margin-bottom: 1rem; font-size: 1.3rem; }
         .suggestion-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 0.5rem;
             margin-top: 1rem;
         }
-
+        
         .suggestion-item {
             background: rgba(255,255,255,0.2);
             padding: 0.75rem 1rem;
@@ -219,30 +101,16 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
             text-align: center;
             font-size: 0.9rem;
         }
-
+        
         .suggestion-item:hover {
             background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
             border-color: rgba(255,255,255,0.5);
         }
-
-        .suggestion-item:active {
-            transform: translateY(0);
-        }
-
-        .voice-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
+        
         .live-captions {
             position: fixed;
             bottom: 8vh;
@@ -262,39 +130,11 @@
             transition: opacity 0.3s;
             pointer-events: none;
         }
-
-        .live-captions.user-caption {
-    background: rgba(56, 183, 74, 0.88); /* Greenish for user speech */
-    color: #fff;
-    border: 2px solid #2ecc40;
-}
-.live-captions.bot-caption {
-    background: rgba(52, 152, 219, 0.88); /* Bluish for bot TTS */
-    color: #fff;
-    border: 2px solid #2980b9;
-}
-
-
-        .history-btn {
-            background: linear-gradient(45deg, #ffcc00, #ffa500);
-            color: #333;
-            border: none;
-            border-radius: 18px;
-            padding: 0.7rem 2rem;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 1rem auto;
-            display: block;
-        }
-
-        .history-btn:hover {
-            background: linear-gradient(45deg, #ffa500, #ffcc00);
-            transform: translateY(-2px);
-        }
-
-        .chat-history-modal {
+        
+        .live-captions.user-caption { background: rgba(56, 183, 74, 0.88); border: 2px solid #2ecc40; }
+        .live-captions.bot-caption { background: rgba(52, 152, 219, 0.88); border: 2px solid #2980b9; }
+        
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -306,7 +146,7 @@
             align-items: center;
             justify-content: center;
         }
-
+        
         .modal-content {
             background: #fff;
             color: #333;
@@ -319,7 +159,7 @@
             box-shadow: 0 10px 32px rgba(0,0,0,0.3);
             position: relative;
         }
-
+        
         .close-btn {
             position: absolute;
             top: 14px;
@@ -329,13 +169,10 @@
             font-size: 2rem;
             color: #888;
             cursor: pointer;
-            transition: color 0.2s;
         }
-
-        .close-btn:hover {
-            color: #f44336;
-        }
-
+        
+        .close-btn:hover { color: #f44336; }
+        
         .chat-message {
             margin: 0.5rem 0;
             padding: 0.5rem 1rem;
@@ -343,82 +180,29 @@
             text-align: left;
             font-size: 0.9rem;
         }
-
-        .user-message {
-            background: rgba(76, 175, 80, 0.2);
-            margin-left: 1rem;
-        }
-
-        .tutor-message {
-            background: rgba(33, 150, 243, 0.2);
-            margin-right: 1rem;
-        }
-
-        .session-summary {
-            background: rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 20px;
-            margin: 2rem 0;
-            backdrop-filter: blur(10px);
-            text-align: left;
-        }
-
-        .summary-item {
+        
+        .user-message { background: rgba(76, 175, 80, 0.2); margin-left: 1rem; }
+        .tutor-message { background: rgba(33, 150, 243, 0.2); margin-right: 1rem; }
+        .hidden { display: none; }
+        
+        .reading-word-display {
+            font-size: 3.2rem;
+            letter-spacing: 0.15em;
+            background: linear-gradient(90deg,#fff8,#fffb);
+            color: #764ba2;
+            padding: 1.1rem 3.4rem;
+            border-radius: 1.1em;
+            box-shadow: 0 4px 30px rgba(33,150,243,0.18);
+            font-weight: 900;
+            border: 3px solid #eee;
             margin: 1rem 0;
-            padding: 0.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
         }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Mobile optimizations */
+        
         @media (max-width: 768px) {
-            .suggestion-grid {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-            
-            .voice-controls {
-                flex-direction: row;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 0.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .voice-button {
-                width: 100px;
-                height: 100px;
-                font-size: 1.5rem;
-            }
-
-            .start-button {
-                padding: 1rem 2rem;
-                font-size: 1.2rem;
-            }
-
-            .status {
-                font-size: 1rem;
-                padding: 0.75rem;
-            }
-
-            .student-info {
-                padding: 1.5rem;
-            }
+            .suggestion-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+            .btn { padding: 0.75rem 1.5rem; font-size: 1rem; }
         }
     </style>
 </head>
@@ -430,7 +214,7 @@
             <h1>Hi! I'm your AI Tutor!</h1>
             <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
-            <div class="student-info">
+            <div class="glass-panel">
                 <div class="form-group">
                     <label for="student-name">Name</label>
                     <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
@@ -456,9 +240,9 @@
                         <option value="12">12th Grade</option>
                     </select>
                 </div>
+                
+                <button class="btn btn-primary" onclick="startTutoring()">Start Learning!</button>
             </div>
-            
-            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
         </div>
 
         <!-- Main Tutoring Interface -->
@@ -466,37 +250,33 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="status" id="status">Press the microphone to start talking!</div>
+            <div class="glass-panel status" id="status">Click the mic or tap suggestions to start!</div>
             
-
-            <div id="suggestions" class="suggestions">
-                <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-grid" id="suggestion-grid">
-                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
-                </div>
+            <div id="reading-word-container" class="hidden">
+                <div class="reading-word-display" id="reading-word"></div>
             </div>
-
-            <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+            
+            <div class="glass-panel suggestions">
+                <h3>🎯 What sounds fun today?</h3>
+                <div class="suggestion-grid" id="suggestion-grid"></div>
+            </div>
+            
+            <button class="btn btn-warning" onclick="showHistory()">View Chat History</button>
+            <button class="btn btn-danger" onclick="endSession()">End Session</button>
         </div>
 
         <!-- Session Summary -->
-        <div id="session-summary" class="session-summary hidden">
+        <div id="session-summary" class="glass-panel hidden">
             <h2>Session Complete! 🎉</h2>
             <div id="summary-content"></div>
-            <button class="start-button" onclick="startNewSession()">Start New Session</button>
+            <button class="btn btn-primary" onclick="startNewSession()">Start New Session</button>
         </div>
 
         <!-- Live Captions -->
         <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
 
-
         <!-- Chat History Modal -->
-        <div id="chat-history-modal" class="chat-history-modal hidden">
+        <div id="chat-history-modal" class="modal hidden">
             <div class="modal-content">
                 <button onclick="closeHistory()" class="close-btn">&times;</button>
                 <h3>Chat History</h3>
@@ -506,572 +286,406 @@
     </div>
 
     <script>
-        // App State
-        let isListening = false;
-        let recognition;
-        let speechSynthesis = window.speechSynthesis;
-        let currentSessionId = null;
-        let isProcessing = false;
-        let sessionStarted = false;
-        let selectedVoice = null;
-        let conversationContext = [];
-        let chatHistory = [];
-        let currentSubject = null;
-        
+        // Consolidated state
+        const state = {
+            listening: false,
+            processing: false,
+            sessionStarted: false,
+            sessionId: null,
+            recognition: null,
+            synthesis: window.speechSynthesis,
+            selectedVoice: null,
+            chatHistory: [],
+            currentSubject: null
+        };
+
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
-
-        function showReadingWordPrompt(prompt, word) {
-    // Remove any previous prompt
-    let existing = document.getElementById('reading-word-prompt');
-    if (existing) existing.remove();
-
-    // Create a new prompt
-    const container = document.createElement('div');
-    container.id = 'reading-word-prompt';
-    container.style.position = 'relative';
-    container.style.margin = '2rem 0';
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.alignItems = 'center';
-
-    // Prompt text
-    const promptDiv = document.createElement('div');
-    promptDiv.textContent = prompt;
-    promptDiv.style.fontSize = '1.4rem';
-    promptDiv.style.marginBottom = '1.3rem';
-    promptDiv.style.fontWeight = 'bold';
-
-    // The BIG word display
-    const wordDiv = document.createElement('div');
-    wordDiv.textContent = word;
-    wordDiv.style.fontSize = '3.2rem';
-    wordDiv.style.letterSpacing = '0.15em';
-    wordDiv.style.background = 'linear-gradient(90deg,#fff8,#fffb)';
-    wordDiv.style.color = '#764ba2';
-    wordDiv.style.padding = '1.1rem 3.4rem';
-    wordDiv.style.borderRadius = '1.1em';
-    wordDiv.style.boxShadow = '0 4px 30px rgba(33,150,243,0.18)';
-    wordDiv.style.fontWeight = '900';
-    wordDiv.style.border = '3px solid #eee';
-
-    container.appendChild(promptDiv);
-    container.appendChild(wordDiv);
-    
-
-    // Insert at the top of tutor interface
-    const tutorInterface = document.getElementById('tutor-interface');
-    tutorInterface.insertBefore(container, tutorInterface.children[2] || null);
-}
-
-function showLiveCaption(text, role) {
-  const cap = document.getElementById('live-captions');
-  cap.textContent = text;
-  cap.className = 'live-captions' +
-    (role === 'user' ? ' user-caption' : ' bot-caption');
-  cap.classList.remove('hidden');
-  setTimeout(() => cap.classList.add('hidden'), 2000);
-}
-
-
-
-        // Initialize speech synthesis
-        function initializeSpeechSynthesis() {
-            return new Promise((resolve) => {
-                let voices = speechSynthesis.getVoices();
-                
-                if (voices.length > 0) {
-                    selectBestVoice(voices);
-                    resolve();
-                } else {
-                    speechSynthesis.onvoiceschanged = () => {
-                        voices = speechSynthesis.getVoices();
-                        selectBestVoice(voices);
-                        resolve();
-                    };
+        
+        // Utility functions
+        const $ = id => document.getElementById(id);
+        const updateStatus = msg => $('status').textContent = msg;
+        const showElement = id => $(id).classList.remove('hidden');
+        const hideElement = id => $(id).classList.add('hidden');
+        const addToHistory = (sender, message) => state.chatHistory.push({sender, message});
+        
+        // Enhanced speech synthesis with better voice selection
+        async function initSpeech() {
+            return new Promise(resolve => {
+                const selectVoice = () => {
+                    const voices = state.synthesis.getVoices();
+                    const preferred = ['Samantha', 'Karen', 'Susan', 'Google UK English Female', 'Microsoft Zira'];
                     
-                    setTimeout(() => {
-                        voices = speechSynthesis.getVoices();
-                        selectBestVoice(voices);
-                        resolve();
-                    }, 1000);
+                    state.selectedVoice = preferred.map(name => 
+                        voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()))
+                    ).find(v => v) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+                    
+                    resolve();
+                };
+                
+                if (state.synthesis.getVoices().length > 0) {
+                    selectVoice();
+                } else {
+                    state.synthesis.onvoiceschanged = selectVoice;
+                    setTimeout(selectVoice, 1000);
                 }
             });
         }
-
-        function selectBestVoice(voices) {
-            const preferredVoices = [
-                'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
-                'Google UK English Female', 'Google US English', 'Microsoft Zira',
-                'Alex', 'Daniel', 'Fred'
-            ];
-            
-            for (let preferred of preferredVoices) {
-                selectedVoice = voices.find(voice => 
-                    voice.name.includes(preferred) || 
-                    voice.name.toLowerCase().includes(preferred.toLowerCase())
-                );
-                if (selectedVoice) break;
-            }
-            
-            if (!selectedVoice) {
-                selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
-            }
-        }
-
-        function speakWithPromise(text) {
-            return new Promise((resolve) => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                }
-
+        
+        // Enhanced TTS with interruption handling
+        function speak(text, type = 'bot') {
+            return new Promise(resolve => {
+                if (state.synthesis.speaking) state.synthesis.cancel();
+                
                 setTimeout(() => {
                     const utterance = new SpeechSynthesisUtterance(text);
+                    Object.assign(utterance, {
+                        rate: 0.8,
+                        pitch: 1.0,
+                        volume: 1.0,
+                        voice: state.selectedVoice
+                    });
                     
-                    utterance.rate = 0.8;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    
-                    if (selectedVoice) {
-                        utterance.voice = selectedVoice;
-                    }
-                    
-utterance.onstart = () => {
-   showLiveCaption(text);
-   showLiveCaption(text);
-   // As soon as tutor starts talking, begin listening for student interjections
-   if (!isListening) {
-     try { recognition.start(); }
-     catch(e){ console.warn('Recognition start error:',e); }
-   }
-};
-utterance.onend = () => {
-
-  document.getElementById('live-captions').classList.add('hidden');
-  
-  if (sessionStarted && !isListening) {
-    updateStatus("Listening for your response…");
-    try {
-      recognition.start();
-    } catch(e) {
-      console.warn('Recognition start error:', e);
-    }
-  }
-  resolve();
-};
-
-
-                    
-                    utterance.onerror = () => {
+                    utterance.onstart = () => showCaption(text, type);
+                    utterance.onend = () => {
+                        hideElement('live-captions');
+                        if (state.sessionStarted && !state.listening) {
+                            updateStatus("Listening for your response…");
+                            startListening();
+                        }
                         resolve();
                     };
+                    utterance.onerror = resolve;
                     
-                    try {
-                        speechSynthesis.speak(utterance);
-                    } catch (error) {
-                        console.error('Speech synthesis error:', error);
-                        resolve();
-                    }
+                    state.synthesis.speak(utterance);
                 }, 100);
             });
         }
-
-        function initializeSpeechRecognition() {
-if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    updateStatus("Sorry, your browser doesn't support speech recognition. Try Chrome or Edge!");
-    return false;
-}
-
-
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = true; 
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-            recognition.maxAlternatives = 1;
-
-recognition.onstart = () => {
-  isListening = true;
-   updateStatus("I'm listening! Go ahead and speak.");
-};
-
-recognition.onend = () => {
- isListening = false;
-   // we’ll restart from the TTS onend handler
-};
-
-
-
-recognition.onresult = (event) => {
-    let transcript = '';
-    // build transcript...
-    // BEFORE you call handleUserInput, cancel any ongoing TTS
-   if (speechSynthesis.speaking) {
-     speechSynthesis.cancel();    // cut off the tutor
-  }
-    // existing code:
-    document.getElementById('live-captions').textContent = transcript;
-    // ...
-    if (event.results[event.results.length - 1].isFinal) {
-        handleUserInput(transcript.trim());
-    }
-};
-
-
-            recognition.onerror = (event) => {
-                isProcessing = false;
-                
-                const errorMessages = {
-                    'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
-                    'audio-capture': "I couldn't access your microphone. Please check your permissions.",
-                    'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
-                    'network': "Network error. Please check your internet connection.",
-                    'service-not-allowed': "Your browser may not support speech recognition. Try using Chrome and allow microphone access."
-                };
-                
-                const message = errorMessages[event.error] || "I didn't catch that clearly. Please try speaking again!";
-                updateStatus(message);
+        
+        // Enhanced caption system
+        function showCaption(text, type = 'bot') {
+            const caption = $('live-captions');
+            caption.textContent = text;
+            caption.className = `live-captions ${type}-caption`;
+            showElement('live-captions');
+            if (type === 'user') setTimeout(() => hideElement('live-captions'), 2000);
+        }
+        
+        // Streamlined speech recognition
+        function initRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
+                return false;
+            }
+            
+            state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            Object.assign(state.recognition, {
+                continuous: true,
+                interimResults: true,
+                lang: 'en-US',
+                maxAlternatives: 1
+            });
+            
+            state.recognition.onstart = () => {
+                state.listening = true;
+                updateStatus("I'm listening! Go ahead and speak.");
             };
+            
+            state.recognition.onend = () => state.listening = false;
+            
+  recognition.onresult = (event) => {
+  // Grab the best result
+  const result = event.results[event.resultIndex][0];
+  const transcript = result.transcript.trim();
+  const confidence = result.confidence;
 
+  // Show the live caption
+  const cap = document.getElementById('live-captions');
+  cap.textContent = transcript;
+  cap.classList.remove('hidden');
+
+  // Only act on final results that are likely real speech
+  if (event.results[event.resultIndex].isFinal && !isProcessing) {
+    // Filter out low-confidence or too-short snippets
+    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
+    if (isNoise) {
+      updateStatus("Sorry, I didn't catch that. Please try again.");
+    } else {
+      // If the tutor is still speaking, cut them off
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+      handleUserInput(transcript);
+    }
+
+    // Hide caption after a brief moment
+    setTimeout(() => cap.classList.add('hidden'), 600);
+  }
+};
+
+            
+            state.recognition.onerror = event => {
+                state.processing = false;
+                const errorMsg = {
+                    'no-speech': "I didn't hear anything. Please try again.",
+                    'audio-capture': "Couldn't access microphone. Check permissions.",
+                    'not-allowed': "Microphone access denied. Please enable it.",
+                    'network': "Network error. Check your connection.",
+                    'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
+                }[event.error] || "Please try speaking again!";
+                
+                updateStatus(errorMsg);
+            };
+            
             return true;
         }
-
-        async function startTutoring() {
-
-            
-            await initializeSpeechSynthesis();
-            
-            const speechSupported = initializeSpeechRecognition();
-            
-            if (!speechSupported) {
-                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge for the best experience.');
-                return;
+        
+        function startListening() {
+            if (state.recognition && !state.listening && !state.processing) {
+                try { state.recognition.start(); }
+                catch (e) { console.warn('Recognition start error:', e); }
             }
-
-            const studentName = document.getElementById('student-name').value.trim();
-            const studentGrade = document.getElementById('student-grade').value;
-
+        }
+        
+        // Enhanced reading word display
+        function showReadingWord(prompt, word) {
+            const container = $('reading-word-container');
+            const wordDisplay = $('reading-word');
             
-
+            wordDisplay.innerHTML = `
+                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">${prompt}</div>
+                <div>${word}</div>
+            `;
+            
+            showElement('reading-word-container');
+        }
+        
+        // Streamlined user input handling
+        async function handleUserInput(input) {
+            if (state.processing || !state.sessionStarted) return;
+            
+            state.processing = true;
+            updateStatus("Processing your request...");
+            addToHistory('user', input);
+            
             try {
-                updateStatus("Starting your session...");
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        sessionId: state.sessionId,
+                        message: input,
+                        context: {}
+                    })
+                });
+                
+                if (!response.ok) throw new Error('API request failed');
+                
+                const data = await response.json();
+                
+                // Handle reading word display
+                if (data.readingWord) {
+                    showReadingWord(data.response, data.readingWord);
+                    await speak(data.response);
+                    addToHistory('tutor', data.response + ' (See word above)');
+                } else {
+                    hideElement('reading-word-container');
+                    await speak(data.response);
+                    addToHistory('tutor', data.response);
+                }
+                
+                if (data.subject) state.currentSubject = data.subject;
+                updateSuggestions(input, data.response);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                const fallback = generateFallback(input);
+                addToHistory('tutor', fallback);
+                await speak(fallback);
+            } finally {
+                state.processing = false;
+                updateStatus("Ready for your next question!");
+            }
+        }
+        
+        // Smart suggestion system
+        function updateSuggestions(userInput, tutorResponse) {
+            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
+            const grid = $('suggestion-grid');
+            
+            const suggestionSets = {
+                math: [
+                    {text: '🔢 More math problems', query: 'Give me another math problem'},
+                    {text: '📊 Explain this concept', query: 'Explain this math topic more'},
+                    {text: '🎲 Math games', query: 'Let\'s play a math game'},
+                    {text: '🧮 Real-world math', query: 'How is this used in real life?'}
+                ],
+                reading: [
+                    {text: '📖 Read together', query: 'Can we read something together?'},
+                    {text: '📝 New vocabulary', query: 'Teach me new words'},
+                    {text: '✍️ Write a story', query: 'Help me write a story'},
+                    {text: '🎭 Act it out', query: 'Can we act out this story?'}
+                ],
+                science: [
+                    {text: '🔬 Try experiment', query: 'Can we do a science experiment?'},
+                    {text: '🌟 Learn about space', query: 'Tell me about space'},
+                    {text: '🐾 Explore animals', query: 'I want to learn about animals'},
+                    {text: '🌱 Discover plants', query: 'Tell me about plants'}
+                ],
+                default: [
+                    {text: '❓ Ask anything', query: 'I have a question'},
+                    {text: '🎯 New topic', query: 'What should we learn next?'},
+                    {text: '🔍 Explore more', query: 'Tell me more about this'},
+                    {text: '🎉 Something fun', query: 'Let\'s do something fun'}
+                ]
+            };
+            
+            const suggestions = Object.keys(suggestionSets).find(key => 
+                combined.includes(key) || combined.includes(key.slice(0, -1))
+            ) || 'default';
+            
+            grid.innerHTML = suggestionSets[suggestions].map(s => 
+                `<div class="suggestion-item" onclick="handleUserInput('${s.query}')">${s.text}</div>`
+            ).join('');
+        }
+        
+        function generateFallback(input) {
+            const patterns = {
+                math: "I love math! Let's work on this together.",
+                read: "Reading is so much fun! What stories do you enjoy?",
+                animal: "Animals are amazing! Do you have a favorite?",
+                default: "That sounds interesting! Tell me more about what you're thinking."
+            };
+            
+            const key = Object.keys(patterns).find(k => input.toLowerCase().includes(k)) || 'default';
+            return patterns[key];
+        }
+        
+        // Session management
+        async function startTutoring() {
+            await initSpeech();
+            
+            if (!initRecognition()) return;
+            
+            const name = $('student-name').value.trim() || 'Student';
+            const grade = $('student-grade').value || 'K';
+            
+            try {
+                updateStatus("Starting session...");
                 
                 const response = await fetch(`${API_BASE_URL}/session/start`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        studentName: studentName || 'Student',
-                        grade: studentGrade || 'K',
-                        subjects: []
-                    })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({studentName: name, grade, subjects: []})
                 });
-
-                if (!response.ok) throw new Error('Failed to start session');
-
+                
+                if (!response.ok) throw new Error('Session start failed');
+                
                 const data = await response.json();
-                currentSessionId = data.sessionId;
-                sessionStarted = true;
+                state.sessionId = data.sessionId;
+                state.sessionStarted = true;
                 
-                document.getElementById('welcome-screen').classList.add('hidden');
-                document.getElementById('tutor-interface').classList.remove('hidden');
+                hideElement('welcome-screen');
+                showElement('tutor-interface');
                 
-                const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-await speakWithPromise(welcomeMessage);
-addToConversation('tutor', welcomeMessage);
-// → only start if not already listening
-if (!isListening) {
-  try {
-    recognition.start();
-  } catch (e) {
-    console.warn('Recognition start error:', e);
-  }
-}
-updateStatus("Listening for your response…");
-
+                const welcome = data.welcomeMessage || `Hi ${name}! I'm excited to learn with you today. What shall we explore?`;
+                await speak(welcome);
+                addToHistory('tutor', welcome);
+                
+                updateSuggestions('', welcome);
+                
             } catch (error) {
-                console.error('Error starting session:', error);
-                alert("Failed to start session. Please try again later.");
+                console.error('Session start error:', error);
+                alert("Failed to start session. Please try again.");
             }
         }
-
-async function handleUserInput(input) {
-    if (isProcessing || !sessionStarted) return;
-
-    isProcessing = true;
-    updateStatus("Processing your request...");
-
-    addToConversation('user', input);
-    conversationContext.push({ role: 'user', content: input });
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sessionId: currentSessionId,
-                message: input,
-                context: {}
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to get response');
-
-        const data = await response.json();
-        let tutorResponse = data.response;
-
-        // ===== MOVE THIS BLOCK *HERE* =====
-        if (!data.readingWord) {
-            let existing = document.getElementById('reading-word-prompt');
-            if (existing) existing.remove();
-        }
-        // ===================================
-
-        // If AI sent a reading word, handle display and speech separately
-        if (data.readingWord) {
-            showReadingWordPrompt(tutorResponse, data.readingWord);
-            await speakWithPromise(tutorResponse);
-            addToConversation('tutor', tutorResponse + ' (See word above)');
-            conversationContext.push({ role: 'assistant', content: tutorResponse });
-        } else {
-            await speakWithPromise(tutorResponse);
-            addToConversation('tutor', tutorResponse);
-            conversationContext.push({ role: 'assistant', content: tutorResponse });
-        }
-
-        if (data.subject) {
-            currentSubject = data.subject;
-        }
-
-        updateDynamicSuggestions(input, tutorResponse);
-
-    } catch (error) {
-        console.error('Error getting response:', error);
-        const fallbackResponse = generateFallbackResponse(input);
-        addToConversation('tutor', fallbackResponse);
-        await speakWithPromise(fallbackResponse);
-    } finally {
-        isProcessing = false;
-        updateStatus("Press the microphone to continue our conversation!");
-    }
-}
-
-
-        function updateDynamicSuggestions(userInput, tutorResponse) {
-            const suggestionGrid = document.getElementById('suggestion-grid');
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
-            let suggestions = [];
+        
+        async function endSession() {
+            state.synthesis.cancel();
+            if (state.listening) state.recognition.stop();
             
-            if (combined.includes('math') || combined.includes('number')) {
-                suggestions = [
-                    { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
-                    { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
-                    { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
-                    { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
-                ];
-            } else if (combined.includes('read') || combined.includes('story')) {
-                suggestions = [
-                    { text: '📖 Read together', query: 'Can we read something together?' },
-                    { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
-                    { text: '✍️ Write a story', query: 'Help me write a creative story' },
-                    { text: '🎭 Act out the story', query: 'Can we act out this story?' }
-                ];
-            } else if (combined.includes('science') || combined.includes('animal')) {
-                suggestions = [
-                    { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
-                    { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
-                    { text: '🐾 Explore animals', query: 'I want to learn about animals' },
-                    { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
-                ];
+            try {
+                const [summaryRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/session/${state.sessionId}/summary`),
+                    fetch(`${API_BASE_URL}/session/${state.sessionId}/end`, {method: 'POST'})
+                ]);
+                
+                const summary = summaryRes.ok ? await summaryRes.json() : null;
+                showSessionSummary(summary);
+            } catch (error) {
+                console.error('End session error:', error);
+                showSessionSummary(null);
+            }
+        }
+        
+        function showSessionSummary(summary) {
+            hideElement('tutor-interface');
+            showElement('session-summary');
+            
+            const content = $('summary-content');
+            
+            if (summary) {
+                const suggestions = [
+                    ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
+                    ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
+                ].filter(Boolean);
+                
+                content.innerHTML = `
+                    <div><strong>Duration:</strong> ${summary.duration}</div>
+                    <div><strong>Topics:</strong> ${summary.topicsExplored}</div>
+                    <div><strong>Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
+                    <div><strong>Next Steps:</strong><br>${suggestions.length ? suggestions.join('<br>') : 'Keep asking great questions!'}</div>
+                `;
             } else {
-                suggestions = [
-                    { text: '❓ Ask me anything', query: 'I have a question about something' },
-                    { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
-                    { text: '🔍 Explore more', query: 'Can you tell me more about this?' },
-                    { text: '🎉 Try something fun', query: 'Let\'s do something fun and educational' }
-                ];
+                content.innerHTML = '<div><strong>Session Complete!</strong> You had a wonderful learning session today!</div>';
             }
             
-            suggestionGrid.innerHTML = '';
-            suggestions.forEach(suggestion => {
-                const suggestionDiv = document.createElement('div');
-                suggestionDiv.className = 'suggestion-item';
-                suggestionDiv.textContent = suggestion.text;
-                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
-                suggestionGrid.appendChild(suggestionDiv);
+            speak("You had a wonderful learning session today! Keep being curious!");
+        }
+        
+        function startNewSession() {
+            state.synthesis.cancel();
+            Object.assign(state, {
+                sessionId: null,
+                processing: false,
+                sessionStarted: false,
+                listening: false,
+                chatHistory: [],
+                currentSubject: null
             });
-        }
-
-        function generateFallbackResponse(input) {
-            const lower = input.toLowerCase();
             
-            if (lower.includes('math') || lower.includes('number')) {
-                return "I love math! Let's work on this together. Can you tell me more about what you'd like to practice?";
-            } else if (lower.includes('read') || lower.includes('story')) {
-                return "Reading is so much fun! What kind of stories do you enjoy?";
-            } else if (lower.includes('animal')) {
-                return "Animals are amazing! Do you have a favorite animal?";
-            } else {
-                return "That sounds really interesting! Can you tell me more about what you're thinking?";
-            }
+            hideElement('session-summary');
+            showElement('welcome-screen');
+            
+            $('student-name').value = '';
+            $('student-grade').value = '';
+            
+            updateStatus("Ready to start a new session!");
         }
-
-        function addToConversation(sender, message) {
-            chatHistory.push({ sender, message });
-        }
-
-function showLiveCaption(text, type = 'bot') {
-    const captionsDiv = document.getElementById('live-captions');
-    captionsDiv.classList.add('hidden'); 
-    captionsDiv.textContent = text;
-    captionsDiv.classList.remove('hidden');
-    captionsDiv.classList.toggle('user-caption', type === 'user');
-    captionsDiv.classList.toggle('bot-caption', type === 'bot');
-}
-
+        
+        // History management
         function showHistory() {
-            const fullHistoryDiv = document.getElementById('full-chat-history');
-            fullHistoryDiv.innerHTML = chatHistory.map(msg =>
+            $('full-chat-history').innerHTML = state.chatHistory.map(msg =>
                 `<div class="chat-message ${msg.sender}-message">
                     <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
                 </div>`
             ).join('');
-            document.getElementById('chat-history-modal').classList.remove('hidden');
+            showElement('chat-history-modal');
         }
-
+        
         function closeHistory() {
-            document.getElementById('chat-history-modal').classList.add('hidden');
+            hideElement('chat-history-modal');
         }
-
-        function toggleListening() {
-            if (!recognition) {
-                updateStatus("Speech recognition not available. Try Chrome or Edge!");
-                return;
-            }
-            
-            if (isProcessing) {
-                updateStatus("Please wait, I'm still processing your last message...");
-                return;
-            }
-            
-            if (isListening) {
-                recognition.stop();
-            } else {
-                try {
-                    recognition.start();
-                } catch (error) {
-                    console.error('Error starting recognition:', error);
-                    updateStatus("Error starting microphone. Please try again.");
-                }
-            }
-        }
-
-
-        function updateStatus(message) {
-            document.getElementById('status').textContent = message;
-        }
-
-        async function speakSuggestion(suggestion) {
-            if (!isProcessing && !isListening) {
-                handleUserInput(suggestion);
-            }
-        }
-
-        async function endSession() {
-        speechSynthesis.cancel();
-            
-            if (isListening) {
-                recognition.stop();
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
-                await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
-
-                const summary = response.ok ? await response.json() : null;
-                showSessionSummary(summary);
-            } catch (error) {
-                console.error('Error getting session summary:', error);
-                showSessionSummary(null);
-            }
-        }
-
-
-        // Show session summary
-        async function showSessionSummary(summary) {
-            document.getElementById('tutor-interface').classList.add('hidden');
-            document.getElementById('session-summary').classList.remove('hidden');
-            
-            const summaryContent = document.getElementById('summary-content');
-            
-if (summary) {
-    // Merge suggestions and next steps into one contextual block
-    const allSuggestions = [
-        ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
-        ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
-    ].filter(Boolean);
-
-    summaryContent.innerHTML = `
-        <div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
-        <div class="summary-item"><strong>Number of Inappropriate or Off-topic Requests:</strong> ${summary.totalWarnings}</div>
-        <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-        <div class="summary-item"><strong>Learning Highlights:</strong><br>
-            ${summary.highlights.join('<br>')}
-        </div>
-        <div class="summary-item"><strong>Suggestions & Next Steps:</strong><br>
-            ${allSuggestions.length > 0
-                ? allSuggestions.join('<br>')
-                : 'Keep asking great questions!'}
-        </div>
-    `;
-} else {
-    summaryContent.innerHTML = `
-        <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-        <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-    `;
-}
-
-
-
-            
-            await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
-
-        }
-
-        // Start new session
-        function startNewSession() {
-            // Stop any speech and reset state
-            speechSynthesis.cancel();
-            currentSessionId = null;
-            isProcessing = false;
-            sessionStarted = false;
-            isListening = false;
-            
-            // Reset UI
-            document.getElementById('session-summary').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden');
-            
-            // Clear form
-            document.getElementById('student-name').value = '';
-            document.getElementById('student-grade').value = '';
-            
-
-            // Reset microphone button
-            updateStatus("Ready to start a new session!");
-        }
-
+        
         // Initialize on load
         window.onload = async function() {
-            console.log('🚀 App loading...');
+            console.log('🚀 AI Tutor loading...');
+            await initSpeech();
             
-            // Initialize speech synthesis
-            await initializeSpeechSynthesis();
+            // Initialize default suggestions
+            updateSuggestions('', 'Welcome');
             
-            // Test basic functionality
-            console.log('Speech synthesis supported:', 'speechSynthesis' in window);
-            console.log('Speech recognition supported:', 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-            
-            console.log('✅ App loaded successfully');
+            console.log('✅ AI Tutor ready!');
         };
-
-
     </script>
 </body>
 </html>
