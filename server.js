@@ -4,7 +4,6 @@ const OpenAI = require('openai');
 require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-const leven = require('leven');
 
 // --- Unified Configuration ---
 const config = {
@@ -83,18 +82,73 @@ const getMaxTokens = (grade) => {
 };
 
 /**
+ * Simple Levenshtein distance implementation
+ */
+function levenshteinDistance(a, b) {
+  const matrix = [];
+  
+  // Create matrix
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  // Fill matrix
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+  
+  return matrix[b.length][a.length];
+}
+
+/**
  * Fuzzy correction using Levenshtein distance
  */
 function fuzzyCorrect(text) {
   return text
     .split(/\s+/)
     .map(word => {
-      let best = {w: word, d: Infinity};
-      for (const cand of VOCABULARY) {
-        const dist = leven(word.toLowerCase(), cand.toLowerCase());
-        if (dist < best.d) best = {w: cand, d: dist};
+      // Skip very short words or words that are already in vocabulary
+      if (word.length <= 2) return word;
+      
+      const lowerWord = word.toLowerCase();
+      
+      // Check if word is already correct
+      if (VOCABULARY.some(v => v.toLowerCase() === lowerWord)) {
+        return word;
       }
-      return best.d <= 2 ? best.w : word;
+      
+      let bestMatch = { word: word, distance: Infinity };
+      
+      // Find the best match in vocabulary
+      for (const candidate of VOCABULARY) {
+        const distance = levenshteinDistance(lowerWord, candidate.toLowerCase());
+        if (distance < bestMatch.distance) {
+          bestMatch = { word: candidate, distance: distance };
+        }
+      }
+      
+      // Only correct if the distance is reasonable (1-2 characters different)
+      // and the word lengths are similar
+      if (bestMatch.distance <= 2 && 
+          Math.abs(word.length - bestMatch.word.length) <= 2) {
+        return bestMatch.word;
+      }
+      
+      return word;
     })
     .join(' ');
 }
@@ -348,7 +402,15 @@ app.post('/api/chat', async (req, res) => {
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
     
-    let cleanedMessage = fuzzyCorrect(message.trim());
+    let cleanedMessage = message.trim();
+    
+    // Apply fuzzy correction only if needed
+    try {
+      cleanedMessage = fuzzyCorrect(cleanedMessage);
+    } catch (error) {
+      console.warn('⚠️ Fuzzy correction failed, using original message:', error.message);
+      cleanedMessage = message.trim();
+    }
 
     // Special case "can you hear me"
     if (/^can you hear me\??$/i.test(cleanedMessage)) {
