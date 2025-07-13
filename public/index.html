@@ -731,12 +731,14 @@
             tutorInterface.insertBefore(container, tutorInterface.children[2]);
         }
 
-        // Text cleaning function to remove data artifacts
+// Text cleaning function to remove data artifacts
         function cleanResponseText(text) {
-            // Remove common streaming artifacts
-            text = text.replace(/^data[.\s]*/, ''); // Remove "data." at start
-            text = text.replace(/data[.\s]*$/g, ''); // Remove "data." at end
-            text = text.replace(/\bdata\b[.\s]*/g, ''); // Remove standalone "data" words
+            // Remove streaming data artifacts like 'data: "word"'
+            text = text.replace(/data:\s*"([^"]+)"/g, '$1'); // Extract content from data: "content"
+            text = text.replace(/data:\s*([^"\s]+)/g, '$1'); // Extract content from data: content
+            text = text.replace(/event:\s*done/g, ''); // Remove event markers
+            text = text.replace(/data:\s*\[DONE\]/g, ''); // Remove done markers
+            text = text.replace(/\bdata\b[:\s]*/g, ''); // Remove standalone "data" words
             text = text.replace(/\s+/g, ' '); // Normalize whitespace
             text = text.trim();
             
