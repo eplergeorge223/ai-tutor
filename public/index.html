@@ -392,36 +392,35 @@
             
             state.recognition.onend = () => state.listening = false;
             
-  recognition.onresult = (event) => {
-  // Grab the best result
-  const result = event.results[event.resultIndex][0];
-  const transcript = result.transcript.trim();
-  const confidence = result.confidence;
+            state.recognition.onresult = (event) => {
+                // Grab the best result
+                const result = event.results[event.resultIndex][0];
+                const transcript = result.transcript.trim();
+                const confidence = result.confidence;
 
-  // Show the live caption
-  const cap = document.getElementById('live-captions');
-  cap.textContent = transcript;
-  cap.classList.remove('hidden');
+                // Show the live caption
+                const cap = $('live-captions');
+                cap.textContent = transcript;
+                cap.classList.remove('hidden');
 
-  // Only act on final results that are likely real speech
-  if (event.results[event.resultIndex].isFinal && !isProcessing) {
-    // Filter out low-confidence or too-short snippets
-    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
-    if (isNoise) {
-      updateStatus("Sorry, I didn't catch that. Please try again.");
-    } else {
-      // If the tutor is still speaking, cut them off
-      if (speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-      }
-      handleUserInput(transcript);
-    }
+                // Only act on final results that are likely real speech
+                if (event.results[event.resultIndex].isFinal && !state.processing) {
+                    // Filter out low-confidence or too-short snippets
+                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
+                    if (isNoise) {
+                        updateStatus("Sorry, I didn't catch that. Please try again.");
+                    } else {
+                        // If the tutor is still speaking, cut them off
+                        if (state.synthesis.speaking) {
+                            state.synthesis.cancel();
+                        }
+                        handleUserInput(transcript);
+                    }
 
-    // Hide caption after a brief moment
-    setTimeout(() => cap.classList.add('hidden'), 600);
-  }
-};
-
+                    // Hide caption after a brief moment
+                    setTimeout(() => cap.classList.add('hidden'), 600);
+                }
+            };
             
             state.recognition.onerror = event => {
                 state.processing = false;
