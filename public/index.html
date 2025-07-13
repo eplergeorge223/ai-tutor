@@ -639,15 +639,22 @@ function showLiveCaption(text, role) {
                         showLiveCaption(text);
                     };
                     
-                    utterance.onend = () => {
-   document.getElementById('live-captions').classList.add('hidden');
-      if (sessionStarted) {
-     // → auto-listen again as soon as TTS is done
+utterance.onend = () => {
+
+  document.getElementById('live-captions').classList.add('hidden');
+  
+  if (sessionStarted && !isListening) {
     updateStatus("Listening for your response…");
-    recognition.start();
-   }
+    try {
+      recognition.start();
+    } catch(e) {
+      console.warn('Recognition start error:', e);
+    }
+  }
   resolve();
 };
+
+
                     
                     utterance.onerror = () => {
                         resolve();
@@ -676,11 +683,16 @@ if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 1;
 
-            recognition.onstart = () => {
-                isListening = true;
-                updateMicButton();
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
+recognition.onstart = () => {
+  isListening = true;
+   updateStatus("I'm listening! Go ahead and speak.");
+};
+
+recognition.onend = () => {
+ isListening = false;
+   // we’ll restart from the TTS onend handler
+};
+
 
 
 recognition.onresult = (event) => {
@@ -709,9 +721,7 @@ setTimeout(() => {
 
 
             recognition.onerror = (event) => {
-                isListening = false;
                 isProcessing = false;
-                updateMicButton();
                 
                 const errorMessages = {
                     'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
@@ -768,11 +778,17 @@ setTimeout(() => {
                 document.getElementById('tutor-interface').classList.remove('hidden');
                 
                 const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-   await speakWithPromise(welcomeMessage);
-   addToConversation('tutor', welcomeMessage);
-   // → once the welcome TTS ends, begin listening automatically
-   recognition.start();
-   updateStatus("Listening for your response…");
+await speakWithPromise(welcomeMessage);
+addToConversation('tutor', welcomeMessage);
+// → only start if not already listening
+if (!isListening) {
+  try {
+    recognition.start();
+  } catch (e) {
+    console.warn('Recognition start error:', e);
+  }
+}
+updateStatus("Listening for your response…");
 
             } catch (error) {
                 console.error('Error starting session:', error);
@@ -951,16 +967,6 @@ function showLiveCaption(text, type = 'bot') {
             }
         }
 
-        function updateMicButton() {
-            const micBtn = document.getElementById('mic-btn');
-            if (isListening) {
-                micBtn.classList.add('listening');
-                micBtn.innerHTML = '🔴';
-            } else {
-                micBtn.classList.remove('listening');
-                micBtn.innerHTML = '🎤';
-            }
-        }
 
         function updateStatus(message) {
             document.getElementById('status').textContent = message;
@@ -1052,7 +1058,6 @@ if (summary) {
             
 
             // Reset microphone button
-            updateMicButton();
             updateStatus("Ready to start a new session!");
         }
 
