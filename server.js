@@ -83,7 +83,8 @@ if (regex.test(lowerText)) {
   return { inappropriate: false };
 }
 
-function getTutorSystemPrompt(grade, studentName) {
+
+function getTutorSystemPrompt(grade, studentName, session = null) {
   const basePrompt = `
 You are an AI Tutor for ${studentName}. Your job: teach students to THINK, not just memorize! 
 Keep replies short, simple, and step-by-step. 
@@ -116,11 +117,10 @@ Instead, reply in JSON format like this:
 Pick any age-appropriate word you want for each turn.
 `.trim();
 
-
+// Fix: Only access session properties if session exists
 const paceInstruction = session?.conversationPatterns?.preferredPace === 'fast' 
   ? `${studentName} likes to respond quickly and might interrupt - keep responses shorter and more direct.`
   : `Give ${studentName} time to process and respond.`;
-
 
   const examples = `
 Examples:
@@ -137,11 +137,11 @@ Stay positive, focused, and always teach the process!
     '1': 'Easy words, encourage trying. 1–2 sentences.',
     '2': 'Build confidence, simple steps. 2 sentences.',
     '3': 'A bit more detail, still brief. 2–3 sentences.',
-    '4': 'Explain clearly, don’t ramble. 2–3 sentences.',
+    '4': 'Explain clearly, don\'t ramble. 2–3 sentences.',
     '5': 'Good explanations, stay on topic. 3 sentences.',
     '6': 'A little more complex, still short. 3–4 sentences.',
     '7': 'Focused and clear. 3–4 sentences.',
-    '8': 'Explain in detail, don’t overwhelm. 3–4 sentences.',
+    '8': 'Explain in detail, don\'t overwhelm. 3–4 sentences.',
     '9': 'Cover fully, be efficient. 4–5 sentences.',
     '10': 'Thorough, but keep it moving. 4–5 sentences.',
     '11': 'Go in-depth, stay focused. 4–5 sentences.',
@@ -179,10 +179,10 @@ ${gradeGuidelines[grade] || gradeGuidelines['K']}
   `.trim();
 }
 
-
+// Enhanced session structure
 // Enhanced session structure
 function createSession(sessionId, studentName, grade, subjects) {
-    const initialSystemMessageContent = getTutorSystemPrompt(grade, studentName);
+    const initialSystemMessageContent = getTutorSystemPrompt(grade, studentName, null);
     return {
         id: sessionId,
         studentName: studentName || 'Student',
@@ -208,7 +208,6 @@ function createSession(sessionId, studentName, grade, subjects) {
         }
     };
 }
-
 function generateSessionId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
@@ -728,34 +727,28 @@ async function generateAIResponse(sessionId, userMessage) {
   // Keep only last 6 messages to reduce context and cost
   if (session.messages.length > 6) {
     session.messages = session.messages.slice(-6);
-
   }
 
   // Track conversation patterns for personalization
-if (!session.conversationPatterns) {
-  session.conversationPatterns = {
-    averageResponseLength: 0,
-    preferredPace: 'normal',
-    interruptionCount: 0,
-    lastResponseTime: Date.now()
-  };
-}
+  if (!session.conversationPatterns) {
+    session.conversationPatterns = {
+      averageResponseLength: 0,
+      preferredPace: 'normal',
+      interruptionCount: 0,
+      lastResponseTime: Date.now()
+    };
+  }
 
+  // Detect if this might be an interruption (quick response)
+  const timeSinceLastResponse = Date.now() - session.conversationPatterns.lastResponseTime;
+  if (timeSinceLastResponse < 5000) { // Less than 5 seconds
+    session.conversationPatterns.interruptionCount++;
+    session.conversationPatterns.preferredPace = 'fast';
+  }
 
-// Detect if this might be an interruption (quick response)
-const timeSinceLastResponse = Date.now() - session.conversationPatterns.lastResponseTime;
-if (timeSinceLastResponse < 5000) { // Less than 5 seconds
-  session.conversationPatterns.interruptionCount++;
-  session.conversationPatterns.preferredPace = 'fast';
-}
+  session.conversationPatterns.lastResponseTime = Date.now();
 
-session.conversationPatterns.lastResponseTime = Date.now();
-
-  
-
-  const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName);
-
-  
+  const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName, session);
   
   const conversationHistoryForAI = session.messages
     .filter(m => m.role !== 'system')
