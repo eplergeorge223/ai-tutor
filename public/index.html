@@ -465,22 +465,29 @@
                 }
             });
         }
-
-// 1) A helper that only starts recognition when it isn’t already running
+// 1) Only start recognition if it isn’t already running
 function safeStartRecognition() {
-  if (state.recognition && !state.isListening) {
+  if (!state.isListening && state.recognition) {
     try {
       state.recognition.start();
     } catch (e) {
-      console.warn('Recognition start error:', e);
+      console.warn("Couldn't start recognition:", e);
     }
   }
 }
 
-// 2) Updated speakWithPromise to use safeStartRecognition after speaking
+// 2) Speak once per full response, and restart recognition afterwards
 function speakWithPromise(text) {
   return new Promise(resolve => {
-    if (state.speechSynthesis.speaking) state.speechSynthesis.cancel();
+    if (state.speechSynthesis.speaking) {
+      state.speechSynthesis.cancel();
+    }
+
+    // stop recognition while the tutor is talking
+    if (state.isListening) {
+      try { state.recognition.stop(); } catch {}
+      state.isListening = false;
+    }
 
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 0.8;
@@ -488,15 +495,14 @@ function speakWithPromise(text) {
     utter.volume = 1.0;
     if (state.selectedVoice) utter.voice = state.selectedVoice;
 
-    utter.onstart = () => {
-      showLiveCaption(text, 'bot');
-    };
-    utter.onend = () => {
+    utter.onstart = () => showLiveCaption(text, 'bot');
+    utter.onend   = () => {
       hideLiveCaption();
+      // small delay so we don't pick up our own voice
       setTimeout(() => {
         safeStartRecognition();
         resolve();
-      }, 500);  // small pause so it doesn’t pick up its own voice
+      }, 300);
     };
     utter.onerror = () => resolve();
 
@@ -672,18 +678,18 @@ function speakWithPromise(text) {
             }
         }
 
-// 3) handleUserInput with proper SSE parsing (no “{data}” tokens) and try/catch/finally
+// 3) Fetch the full streamed reply, then speak it in one go
 async function handleUserInput(input) {
   if (state.isProcessing || !state.sessionStarted) return;
 
+  // stop listening immediately
   if (state.isListening) {
-    try { state.recognition.stop(); }
-    catch (e) { console.warn('Recognition stop error:', e); }
+    try { state.recognition.stop(); } catch {}
     state.isListening = false;
   }
 
   state.isProcessing = true;
-  updateStatus("Processing your request...");
+  updateStatus("Processing your request…");
   addToConversation('user', input);
 
   try {
@@ -692,49 +698,44 @@ async function handleUserInput(input) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ sessionId: state.currentSessionId, message: input })
     });
-    if (!res.ok) throw new Error('Network error');
+    if (!res.ok) throw new Error("Network error");
 
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '', fullText = '';
+    let   chunk, done;
+    let   fullText = "";
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split('\n\n');
-      buffer = parts.pop();  // keep remainder
-
-      for (let part of parts) {
-        if (part.startsWith('data:')) {
-          const chunk = part.slice(5).trim();
-          if (chunk === '[DONE]') break;
-          fullText += chunk;
-          await speakWithPromise(chunk);
-        }
-      }
+    // accumulate every chunk
+    while (({ value: chunk, done } = await reader.read(), !done)) {
+      fullText += decoder.decode(chunk, { stream: true });
     }
+    fullText += decoder.decode(); // flush
 
-    // handle JSON readingWord if early-grade
+    // parse reading-word JSON if present
     let readingWord = null, messageText = fullText.trim();
     try {
-      const j = JSON.parse(messageText);
-      readingWord = j.READING_WORD; messageText = j.message;
+      const parsed = JSON.parse(messageText);
+      readingWord  = parsed.READING_WORD;
+      messageText  = parsed.message;
     } catch {}
 
+    // add to history & display
     if (readingWord) {
       showReadingWordPrompt(messageText, readingWord);
-      addToConversation('tutor', messageText + ' (See word above)');
+      addToConversation('tutor', messageText + " (See word above)");
     } else {
       addToConversation('tutor', messageText);
     }
 
     updateDynamicSuggestions(input, messageText);
 
+    // now speak the entire thing at once
+    await speakWithPromise(messageText);
+
   } catch (err) {
-    console.error('handleUserInput error:', err);
+    console.error("handleUserInput error:", err);
     const fb = generateFallbackResponse(input);
-    addToConversation('tutor', fb);
+    addToConversation("tutor", fb);
     await speakWithPromise(fb);
 
   } finally {
