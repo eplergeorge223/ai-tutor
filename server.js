@@ -98,6 +98,12 @@ Keep replies short, simple, and step-by-step, always appropriate for a ${grade} 
 -   **Positive & Patient Tone:** Maintain an upbeat, supportive, and understanding tone. If the student is struggling or gives an incorrect answer, be gentle, rephrase the question, or offer a new approach.
 -   **Redirect Gently:** If the student asks something off-topic or inappropriate, gently but firmly redirect them back to an educational topic using the pre-defined safe responses. Never engage with non-educational or personal matters.
 
+**How to Encourage Deeper Thinking (NEW):**
+-   **Ask "Why":** After an answer, ask "Why do you think that?" or "Can you explain how you got that idea?"
+-   **Connect Concepts:** "How does this connect to what we learned about [related topic]?" or "Where else might you see this idea?"
+-   **Prompt for Examples:** "Can you give me an example of that?" or "How would you use that in real life?"
+-   **Encourage Elaboration:** "Tell me more about that idea." or "What else comes to mind?"
+
 **How to Respond When a Student Struggles or Says "I Don't Know":**
 -   **Rephrase:** Try asking the question in a different way.
 -   **Break It Down:** Divide a complex problem into simpler parts. "Let's try a smaller piece of that first."
@@ -174,7 +180,6 @@ ${examples}
 ${gradeGuidelines[grade] || gradeGuidelines['K']}
     `.trim();
 }
-
 // Enhanced session structure
 function createSession(sessionId, studentName, grade, subjects) {
     const initialSystemMessageContent = getTutorSystemPrompt(grade, studentName);
@@ -185,14 +190,14 @@ function createSession(sessionId, studentName, grade, subjects) {
         subjects: subjects || [],
         startTime: new Date(),
         lastActivity: Date.now(),
-        messages: [{ role: 'system', content: initialSystemMessageContent, timestamp: new Date() }], // Pre-populate with system message
+        messages: [{ role: 'system', content: initialSystemMessageContent, timestamp: new Date() }],
         totalWarnings: 0,
         topicsDiscussed: new Set(),
         currentTopic: null,
-        topicBreakdown: {}, 
+        topicBreakdown: {},
         conversationContext: [],
         achievements: [],
-        strugglingAreas: [],
+        strugglingAreas: new Map(), // NEW: Map to store { topic: count_of_struggles }
         preferredLearningStyle: null,
         sessionNotes: []
     };
@@ -701,11 +706,20 @@ function generateRecommendations(session) {
 
 // Generate next steps for continued learning
 function generateNextSteps(session) {
-    // If there’s a specific struggle, address it
-    if (session.strugglingAreas && session.strugglingAreas.length > 0) {
-        // Use only the most recent or most frequent
-        const lastStruggle = session.strugglingAreas[session.strugglingAreas.length - 1];
-        return [`You could use some extra practice on ${lastStruggle}. Let's focus more on this next time.`];
+    const nextSteps = [];
+
+    // Prioritize addressing areas where the student struggled most
+    if (session.strugglingAreas && session.strugglingAreas.size > 0) {
+        // Sort struggles by count, highest first
+        const sortedStruggles = Array.from(session.strugglingAreas.entries())
+                                    .sort((a, b) => b[1] - a[1]);
+
+        sortedStruggles.forEach(([topic, count]) => {
+            if (count > 1) { // Only suggest if struggled more than once
+                 nextSteps.push(`You seemed to have some questions about ${capitalize(topic)}. Let's review that next time!`);
+            }
+        });
+        if (nextSteps.length > 0) return nextSteps; // If we have specific struggles, use those
     }
 
     // Otherwise, use main subtopic (most discussed)
@@ -730,92 +744,113 @@ function generateNextSteps(session) {
 }
 
 async function generateAIResponse(sessionId, userMessage) {
-  const session = sessions.get(sessionId);
-  if (!session) throw new Error('Session not found');
+    const session = sessions.get(sessionId);
+    if (!session) throw new Error('Session not found');
 
-  session.messages.push({
-    role: 'user',
-    content: userMessage,
-    timestamp: new Date()
-  });
+    // --- NEW: Heuristic for detecting struggle ---
+    const lowerUserMessage = userMessage.toLowerCase();
+    const isStrugglePhrase = lowerUserMessage.includes("i don't know") ||
+                             lowerUserMessage.includes("i'm stuck") ||
+                             lowerUserMessage.includes("i am stuck") ||
+                             lowerUserMessage.includes("it's hard") ||
+                             lowerUserMessage.includes("this is hard");
 
-  // Keep only last 6 messages to reduce context and cost
-  if (session.messages.length > 6) {
-    session.messages = session.messages.slice(-6);
-  }
+    if (isStrugglePhrase && session.currentTopic) {
+        // Increment struggle count for the current topic
+        const currentStruggleCount = session.strugglingAreas.get(session.currentTopic) || 0;
+        session.strugglingAreas.set(session.currentTopic, currentStruggleCount + 1);
+        console.log(`💡 Session ${sessionId.slice(-6)}: Detected struggle in topic "${session.currentTopic}". Count: ${currentStruggleCount + 1}`);
+    }
+    // --- END NEW HEURISTIC ---
 
-  const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName);
-  
-  const conversationHistoryForAI = session.messages
-    .filter(m => m.role !== 'system')
-    .slice(-4); // Only last 4 exchanges
+    session.messages.push({
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date()
+    });
 
-  const messagesToSendToAI = [
-    { role: 'system', content: systemPromptContent },
-    ...conversationHistoryForAI.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }))
-  ];
-
-  try {
-    // Much more aggressive token limits
-    let maxTokens = getMaxTokensForGrade(session.grade);
-    
-    // Only allow longer responses for explicit story requests
-    const lowerMessage = userMessage.toLowerCase();
-    if (lowerMessage.includes('tell me a story') || lowerMessage.includes('story about')) {
-      maxTokens = Math.min(maxTokens * 2, 300); // Cap even stories
+    // ... (rest of your generateAIResponse function) ...
+    // Keep only last 6 messages to reduce context and cost
+    if (session.messages.length > 6) {
+        session.messages = session.messages.slice(-6);
     }
 
-    const completion = await openai.chat.completions.create({
-      model: config.GPT_MODEL,
-      messages: messagesToSendToAI,
-      max_tokens: maxTokens,
-      temperature: config.GPT_TEMPERATURE,
-      presence_penalty: config.GPT_PRESENCE_PENALTY,
-      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      // Add stop sequences to prevent rambling (max 4 allowed)
-      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
-    });
+    const systemPromptContent = getTutorSystemPrompt(session.grade, session.studentName);
 
-    // ---- FIX IS HERE ----
-    const aiText = completion.choices[0].message.content.trim();
+    const conversationHistoryForAI = session.messages
+        .filter(m => m.role !== 'system')
+        .slice(-4); // Only last 4 exchanges
 
-    // Add AI response to session
-    session.messages.push({
-      role: 'assistant',
-      content: aiText,
-      timestamp: new Date()
-    });
+    const messagesToSendToAI = [
+        { role: 'system', content: systemPromptContent },
+        ...conversationHistoryForAI.map(msg => ({
+            role: msg.role,
+            content: msg.content
+        }))
+    ];
 
-    const subject = classifySubject(userMessage);
-    const encouragement = generateEncouragement(session);
+    try {
+        // Much more aggressive token limits
+        let maxTokens = getMaxTokensForGrade(session.grade);
 
-    return {
-      text: aiText,
-      subject: subject,
-      encouragement: encouragement
-    };
+        // Only allow longer responses for explicit story requests
+        // (This logic might conflict with "shorten sentences" slightly, consider its impact)
+        const lowerMessage = userMessage.toLowerCase();
+        if (lowerMessage.includes('tell me a story') || lowerMessage.includes('story about')) {
+            maxTokens = Math.min(maxTokens * 2, 300); // Cap even stories
+        }
 
-  } catch (error) {
-    console.error(`❌ AI API Error for session ${sessionId.slice(-6)}:`, error.message);
-    
-    const fallbackResponse = generateShortFallback(userMessage, session);
-    session.messages.push({
-      role: 'assistant',
-      content: fallbackResponse,
-      timestamp: new Date()
-    });
+        const completion = await openai.chat.completions.create({
+            model: config.GPT_MODEL,
+            messages: messagesToSendToAI,
+            max_tokens: maxTokens,
+            temperature: config.GPT_TEMPERATURE,
+            presence_penalty: config.GPT_PRESENCE_PENALTY,
+            frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+            // Add stop sequences to prevent rambling (max 4 allowed)
+            stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
+        });
 
-    return {
-      text: fallbackResponse,
-      subject: classifySubject(userMessage),
-      encouragement: generateEncouragement(session)
-    };
-  }
+        const aiText = completion.choices[0].message.content.trim();
+
+        // Add AI response to session
+        session.messages.push({
+            role: 'assistant',
+            content: aiText,
+            timestamp: new Date()
+        });
+
+        const { subject, subtopic } = classifySubject(userMessage); // Re-run classification for current message
+        // Update currentTopic based on the user's message classification, if a subject is found
+        if (subject) {
+            session.currentTopic = subject;
+        }
+
+        const encouragement = generateEncouragement(session);
+
+        return {
+            text: aiText,
+            subject: subject, // Return the subject identified from the user message
+            encouragement: encouragement
+        };
+
+    } catch (error) {
+        console.error(`❌ AI API Error for session ${sessionId.slice(-6)}:`, error.message);
+
+        const fallbackResponse = generateShortFallback(userMessage, session);
+        session.messages.push({
+            role: 'assistant',
+            content: fallbackResponse,
+            timestamp: new Date()
+        });
+
+        return {
+            text: fallbackResponse,
+            subject: classifySubject(userMessage),
+            encouragement: generateEncouragement(session)
+        };
+    }
 }
-
 
 function getMaxTokensForGrade(grade) {
   const gradeLevel = parseInt(grade) || 0;
