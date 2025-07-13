@@ -635,10 +635,15 @@ function showLiveCaption(text, role) {
                         utterance.voice = selectedVoice;
                     }
                     
-                    utterance.onstart = () => {
-                        showLiveCaption(text);
-                    };
-                    
+utterance.onstart = () => {
+   showLiveCaption(text);
+   showLiveCaption(text);
+   // As soon as tutor starts talking, begin listening for student interjections
+   if (!isListening) {
+     try { recognition.start(); }
+     catch(e){ console.warn('Recognition start error:',e); }
+   }
+};
 utterance.onend = () => {
 
   document.getElementById('live-captions').classList.add('hidden');
@@ -678,7 +683,7 @@ if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
 
 
             recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = false;
+            recognition.continuous = true; 
             recognition.interimResults = true;
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 1;
@@ -697,25 +702,16 @@ recognition.onend = () => {
 
 recognition.onresult = (event) => {
     let transcript = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-        transcript += event.results[i][0].transcript;
-    }
-    // Show live, whether interim or final
+    // build transcript...
+    // BEFORE you call handleUserInput, cancel any ongoing TTS
+   if (speechSynthesis.speaking) {
+     speechSynthesis.cancel();    // cut off the tutor
+  }
+    // existing code:
     document.getElementById('live-captions').textContent = transcript;
-    document.getElementById('live-captions').classList.remove('hidden');
-
-    // If it's final (user stopped speaking)
+    // ...
     if (event.results[event.results.length - 1].isFinal) {
-        if (transcript.trim().length > 0 && !isProcessing) {
-            handleUserInput(transcript.trim());
-        } else if (!isProcessing) {
-            updateStatus("I didn't catch that clearly. Please try speaking again!");
-        }
-        // Hide caption after handling (or keep for a second if you want)
-setTimeout(() => {
-    document.getElementById('live-captions').classList.add('hidden');
-}, 600);
-
+        handleUserInput(transcript.trim());
     }
 };
 
