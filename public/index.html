@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -730,6 +729,25 @@
 
             const tutorInterface = $('tutor-interface');
             tutorInterface.insertBefore(container, tutorInterface.children[2]);
+        }
+
+        // Text cleaning function to remove data artifacts
+        function cleanResponseText(text) {
+            // Remove common streaming artifacts
+            text = text.replace(/^data[.\s]*/, ''); // Remove "data." at start
+            text = text.replace(/data[.\s]*$/g, ''); // Remove "data." at end
+            text = text.replace(/\bdata\b[.\s]*/g, ''); // Remove standalone "data" words
+            text = text.replace(/\s+/g, ' '); // Normalize whitespace
+            text = text.trim();
+            
+            // Remove any remaining artifacts that might be chunked data
+            text = text.replace(/^[^a-zA-Z]*/, ''); // Remove non-letter characters at start
+            text = text.replace(/[^.!?]*$/, function(match) {
+                // Only remove if it's clearly not a complete sentence
+                return match.length < 3 ? '' : match;
+            });
+            
+            return text;
         }
 
         // Main Functions
