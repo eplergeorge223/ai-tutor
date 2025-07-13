@@ -160,143 +160,127 @@
         .tutor-message { background: rgba(33, 150, 243, 0.2); margin-right: 1rem; }
         .hidden { display: none; }
         
+        .reading-word-display {
+            font-size: 3.2rem;
+            letter-spacing: 0.15em;
+            background: linear-gradient(90deg,#fff8,#fffb);
+            color: #764ba2;
+            padding: 1.1rem 3.4rem;
+            border-radius: 1.1em;
+            box-shadow: 0 4px 30px rgba(33,150,243,0.18);
+            font-weight: 900;
+            border: 3px solid #eee;
+            margin: 1rem 0;
+        }
+
         /* Flashcard Styles */
         .flashcard-container {
             perspective: 1000px;
-            margin: 2rem auto;
-            width: 350px;
-            height: 200px;
-            position: relative;
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        
+
         .flashcard {
-            width: 100%;
-            height: 100%;
+            width: 400px;
+            height: 250px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s;
             cursor: pointer;
         }
-        
+
         .flashcard.flipped {
             transform: rotateY(180deg);
         }
-        
-        .flashcard-front,
-        .flashcard-back {
+
+        .flashcard-face {
             position: absolute;
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            background: white;
             border-radius: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: #333;
-            border: 2px solid #ddd;
-        }
-        
-        .flashcard-back {
-            transform: rotateY(180deg);
-        }
-        
-        .flashcard-content {
+            justify-content: center;
             font-size: 2.5rem;
             font-weight: bold;
-            color: #2c3e50;
             text-align: center;
-            line-height: 1.2;
+            padding: 2rem;
+            border: 3px solid #ddd;
         }
-        
-        .flashcard-type {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 0.9rem;
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
+            color: #333;
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4f1d4 100%);
+            color: #2e7d32;
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-prompt {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
             color: #666;
             font-weight: normal;
         }
-        
-        .flashcard-hint {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            color: #888;
+
+        .flashcard-content {
+            font-size: 3rem;
+            color: #333;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .flashcard-back .flashcard-content {
+            color: #2e7d32;
+        }
+
+        .flashcard-instruction {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
             font-style: italic;
         }
-        
-        .flashcard-controls {
-            margin-top: 1rem;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        .flashcard-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
+
+        /* Speech indicators */
+        .speech-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             padding: 0.5rem 1rem;
             border-radius: 20px;
-            cursor: pointer;
             font-size: 0.9rem;
-            transition: all 0.3s ease;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
-        
-        .flashcard-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-1px);
-        }
-        
-        /* Input area for student responses */
-        .input-area {
-            margin: 2rem 0;
-        }
-        
-        .input-box {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 15px;
-            padding: 1rem;
+
+        .speech-indicator.listening {
+            background: rgba(76, 175, 80, 0.9);
             color: white;
-            font-size: 1.1rem;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
+            opacity: 1;
         }
-        
-        .input-box::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .submit-btn {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            border: none;
+
+        .speech-indicator.speaking {
+            background: rgba(33, 150, 243, 0.9);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-left: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 1;
         }
         
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             h2 { font-size: 1.5rem; }
             .btn { padding: 0.75rem 1.5rem; font-size: 1rem; }
-            .flashcard-container { width: 300px; height: 180px; }
+            .flashcard { width: 300px; height: 200px; }
             .flashcard-content { font-size: 2rem; }
         }
     </style>
@@ -345,33 +329,29 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="glass-panel status" id="status">Ready to start! Click 'Start Learning' above.</div>
+            <div class="glass-panel status" id="status">Getting ready to learn...</div>
             
-            <!-- Flashcard Display -->
+            <div id="reading-word-container" class="hidden">
+                <div class="reading-word-display" id="reading-word"></div>
+            </div>
+
+            <!-- Flashcard Container -->
             <div id="flashcard-container" class="flashcard-container hidden">
                 <div class="flashcard" id="flashcard" onclick="flipCard()">
-                    <div class="flashcard-front">
-                        <div class="flashcard-type" id="flashcard-type-front">Math</div>
-                        <div class="flashcard-content" id="flashcard-front-content">2 + 2</div>
-                        <div class="flashcard-hint">Click to flip</div>
+                    <div class="flashcard-face flashcard-front">
+                        <div>
+                            <div class="flashcard-prompt" id="flashcard-prompt">Question:</div>
+                            <div class="flashcard-content" id="flashcard-front-content"></div>
+                        </div>
                     </div>
-                    <div class="flashcard-back">
-                        <div class="flashcard-type" id="flashcard-type-back">Answer</div>
-                        <div class="flashcard-content" id="flashcard-back-content">4</div>
-                        <div class="flashcard-hint">Click to flip back</div>
+                    <div class="flashcard-face flashcard-back">
+                        <div>
+                            <div class="flashcard-prompt">Answer:</div>
+                            <div class="flashcard-content" id="flashcard-back-content"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="flashcard-controls">
-                    <button class="flashcard-btn" onclick="flipCard()">Flip Card</button>
-                    <button class="flashcard-btn" onclick="nextCard()">Next Question</button>
-                    <button class="flashcard-btn" onclick="hideFlashcard()">Hide Card</button>
-                </div>
-            </div>
-            
-            <!-- Input Area (Optional - voice is primary) -->
-            <div class="input-area">
-                <input type="text" id="user-input" class="input-box" placeholder="Or type your message here..." onkeypress="handleKeyPress(event)" />
-                <button class="submit-btn" onclick="submitInput()">Send</button>
+                <div class="flashcard-instruction">Click the card to flip it!</div>
             </div>
             
             <button class="btn btn-warning" onclick="showHistory()">View Chat History</button>
@@ -388,6 +368,9 @@
         <!-- Live Captions -->
         <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
 
+        <!-- Speech Indicator -->
+        <div id="speech-indicator" class="speech-indicator">Listening...</div>
+
         <!-- Chat History Modal -->
         <div id="chat-history-modal" class="modal hidden">
             <div class="modal-content">
@@ -403,6 +386,7 @@
         const state = {
             listening: false,
             processing: false,
+            speaking: false,
             sessionStarted: false,
             sessionId: null,
             recognition: null,
@@ -410,7 +394,9 @@
             selectedVoice: null,
             chatHistory: [],
             currentSubject: null,
-            currentFlashcard: null
+            currentFlashcard: null,
+            flashcardFlipped: false,
+            speechQueue: []
         };
 
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
@@ -422,7 +408,19 @@
         const hideElement = id => $(id).classList.add('hidden');
         const addToHistory = (sender, message) => state.chatHistory.push({sender, message});
         
-        // Enhanced speech synthesis with better voice selection
+        // Speech indicator
+        function showSpeechIndicator(type) {
+            const indicator = $('speech-indicator');
+            indicator.className = `speech-indicator ${type}`;
+            indicator.textContent = type === 'listening' ? 'Listening...' : 'Speaking...';
+        }
+
+        function hideSpeechIndicator() {
+            const indicator = $('speech-indicator');
+            indicator.className = 'speech-indicator';
+        }
+
+        // Enhanced speech synthesis with queue management
         async function initSpeech() {
             return new Promise(resolve => {
                 const selectVoice = () => {
@@ -445,33 +443,58 @@
             });
         }
         
-        // Enhanced TTS that resumes listening after speaking
+        // Enhanced TTS with better flow control
         function speak(text, type = 'bot') {
             return new Promise(resolve => {
-                if (state.synthesis.speaking) state.synthesis.cancel();
+                // Cancel any ongoing speech
+                if (state.synthesis.speaking) {
+                    state.synthesis.cancel();
+                }
+                
+                // Stop listening while speaking
+                if (state.listening && state.recognition) {
+                    state.recognition.stop();
+                }
+                
+                state.speaking = true;
+                showSpeechIndicator('speaking');
                 
                 setTimeout(() => {
                     const utterance = new SpeechSynthesisUtterance(text);
                     Object.assign(utterance, {
-                        rate: 0.8,
+                        rate: 0.85,
                         pitch: 1.0,
                         volume: 1.0,
                         voice: state.selectedVoice
                     });
                     
-                    utterance.onstart = () => showCaption(text, type);
+                    utterance.onstart = () => {
+                        showCaption(text, type);
+                        state.speaking = true;
+                    };
+                    
                     utterance.onend = () => {
+                        state.speaking = false;
+                        hideSpeechIndicator();
                         hideElement('live-captions');
-                        // Resume listening after tutor finishes speaking
-                        if (state.sessionStarted && !state.processing) {
+                        
+                        // Resume listening after a brief pause
+                        if (state.sessionStarted) {
                             setTimeout(() => {
-                                updateStatus("I'm ready to listen!");
-                                startListening();
+                                if (!state.processing && !state.speaking) {
+                                    updateStatus("I'm ready to listen...");
+                                    startListening();
+                                }
                             }, 500);
                         }
                         resolve();
                     };
-                    utterance.onerror = resolve;
+                    
+                    utterance.onerror = () => {
+                        state.speaking = false;
+                        hideSpeechIndicator();
+                        resolve();
+                    };
                     
                     state.synthesis.speak(utterance);
                 }, 100);
@@ -484,50 +507,234 @@
             caption.textContent = text;
             caption.className = `live-captions ${type}-caption`;
             showElement('live-captions');
-            if (type === 'user') setTimeout(() => hideElement('live-captions'), 2000);
+            if (type === 'user') {
+                setTimeout(() => hideElement('live-captions'), 2000);
+            }
         }
         
-        // Flashcard functions
-        function showFlashcard(frontContent, backContent, type = 'Math') {
-            state.currentFlashcard = { frontContent, backContent, type };
+        // Streamlined speech recognition with better flow
+        function initRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
+                return false;
+            }
             
-            $('flashcard-front-content').textContent = frontContent;
-            $('flashcard-back-content').textContent = backContent;
-            $('flashcard-type-front').textContent = type;
-            $('flashcard-type-back').textContent = 'Answer';
+            state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            Object.assign(state.recognition, {
+                continuous: true,
+                interimResults: true,
+                lang: 'en-US',
+                maxAlternatives: 1
+            });
             
-            // Reset to front side
+            state.recognition.onstart = () => {
+                state.listening = true;
+                showSpeechIndicator('listening');
+                updateStatus("I'm listening! Go ahead and speak.");
+            };
+            
+            state.recognition.onend = () => {
+                state.listening = false;
+                hideSpeechIndicator();
+                
+                // Auto-restart if we should still be listening
+                if (state.sessionStarted && !state.processing && !state.speaking) {
+                    setTimeout(() => startListening(), 1000);
+                }
+            };
+            
+            state.recognition.onresult = (event) => {
+                const result = event.results[event.resultIndex][0];
+                const transcript = result.transcript.trim();
+                const confidence = result.confidence;
+
+                // Show live caption
+                showCaption(transcript, 'user');
+
+                // Process final results
+                if (event.results[event.resultIndex].isFinal && !state.processing) {
+                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
+                    
+                    if (isNoise) {
+                        updateStatus("Sorry, I didn't catch that. Please try again.");
+                        setTimeout(() => hideElement('live-captions'), 1000);
+                    } else {
+                        // Stop current speech if user interrupts
+                        if (state.speaking) {
+                            state.synthesis.cancel();
+                            state.speaking = false;
+                        }
+                        
+                        // Stop listening during processing
+                        if (state.listening) {
+                            state.recognition.stop();
+                        }
+                        
+                        handleUserInput(transcript);
+                    }
+                }
+            };
+            
+            state.recognition.onerror = event => {
+                state.processing = false;
+                state.listening = false;
+                hideSpeechIndicator();
+                
+                const errorMsg = {
+                    'no-speech': "I didn't hear anything. Please try again.",
+                    'audio-capture': "Couldn't access microphone. Check permissions.",
+                    'not-allowed': "Microphone access denied. Please enable it.",
+                    'network': "Network error. Check your connection.",
+                    'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
+                }[event.error] || "Please try speaking again!";
+                
+                updateStatus(errorMsg);
+                
+                // Restart listening after error
+                if (state.sessionStarted && !state.processing && !state.speaking) {
+                    setTimeout(() => startListening(), 2000);
+                }
+            };
+            
+            return true;
+        }
+        
+        function startListening() {
+            if (state.recognition && !state.listening && !state.processing && !state.speaking) {
+                try { 
+                    state.recognition.start(); 
+                } catch (e) { 
+                    console.warn('Recognition start error:', e); 
+                }
+            }
+        }
+        
+        // Enhanced flashcard functions
+        function showFlashcard(data) {
+            const { prompt, front, back } = data;
+            
+            $('flashcard-prompt').textContent = prompt || 'Question:';
+            $('flashcard-front-content').textContent = front;
+            $('flashcard-back-content').textContent = back;
+            
+            // Reset card to front
             $('flashcard').classList.remove('flipped');
+            state.flashcardFlipped = false;
+            state.currentFlashcard = data;
+            
             showElement('flashcard-container');
+            hideElement('reading-word-container');
         }
-        
+
         function flipCard() {
-            $('flashcard').classList.toggle('flipped');
+            const card = $('flashcard');
+            card.classList.toggle('flipped');
+            state.flashcardFlipped = !state.flashcardFlipped;
+            
+            // After flipping to see the answer, automatically continue after a delay
+            if (state.flashcardFlipped) {
+                setTimeout(() => {
+                    hideFlashcard();
+                    if (state.sessionStarted && !state.processing && !state.speaking) {
+                        updateStatus("Great! What would you like to learn next?");
+                        startListening();
+                    }
+                }, 3000); // Give 3 seconds to read the answer
+            }
         }
-        
-        function nextCard() {
-            hideFlashcard();
-            handleUserInput('Give me another question');
-        }
-        
+
         function hideFlashcard() {
             hideElement('flashcard-container');
             state.currentFlashcard = null;
+            state.flashcardFlipped = false;
+        }
+
+        // Enhanced function to detect if AI response contains a question that should show a flashcard
+        function shouldShowFlashcard(response) {
+            const questionPatterns = [
+                /what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+)/i,
+                /what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+\s*[\+\-\*\/]\s*\d+)/i,
+                /sound\s+out\s+.*word\s+["""](\w+)["""]/i,
+                /spell\s+.*word\s+["""](\w+)["""]/i,
+                /what\s+letter\s+comes\s+after\s+(\w)/i,
+                /what\s+comes\s+next\s+in\s+the\s+sequence/i,
+                /what\s+is\s+the\s+capital\s+of\s+(\w+)/i,
+                /how\s+do\s+you\s+spell\s+(\w+)/i,
+                /what\s+does\s+(\w+)\s+mean/i
+            ];
+            
+            return questionPatterns.some(pattern => pattern.test(response));
+        }
+
+        // Enhanced function to extract question and answer from AI response
+        function extractFlashcardData(response) {
+            // Math problems
+            const mathMatch = response.match(/what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+(?:\s*[\+\-\*\/]\s*\d+)*)/i);
+            if (mathMatch) {
+                const problem = mathMatch[1];
+                try {
+                    const answer = eval(problem.replace(/\s/g, ''));
+                    return {
+                        prompt: "What is...",
+                        front: problem,
+                        back: answer.toString()
+                    };
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            // Sound out word
+            const soundMatch = response.match(/sound\s+out\s+.*word\s+["""](\w+)["""]/i);
+            if (soundMatch) {
+                const word = soundMatch[1].toLowerCase();
+                const soundedOut = word.split('').join('-');
+                return {
+                    prompt: "Sound out the word:",
+                    front: word,
+                    back: soundedOut
+                };
+            }
+            
+            // Spelling
+            const spellMatch = response.match(/(?:spell|how\s+do\s+you\s+spell)\s+.*["""]?(\w+)["""]?/i);
+            if (spellMatch) {
+                const word = spellMatch[1].toLowerCase();
+                const spelled = word.split('').join('-');
+                return {
+                    prompt: "Spell the word:",
+                    front: word,
+                    back: spelled.toUpperCase()
+                };
+            }
+            
+            // Letter sequence
+            const letterMatch = response.match(/what\s+letter\s+comes\s+after\s+(\w)/i);
+            if (letterMatch) {
+                const letter = letterMatch[1].toUpperCase();
+                const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+                return {
+                    prompt: "What letter comes after:",
+                    front: letter,
+                    back: nextLetter
+                };
+            }
+            
+            return null;
         }
         
-        // Input handling
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                submitInput();
-            }
-        }
-        
-        function submitInput() {
-            const input = $('user-input').value.trim();
-            if (input) {
-                $('user-input').value = '';
-                handleUserInput(input);
-            }
+        // Enhanced reading word display
+        function showReadingWord(prompt, word) {
+            const container = $('reading-word-container');
+            const wordDisplay = $('reading-word');
+            
+            wordDisplay.innerHTML = `
+                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">${prompt}</div>
+                <div>${word}</div>
+            `;
+            
+            showElement('reading-word-container');
+            hideElement('flashcard-container');
         }
         
         // Streamlined user input handling
@@ -553,13 +760,21 @@
                 
                 const data = await response.json();
                 
-                // Handle flashcard display
-                if (data.flashcard) {
-                    showFlashcard(data.flashcard.front, data.flashcard.back, data.flashcard.type || 'Question');
+                // Check if we should show a flashcard based on the AI's response
+                const flashcardData = data.flashcard || extractFlashcardData(data.response);
+                
+                // Handle different response types
+                if (flashcardData) {
+                    showFlashcard(flashcardData);
                     await speak(data.response);
                     addToHistory('tutor', data.response + ' (See flashcard above)');
+                } else if (data.readingWord) {
+                    showReadingWord(data.response, data.readingWord);
+                    await speak(data.response);
+                    addToHistory('tutor', data.response + ' (See word above)');
                 } else {
-                    hideFlashcard();
+                    hideElement('reading-word-container');
+                    hideElement('flashcard-container');
                     await speak(data.response);
                     addToHistory('tutor', data.response);
                 }
@@ -573,28 +788,22 @@
                 await speak(fallback);
             } finally {
                 state.processing = false;
-                updateStatus("Ready for your next message!");
+                updateStatus("Ready for your next question!");
             }
         }
         
         function generateFallback(input) {
             const patterns = {
-                math: "I love math! Let's work on this together. What's 5 + 3?",
+                math: "I love math! Let's work on this together.",
                 read: "Reading is so much fun! What stories do you enjoy?",
                 animal: "Animals are amazing! Do you have a favorite?",
                 default: "That sounds interesting! Tell me more about what you're thinking."
             };
             
             const key = Object.keys(patterns).find(k => input.toLowerCase().includes(k)) || 'default';
-            const response = patterns[key];
-            
-            // Show a sample flashcard for math questions
-            if (key === 'math') {
-                showFlashcard('5 + 3', '8', 'Math');
-            }
-            
-            return response;
+            return patterns[key];
         }
+        
         
         // Session management
         async function startTutoring() {
@@ -678,16 +887,13 @@
         
         function startNewSession() {
             state.synthesis.cancel();
-            if (state.listening) state.recognition.stop();
-            
             Object.assign(state, {
                 sessionId: null,
                 processing: false,
                 sessionStarted: false,
                 listening: false,
                 chatHistory: [],
-                currentSubject: null,
-                currentFlashcard: null
+                currentSubject: null
             });
             
             hideElement('session-summary');
@@ -717,6 +923,10 @@
         window.onload = async function() {
             console.log('🚀 AI Tutor loading...');
             await initSpeech();
+            
+            // Initialize default suggestions
+            updateSuggestions('', 'Welcome');
+            
             console.log('✅ AI Tutor ready!');
         };
     </script>
