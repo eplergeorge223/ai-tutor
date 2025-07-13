@@ -556,13 +556,12 @@
                 if (event.results[event.resultIndex].isFinal && !state.processing) {
                     const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
                     
-                    // Enhanced filtering for educational content
-                    const isEducational = /\b(what|how|tell|explain|teach|learn|math|read|spell|calculate|solve|question|help|show|where|when|why|who)\b/i.test(transcript);
-                    const isDirectedAtTutor = /\b(tutor|teacher|hey|hi|hello|can you|please|I need|I want)\b/i.test(transcript) || transcript.endsWith('?');
-                    
-                    if (isNoise || (!isEducational && !isDirectedAtTutor)) {
-                        updateStatus("I'm listening for learning questions! Try asking 'What is 2+2?' or 'Teach me about...'");
-                        setTimeout(() => hideElement('live-captions'), 2000);
+// Much more flexible - allow most conversational input
+const isValidInput = transcript.length >= 3 && !isNoise;
+
+if (!isValidInput) {
+    updateStatus("I didn't catch that. Try speaking a little louder!");
+    setTimeout(() => hideElement('live-captions'), 2000);
                     } else {
                         // Stop current speech if user interrupts
                         if (state.speaking) {
@@ -797,18 +796,35 @@
             }
         }
         
-        function generateFallback(input) {
-            const patterns = {
-                math: "I love math! Let's work on this together.",
-                read: "Reading is so much fun! What stories do you enjoy?",
-                animal: "Animals are amazing! Do you have a favorite?",
-                default: "That sounds interesting! Tell me more about what you're thinking."
-            };
-            
-            const key = Object.keys(patterns).find(k => input.toLowerCase().includes(k)) || 'default';
-            return patterns[key];
-        }
-        
+ function generateFallback(input) {
+    const lower = input.toLowerCase();
+    
+    // Handle common 6-year-old topics naturally
+    if (lower.includes('math') || /\d/.test(input)) {
+        return "I love math! Let's work on this together.";
+    }
+    if (lower.includes('read') || lower.includes('book') || lower.includes('story')) {
+        return "Reading is so much fun! Tell me about your favorite books!";
+    }
+    if (lower.includes('animal') || lower.includes('pet') || lower.includes('dog') || lower.includes('cat')) {
+        return "Animals are amazing! Do you have a favorite animal?";
+    }
+    if (lower.includes('color') || lower.includes('draw') || lower.includes('picture')) {
+        return "I love talking about colors and art! Tell me about your favorite color!";
+    }
+    if (lower.includes('game') || lower.includes('play') || lower.includes('fun')) {
+        return "Games are fun! We can play learning games together. Tell me about something that sounds fun to you!";
+    }
+    if (lower.includes('friend') || lower.includes('school') || lower.includes('teacher')) {
+        return "That sounds interesting! Tell me more about that.";
+    }
+    if (lower.includes('mom') || lower.includes('dad') || lower.includes('family')) {
+        return "Family is so important! That sounds nice. Tell me about something you'd like to learn about today!";
+    }
+    
+    // Default friendly response that gently guides toward learning
+    return "That's really interesting! I love chatting with you. Is there anything you'd like to learn about or explore together?";
+}
         
         // Session management
         async function startTutoring() {
