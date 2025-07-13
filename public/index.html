@@ -466,52 +466,64 @@
             });
         }
 
-        function speakWithPromise(text) {
-            return new Promise(resolve => {
-                if (state.speechSynthesis.speaking) {
-                    state.speechSynthesis.cancel();
-                }
-
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.rate = 0.8;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    
-                    if (state.selectedVoice) {
-                        utterance.voice = state.selectedVoice;
-                    }
-                    
-                    utterance.onstart = () => {
-                        showLiveCaption(text, 'bot');
-                        if (!state.isListening) {
-                            try { state.recognition.start(); }
-                            catch(e) { console.warn('Recognition start error:', e); }
-                        }
-                    };
-
-                    utterance.onend = () => {
-                        hideLiveCaption();
-                        if (state.sessionStarted && !state.isListening) {
-                            updateStatus("Listening for your response…");
-                            try { state.recognition.start(); }
-                            catch(e) { console.warn('Recognition start error:', e); }
-                        }
-                        resolve();
-                    };
-
-                    utterance.onerror = () => resolve();
-                    
-                    try {
-                        state.speechSynthesis.speak(utterance);
-                    } catch (error) {
-                        console.error('Speech synthesis error:', error);
-                        resolve();
-                    }
-                }, 100);
-            });
+function speakWithPromise(text) {
+    return new Promise(resolve => {
+        if (state.speechSynthesis.speaking) {
+            state.speechSynthesis.cancel();
         }
 
+        // Stop any active recognition while speaking
+        if (state.isListening && state.recognition) {
+            try {
+                state.recognition.stop();
+                state.isListening = false;
+            } catch (e) {
+                console.warn('Recognition stop error:', e);
+            }
+        }
+
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.8;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            if (state.selectedVoice) {
+                utterance.voice = state.selectedVoice;
+            }
+            
+            utterance.onstart = () => {
+                showLiveCaption(text, 'bot');
+                state.isListening = false; // Ensure we're not listening during speech
+            };
+
+            utterance.onend = () => {
+                hideLiveCaption();
+                // Add a delay before starting to listen again
+                setTimeout(() => {
+                    if (state.sessionStarted && !state.isListening && !state.isProcessing) {
+                        updateStatus("Listening for your response…");
+                        try { 
+                            state.recognition.start();
+                        } catch(e) { 
+                            console.warn('Recognition start error:', e); 
+                        }
+                    }
+                }, 1000); // 1 second delay to prevent picking up own voice
+                resolve();
+            };
+
+            utterance.onerror = () => resolve();
+            
+            try {
+                state.speechSynthesis.speak(utterance);
+            } catch (error) {
+                console.error('Speech synthesis error:', error);
+                resolve();
+            }
+        }, 100);
+    });
+}
         function initializeSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
                 updateStatus("Sorry, your browser doesn't support speech recognition. Try Chrome or Edge!");
@@ -532,22 +544,36 @@
                 state.isListening = false;
             };
 
-            state.recognition.onresult = (event) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                
-                if (state.speechSynthesis.speaking) {
-                    state.speechSynthesis.cancel();
-                }
-                
-                showLiveCaption(transcript, 'user');
-                
-                if (event.results[event.results.length - 1].isFinal) {
-                    handleUserInput(transcript.trim());
-                }
-            };
+ state.recognition.onresult = (event) => {
+    let transcript = '';
+    let confidence = 0;
+    
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+        confidence = Math.max(confidence, event.results[i][0].confidence);
+    }
+    
+    // Stop the AI from speaking if user starts talking
+    if (state.speechSynthesis.speaking) {
+        state.speechSynthesis.cancel();
+    }
+    
+    showLiveCaption(transcript, 'user');
+    
+    // Only process if it's a final result, has decent confidence, and isn't too short
+    if (event.results[event.results.length - 1].isFinal) {
+        const cleanTranscript = transcript.trim();
+        
+        // Filter out very short or low-confidence results that might be noise
+        if (cleanTranscript.length >= 3 && confidence > 0.5) {
+            handleUserInput(cleanTranscript);
+        } else {
+            console.log('Filtered out low-confidence or short input:', cleanTranscript, 'confidence:', confidence);
+            hideLiveCaption();
+        }
+    }
+};
+
 
             state.recognition.onerror = (event) => {
                 state.isProcessing = false;
@@ -571,6 +597,25 @@
             captions.textContent = text;
             captions.className = `live-captions ${type}-caption show`;
         }
+
+        function startListening() {
+    if (!state.sessionStarted || state.isListening || state.isProcessing) {
+        return;
+    }
+    
+    try {
+        state.recognition.start();
+        updateStatus("Listening for your response…");
+    } catch (error) {
+        console.warn('Could not start recognition:', error);
+        // Try again after a short delay
+        setTimeout(() => {
+            if (!state.isListening && !state.isProcessing) {
+                startListening();
+            }
+        }, 500);
+    }
+}
 
         function hideLiveCaption() {
             const captions = $('live-captions');
@@ -648,61 +693,71 @@
             }
         }
 
-        async function handleUserInput(input) {
-            if (state.isProcessing || !state.sessionStarted) return;
+ async function handleUserInput(input) {
+    if (state.isProcessing || !state.sessionStarted) return;
 
-            state.isProcessing = true;
-            updateStatus("Processing your request...");
-
-            addToConversation('user', input);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: state.currentSessionId,
-                        message: input,
-                        context: {}
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to get response');
-
-                const data = await response.json();
-                let tutorResponse = data.response;
-
-                // Handle reading word display
-                if (!data.readingWord) {
-                    const existing = $('reading-word-prompt');
-                    if (existing) existing.remove();
-                }
-
-                if (data.readingWord) {
-                    showReadingWordPrompt(tutorResponse, data.readingWord);
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse + ' (See word above)');
-                } else {
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse);
-                }
-
-                if (data.subject) {
-                    state.currentSubject = data.subject;
-                }
-
-                updateDynamicSuggestions(input, tutorResponse);
-
-            } catch (error) {
-                console.error('Error getting response:', error);
-                const fallbackResponse = generateFallbackResponse(input);
-                addToConversation('tutor', fallbackResponse);
-                await speakWithPromise(fallbackResponse);
-            } finally {
-                state.isProcessing = false;
-                updateStatus("Continue our conversation!");
-            }
+    // Stop listening immediately when processing starts
+    if (state.isListening) {
+        try {
+            state.recognition.stop();
+            state.isListening = false;
+        } catch (e) {
+            console.warn('Recognition stop error:', e);
         }
+    }
+
+    state.isProcessing = true;
+    updateStatus("Processing your request...");
+
+    addToConversation('user', input);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: state.currentSessionId,
+                message: input,
+                context: {}
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to get response');
+
+        const data = await response.json();
+        let tutorResponse = data.response;
+
+        // Handle reading word display
+        if (!data.readingWord) {
+            const existing = $('reading-word-prompt');
+            if (existing) existing.remove();
+        }
+
+        if (data.readingWord) {
+            showReadingWordPrompt(tutorResponse, data.readingWord);
+            await speakWithPromise(tutorResponse);
+            addToConversation('tutor', tutorResponse + ' (See word above)');
+        } else {
+            await speakWithPromise(tutorResponse);
+            addToConversation('tutor', tutorResponse);
+        }
+
+        if (data.subject) {
+            state.currentSubject = data.subject;
+        }
+
+        updateDynamicSuggestions(input, tutorResponse);
+
+    } catch (error) {
+        console.error('Error getting response:', error);
+        const fallbackResponse = generateFallbackResponse(input);
+        addToConversation('tutor', fallbackResponse);
+        await speakWithPromise(fallbackResponse);
+    } finally {
+        state.isProcessing = false;
+        updateStatus("Continue our conversation!");
+    }
+}
 
         function updateDynamicSuggestions(userInput, tutorResponse) {
             const suggestionGrid = $('suggestion-grid');
