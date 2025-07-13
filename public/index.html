@@ -26,13 +26,17 @@
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border;
+            box-sizing: border-box; /* Crucial for preventing unexpected scrollbars */
+        }
+
+        html, body {
+            height: 100%; /* Ensures full height for flexbox to work */
+            overflow: hidden; /* **DEFINITIVE FIX: Prevents main body scrollbar** */
         }
 
         body {
             font-family: 'Quicksand', sans-serif; /* More modern and friendly */
             background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
-            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -45,12 +49,37 @@
             text-align: center;
             max-width: 850px; /* Slightly wider container */
             width: 100%;
+            height: 100%; /* Ensure container fills available height from body */
+            display: flex; /* Use flexbox for inner layout */
+            flex-direction: column; /* Stack children vertically */
+            /* justify-content: center; Removed: child elements will manage their vertical space */
             padding: 2rem; /* Increased padding */
             background: rgba(255, 255, 255, 0.08); /* Subtle background for the whole container */
             border-radius: var(--border-radius-lg);
             box-shadow: var(--shadow-strong);
             backdrop-filter: blur(12px); /* Stronger blur */
+            overflow-y: auto; /* **Allow content inside container to scroll if it truly overflows its height, but the body won't** */
         }
+        
+        /* Flex children to prevent overflow, especially on smaller screens */
+        #welcome-screen, #tutor-interface, #session-summary {
+            flex-shrink: 0; /* Prevent them from shrinking too much */
+            flex-grow: 1; /* Allow them to grow if space permits */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center content vertically within each section */
+            align-items: center;
+            padding: 1rem 0; /* Add some internal padding */
+            width: 100%; /* Ensure they take full width */
+        }
+        /* Override justify-content for tutor-interface and session-summary
+           to push content to the top within their flex container,
+           allowing scroll if needed, rather than centering everything */
+        #tutor-interface, #session-summary {
+            justify-content: flex-start; /* Aligns content to the start (top) */
+            padding-top: 0; /* Adjust as needed, but 0 might give more space */
+        }
+
 
         .mascot {
             font-size: 5rem; /* Larger mascot */
@@ -86,7 +115,7 @@
             margin-bottom: 1.5rem;
         }
 
-        .student-info, .session-summary { /* Removed .suggestions */
+        .student-info, .session-summary-card { /* Renamed .session-summary for clarity to avoid conflict with main div */
             background: var(--bg-card-light);
             padding: 2.2rem; /* Consistent padding */
             border-radius: var(--border-radius-md);
@@ -94,6 +123,8 @@
             backdrop-filter: blur(8px);
             box-shadow: var(--shadow-medium);
             border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+            width: 100%; /* Make info card take full width */
+            max-width: 500px; /* Limit its max width */
         }
 
         .form-group {
@@ -120,7 +151,6 @@
             color: var(--text-light);
             font-size: 1.1rem;
             width: 100%;
-            max-width: 350px; /* Slightly wider input */
             outline: none;
             transition: all var(--transition-speed);
         }
@@ -182,6 +212,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0; /* Prevent mic button from shrinking */
         }
 
         .voice-button.listening {
@@ -208,6 +239,8 @@
             align-items: center;
             justify-content: center;
             font-weight: 500;
+            width: 100%; /* Ensure status takes full width */
+            flex-shrink: 0; /* Prevent it from shrinking */
         }
 
         .end-session-btn {
@@ -218,20 +251,18 @@
             color: var(--text-light);
             box-shadow: var(--shadow-light);
             margin: 1.2rem;
+            flex-shrink: 0; /* Prevent button from shrinking */
         }
-
-        /* Removed .suggestions h3, .suggestion-grid, .suggestion-item CSS */
 
         .voice-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 1.5rem;
+            flex-shrink: 0; /* Prevent controls from shrinking */
         }
 
         .live-captions {
-            /* Changed from fixed to absolute to avoid interfering with layout,
-               but still positioned relative to the viewport */
             position: fixed; 
             bottom: 6vh; /* Higher position */
             left: 50%;
@@ -264,7 +295,6 @@
             padding: 0.8rem 2.2rem;
             font-size: 1.2rem;
             box-shadow: var(--shadow-light);
-            /* margin-top: 2rem; Removed from here as it's now in .summary-actions */
             display: inline-block; /* Make it respect margin auto */
         }
 
@@ -285,6 +315,7 @@
             justify-content: center;
             align-items: center;
             z-index: 2000; /* Higher than live captions */
+            overflow: hidden; /* Prevent modal itself from scrolling if content overflows */
         }
 
         .modal-content {
@@ -293,11 +324,27 @@
             border-radius: var(--border-radius-lg);
             padding: 2.5rem;
             max-width: 650px; /* Slightly wider modal */
-            max-height: 90vh; /* Taller modal */
+            width: 90%; /* Responsive width */
+            max-height: 90vh; /* Taller modal, limit to viewport height */
             box-shadow: var(--shadow-strong);
             border: 1px solid rgba(0,0,0,0.1);
             position: relative; /* For close button positioning */
-            overflow-y: auto; /* Enable scrolling for history */
+            display: flex; /* Use flexbox for modal content */
+            flex-direction: column; /* Stack header, content vertically */
+        }
+        
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--primary-gradient-end); /* Match theme for modal heading */
+            text-shadow: none; /* No text shadow in modal */
+        }
+
+        #full-chat-history {
+            flex-grow: 1; /* Allow chat history to take available space */
+            overflow-y: auto; /* Enable scrolling for history INSIDE the modal */
+            padding-right: 10px; /* Add padding for scrollbar */
+            margin-bottom: 1rem; /* Space before potential end */
         }
 
         .close-btn {
@@ -325,6 +372,8 @@
             padding: 0.8rem 1.2rem;
             border-radius: 12px; /* More rounded */
             font-size: 1rem;
+            word-wrap: break-word; /* Ensure long words wrap */
+            overflow-wrap: break-word; /* For newer browsers */
         }
 
         .user-message {
@@ -341,10 +390,12 @@
 
         .session-summary {
             text-align: left;
-            padding: 2.5rem;
+            /* Removed padding from here, it's now on session-summary-card */
             display: flex; /* Use flexbox for summary content */
             flex-direction: column; /* Stack items vertically */
             align-items: center; /* Center horizontally */
+            width: 100%; /* Take full width of parent flex container */
+            max-width: 100%; /* Don't exceed parent */
         }
 
         .session-summary h2 {
@@ -356,6 +407,9 @@
         #summary-content {
             width: 100%; /* Ensure content takes full width */
             margin-bottom: 2rem; /* Space between summary items and buttons */
+            flex-grow: 1; /* Allow summary content to grow */
+            overflow-y: auto; /* Allow summary content to scroll if needed */
+            padding-right: 10px; /* Add padding for scrollbar */
         }
 
         .summary-item {
@@ -373,6 +427,7 @@
             gap: 1rem;
             width: 100%;
             max-width: 350px; /* Control max width of buttons */
+            flex-shrink: 0; /* Prevent actions from shrinking */
         }
         .summary-actions .start-button,
         .summary-actions .history-btn {
@@ -393,6 +448,8 @@
             flex-direction: column;
             align-items: center;
             gap: 1.5rem;
+            flex-shrink: 0; /* Prevent prompt from shrinking */
+            width: 100%; /* Ensure it takes full width */
         }
 
         #reading-word-prompt-display div:first-child {
@@ -426,6 +483,9 @@
 
         /* Responsive Adjustments */
         @media (max-width: 768px) {
+            body {
+                padding: 1rem; /* Less padding on smaller screens */
+            }
             .container {
                 padding: 1.5rem;
             }
@@ -441,14 +501,13 @@
                 font-size: 1.4rem;
             }
             .status { font-size: 1.1rem; padding: 1rem; }
-            .student-info, .session-summary { /* Removed .suggestions */
+            .student-info, .session-summary-card {
                 padding: 1.8rem;
             }
             .form-group input, .form-group select {
                 padding: 0.8rem 1rem;
                 font-size: 1rem;
             }
-            /* Removed .suggestion-grid, .suggestion-item responsive CSS */
             .live-captions {
                 font-size: 1.2rem;
                 padding: 1rem 1.8rem;
@@ -468,6 +527,9 @@
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
             .container {
                 padding: 1rem;
             }
@@ -487,7 +549,6 @@
                 font-size: 0.9rem;
                 min-height: 2.5rem;
             }
-            /* Removed .suggestion-item responsive CSS */
             .live-captions {
                 font-size: 1rem;
                 padding: 0.8rem 1.5rem;
@@ -501,6 +562,11 @@
             .session-summary .history-btn {
                 max-width: 200px; /* Even smaller buttons on very small screens */
             }
+            .close-btn {
+                font-size: 2rem;
+                top: 10px;
+                right: 15px;
+            }
         }
     </style>
 </head>
@@ -511,8 +577,7 @@
             <h1>Hi! I'm your AI Tutor!</h1>
             <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
             
-            <div class="student-info">
-                <div class="form-group">
+            <div class="student-info session-summary-card"> <div class="form-group">
                     <label for="student-name">Name</label>
                     <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
                 </div>
@@ -552,15 +617,15 @@
                 <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
                 <button class="end-session-btn" onclick="endSession()">End Session</button>
             </div>
-
-            </div>
+        </div>
 
         <div id="session-summary" class="session-summary hidden">
-            <h2>Session Complete! 🎉</h2>
-            <div id="summary-content"></div>
-            <div class="summary-actions">
-                <button class="start-button" onclick="startNewSession()">Start New Session</button>
-                <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+            <div class="session-summary-card"> <h2>Session Complete! 🎉</h2>
+                <div id="summary-content"></div>
+                <div class="summary-actions">
+                    <button class="start-button" onclick="startNewSession()">Start New Session</button>
+                    <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+                </div>
             </div>
         </div>
 
@@ -666,21 +731,17 @@
 
             // Create a new prompt container
             const container = document.createElement('div');
-            container.id = 'reading-word-prompt-display'; // Changed ID to avoid conflict with initial DOM lookup
-            // CSS for this is now handled in the <style> block directly
-
-            // Prompt text
+            container.id = 'reading-word-prompt-display'; 
+            
             const promptDiv = document.createElement('div');
             promptDiv.textContent = prompt;
 
-            // The BIG word display
             const wordDiv = document.createElement('div');
             wordDiv.textContent = word;
 
             container.appendChild(promptDiv);
             container.appendChild(wordDiv);
 
-            // Update DOM reference for dynamic element
             readingWordPromptElement = container;
 
             // Insert at the top of tutor interface, after h2
@@ -806,7 +867,6 @@
                 if (!appState.isProcessing) {
                     updateStatus("Press the microphone to continue our conversation!");
                 }
-                // hideLiveCaption(); // This was the old call, now it's done within the result/error handler
             };
 
             recognition.onresult = (event) => {
@@ -989,7 +1049,8 @@
                 await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
 
                 showSessionSummary(summaryData);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Error during session end or summary retrieval:', error);
                 showSessionSummary(null); // Show generic summary if API fails
             }
