@@ -408,88 +408,120 @@ function generateSafeSuggestions(grade) {
   return currentSuggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
+// --- Updated generateDynamicSuggestions function ---
 function generateDynamicSuggestions(session) {
-    // Get the last 3 user messages with topic/subtopic context
-    const ctx = (session.conversationContext || []).slice(-5); // recent context
-    const recentUser = ctx.filter(e => e.role === 'user');
-    const lastUser = recentUser[recentUser.length - 1] || {};
-    const topic = lastUser.topic || session.currentTopic || null;
-    const subtopic = lastUser.subtopic || null;
+    const ctx = (session.conversationContext || []).slice(-5); // Get recent context (last 5 entries)
+    const recentUserMessages = ctx.filter(e => e.role === 'user');
+    const lastUserMessage = recentUserMessages[recentUserMessages.length - 1] || {};
 
-    // Super basic "struggling" detection: 2+ repeated questions or same topic
-    const struggling = recentUser.length >= 2 &&
-        recentUser[recentUser.length-1].topic === recentUser[recentUser.length-2].topic &&
-        recentUser[recentUser.length-1].subtopic === recentUser[recentUser.length-2].subtopic;
+    const currentTopic = lastUserMessage.topic || session.currentTopic || null;
+    const currentSubtopic = lastUserMessage.subtopic || null;
 
-    // Examples for core subjects
-    if (topic === 'math') {
-        if (subtopic === 'addition') {
-            if (struggling) return [
-                "Want to review some addition tips together?",
-                "Need help with addition? Try using your fingers or objects around you!",
-                "Let’s slow down and try a different example."
-            ];
+    // Simple heuristic for "struggling": repeated questions on the same subtopic, or very short/vague answers
+    // This is an estimation, not a perfect measure.
+    const isStruggling = recentUserMessages.length >= 2 &&
+                         recentUserMessages[recentUserMessages.length - 1].topic === recentUserMessages[recentUserMessages.length - 2].topic &&
+                         recentUserMessages[recentUserMessages.length - 1].subtopic === recentUserMessages[recentUserMessages.length - 2].subtopic &&
+                         (lastUserMessage.message.toLowerCase().includes("i don't know") || lastUserMessage.message.length < 5);
+
+
+    // Suggestions for when a student might be struggling on the current topic
+    if (isStruggling && currentTopic) {
+        if (currentTopic === 'math') {
             return [
-                "Ready to try a harder addition problem?",
-                "Want to switch to subtraction for a bit?",
-                "Curious how addition works with bigger numbers?"
-            ];
-        }
-        if (subtopic === 'multiplication') {
+                `Let's try a simpler ${currentSubtopic || 'math'} problem, ${session.studentName}!`,
+                `How about we use some objects to help us with this ${currentSubtopic || 'math'} concept?`,
+                `It's okay to feel stuck! Let's review the steps together.`,
+                `Want to try a different type of math problem for a bit?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3); // Shuffle and pick 3
+        } else if (currentTopic === 'reading') {
             return [
-                "Want a quick times table game?",
-                "Ready for a real-world multiplication problem?",
-                "Switch to division for a challenge?"
-            ];
+                `Let's try sounding out words together, ${session.studentName}!`,
+                `How about we read a very short story first?`,
+                `It's tricky sometimes! Let's look at the pictures for clues.`,
+                `Want to practice some letter sounds instead?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'science') {
+            return [
+                `Let's think about a simpler example of ${currentSubtopic || 'science'}, ${session.studentName}.`,
+                `How about we watch a short video about this, if you have one handy?`, // Suggest external if applicable
+                `It's like a puzzle! What's one small piece we know for sure?`,
+                `Want to explore a different science topic for a bit?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
         }
-        // ... more subtopics
-        return [
-            "Want a math puzzle?",
-            "Switch to a different math topic?",
-            "Try a quick math quiz?"
-        ];
+        // Add more struggling suggestions for other subjects
     }
-    if (topic === 'reading') {
-        if (subtopic === 'vocabulary') {
+
+    // Suggestions based on the current topic (if not struggling or if no specific struggle suggestions)
+    if (currentTopic) {
+        if (currentTopic === 'math') {
             return [
-                "Want to learn new words?",
-                "Try using those words in a sentence?",
-                "Want to read a short story?"
-            ];
+                `Ready for another fun math challenge?`,
+                `Want to try a different kind of math, like shapes or counting?`,
+                `How about a math riddle, ${session.studentName}?`,
+                `What's your favorite math game?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'reading') {
+            return [
+                `Want to read another word with me?`,
+                `Should we find the main idea in a short paragraph?`,
+                `How about a quick story, ${session.studentName}?`,
+                `What's your favorite kind of book?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'science') {
+            return [
+                `What other amazing things are there to learn about ${currentSubtopic || 'science'}?`,
+                `Want to imagine a mini science experiment?`,
+                `How about we learn about a different animal or planet?`,
+                `What big science question do you have today?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'socialStudies') {
+            return [
+                `What's something interesting about history you want to know?`,
+                `Ready to learn about a new country?`,
+                `How about we talk about how communities work?`,
+                `What makes a good citizen, ${session.studentName}?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'art') {
+            return [
+                `What's your favorite color to draw with?`,
+                `Want to learn about a famous artist?`,
+                `How about we imagine making a sculpture?`,
+                `What's a fun way to be creative today?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'music') {
+            return [
+                `What's your favorite song, ${session.studentName}?`,
+                `Want to learn about different musical instruments?`,
+                `How about we make a rhythm together?`,
+                `What's a fun way to make music?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'pe') {
+            return [
+                `What's your favorite game to play outside, ${session.studentName}?`,
+                `Want to learn about staying healthy and strong?`,
+                `How about we think about different sports?`,
+                `What's a fun way to move your body?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'technology') {
+            return [
+                `What's your favorite thing to do on a computer, ${session.studentName}?`,
+                `Want to learn how robots work?`,
+                `How about we talk about staying safe online?`,
+                `What's a cool new invention you've heard about?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
+        } else if (currentTopic === 'language') {
+            return [
+                `Want to learn a new word in another language?`,
+                `How about we practice saying hello in Spanish?`,
+                `What's a fun way to learn new words, ${session.studentName}?`,
+                `Can you tell me about a word you just learned?`
+            ].sort(() => 0.5 - Math.random()).slice(0, 3);
         }
-        return [
-            "Want to read together?",
-            "Need help with tricky words?",
-            "Switch to a fun story?"
-        ];
     }
-    if (topic === 'science') {
-        if (subtopic === 'animals') {
-            return [
-                "Want to learn about a different animal?",
-                "Curious about animal habitats?",
-                "How about animal adaptations?"
-            ];
-        }
-        if (subtopic === 'space') {
-            return [
-                "Want to learn about planets?",
-                "How about stars and galaxies?",
-                "What about astronauts and rockets?"
-            ];
-        }
-        return [
-            "Try a science experiment at home?",
-            "Explore another science topic?",
-            "Ask a big science question!"
-        ];
-    }
-    // Fallback/general
-    return [
-        "Pick a new topic to explore!",
-        "Ask me anything!",
-        "Want a fun learning game?"
-    ];
+
+    // General fallback if no specific topic or struggle identified
+    return getGeneralSuggestions(session.grade).sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
 // Get general suggestions based on grade level
@@ -943,21 +975,55 @@ function classifySubject(input) {
 
 // Generate encouragement based on session progress
 function generateEncouragement(session) {
-  const encouragements = [
-    `You're doing great, ${session.studentName}!`,
-    `I love how curious you are!`,
-    `Keep up the excellent thinking!`,
-    `You're such a good learner!`,
-    `I'm proud of how hard you're working!`,
-    `Your questions show you're really thinking!`,
-    `You're making excellent progress!`,
-    `I can see you're really engaged in learning!`
-  ];
+    const recentMessages = session.messages.slice(-4); // Look at last 4 messages for context
+    const lastAIMessage = recentMessages.findLast(m => m.role === 'assistant'); // Find the most recent AI message
+    const lastUserMessage = recentMessages.findLast(m => m.role === 'user'); // Find the most recent user message
 
- 
-  return encouragements[Math.floor(Math.random() * encouragements.length)];
+    // Very basic "success" heuristic: user's last message was not "I don't know" and relatively positive/longer
+    const userSeemsSuccessful = lastUserMessage && 
+                                !lastUserMessage.content.toLowerCase().includes("i don't know") &&
+                                !lastUserMessage.content.toLowerCase().includes("stuck") &&
+                                lastUserMessage.content.length > 5;
+
+    // Very basic "struggle" heuristic: user explicitly said "I don't know" or very short/vague response
+    const userSeemsToStruggle = lastUserMessage && 
+                                (lastUserMessage.content.toLowerCase().includes("i don't know") || 
+                                 lastUserMessage.content.toLowerCase().includes("stuck") || 
+                                 lastUserMessage.content.length < 5);
+
+    if (userSeemsSuccessful) {
+        const successEncouragements = [
+            `That's brilliant thinking, ${session.studentName}!`,
+            `Wow, you're really getting the hang of this!`,
+            `Fantastic job, ${session.studentName}!`,
+            `You figured it out! High five!`,
+            `Your hard work is really paying off!`
+        ];
+        return successEncouragements[Math.floor(Math.random() * successEncouragements.length)];
+    } else if (userSeemsToStruggle) {
+        const struggleEncouragements = [
+            `It's okay to take your time, ${session.studentName}. Learning can be tricky sometimes!`,
+            `Don't worry, we'll get it together! What's your best guess?`,
+            `Learning is all about trying, ${session.studentName}! What's one tiny step we can take?`,
+            `You're thinking so hard, and that's what matters!`,
+            `This is a fun challenge! Let's break it down.`
+        ];
+        return struggleEncouragements[Math.floor(Math.random() * struggleEncouragements.length)];
+    } else {
+        // General encouragements
+        const generalEncouragements = [
+            `You're doing great, ${session.studentName}!`,
+            `I love how curious you are!`,
+            `Keep up the excellent thinking!`,
+            `You're such a good learner!`,
+            `I'm proud of how hard you're working!`,
+            `Your questions show you're really thinking!`,
+            `You're making excellent progress!`,
+            `I can see you're really engaged in learning!`
+        ];
+        return generalEncouragements[Math.floor(Math.random() * generalEncouragements.length)];
+    }
 }
-
 // Generate contextual fallback responses
 function generateContextualFallback(input, session) {
   const fallbacks = [
