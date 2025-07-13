@@ -345,6 +345,15 @@ if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
 
     const response = await generateAIResponse(sessionId, message.trim()); // No 'context' param
 
+    // Add AI response to conversation context
+session.conversationContext.push({
+  role: 'assistant',
+  message: response.text,
+  topic: response.subject?.subject || null,
+  subtopic: response.subject?.subtopic || null,
+  timestamp: Date.now()
+});
+
     const aiContentCheck = containsInappropriateContent(response.text);
 if (aiContentCheck.inappropriate) {
   session.totalWarnings = (session.totalWarnings || 0) + 1;
@@ -360,7 +369,9 @@ if (aiContentCheck.inappropriate) {
 }
 
     // Track topics and learning patterns
-const { subject, subtopic } = classifySubject(message);
+const subjectInfo = classifySubject(message);
+const subject = subjectInfo.subject;
+const subtopic = subjectInfo.subtopic;
 if (subject) {
   session.topicsDiscussed.add(subject);
   session.currentTopic = subject;
@@ -379,6 +390,11 @@ if (subject) {
   subtopic: subtopic,
   timestamp: Date.now()
 });
+
+
+
+// Also add the AI response to context after we get it
+
 
 
 
