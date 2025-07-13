@@ -5,6 +5,16 @@ require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
+const leven = require('leven');
+
+// Build a “vocabulary” of all known tutor words
+const VOCABULARY = [
+  // all subject keywords
+  ...Object.values(config.SUBJECTS).flat(),
+  // plus any extra curriculum words you care about
+  'painting','reading','algebra','geometry','fraction','biology','physics','history','government'
+  // ← you can extend this list as you spot new mis-hearings
+];
 // --- Unified Configuration ---
 const config = {
   PORT: process.env.PORT || 3000,
@@ -67,16 +77,49 @@ const classifySubject = (input) => {
 
 const getMaxTokens = (grade) => {
   const level = parseInt(grade) || 0;
-  return level <= 2 ? 50 : level <= 5 ? 75 : level <= 8 ? 100 : 125;
+  return level <= 2 ? 40
+       : level <= 5 ? 60
+       : level <= 8 ? 80
+       : 100;
 };
 
+/**
+ * For each word in the user’s input, find the VOCABULARY entry
+ * with the smallest Levenshtein distance ≤ 2 and swap it.
+ */
+function fuzzyCorrect(text) {
+  return text
+    .split(/\s+/)
+    .map(word => {
+      let best = {w: word, d: Infinity};
+      for (const cand of VOCABULARY) {
+        const dist = leven(word.toLowerCase(), cand.toLowerCase());
+        if (dist < best.d) best = {w: cand, d: dist};
+      }
+      return best.d <= 2 ? best.w : word;
+    })
+    .join(' ');
+}
+
+
+
 const getTutorPrompt = (grade, name) => {
-  const responseLength = {
-    'PreK': '1 sentence max', 'K': '1-2 sentences', '1': '1-2 sentences', '2': '2 sentences',
-    '3': '2-3 sentences', '4': '2-3 sentences', '5': '3 sentences', '6': '3-4 sentences',
-    '7': '3-4 sentences', '8': '3-4 sentences', '9': '4-5 sentences', '10': '4-5 sentences',
-    '11': '4-5 sentences', '12': '4-5 sentences'
-  };
+const responseLength = {
+  'PreK': '1 sentence max',
+  'K':   '1 sentence max',
+  '1':   '1 sentence max',
+  '2':   '1 sentence max',
+  '3':   '1-2 sentences',
+  '4':   '1-2 sentences',
+  '5':   '2 sentences max',
+  '6':   '2 sentences max',
+  '7':   '2 sentences max',
+  '8':   '2 sentences max',
+  '9':   '2-3 sentences',
+  '10':  '2-3 sentences',
+  '11':  '2-3 sentences',
+  '12':  '2-3 sentences'
+};
 
   const readingInstruction = ['PreK', 'K', '1', '2'].includes(grade) ? 
     'For reading activities, reply in JSON: {"message": "Can you read this word?", "READING_WORD": "cat"}' : '';
@@ -153,6 +196,7 @@ app.post('/api/session/start', (req, res) => {
   }
 });
 
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
@@ -168,7 +212,18 @@ app.post('/api/chat', async (req, res) => {
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
     
-    const cleanedMessage = message.trim();
+    let cleanedMessage = fuzzyCorrect(message.trim());
+
+
+// special-case “can you hear me”
+if (/^can you hear me\??$/i.test(cleanedMessage)) {
+  return res.json({
+    response: 'Yes! I can hear you loud and clear.',
+    suggestions: [],
+    status: 'success'
+  });
+}
+
     
     // Handle thinking pauses
     if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
