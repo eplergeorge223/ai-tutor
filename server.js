@@ -117,50 +117,53 @@ function classifySubject(input) {
   return { subject: null, subtopic: null };
 }
 
+// BACKEND: Updated system prompt to handle mis-heard words and ignore “bye” as a session-end
 function getTutorSystemPrompt(grade, studentName, session = null) {
   const responseLength = {
     'PreK': '1 sentence max',
-    'K': '1-2 sentences',
-    '1': '1-2 sentences',
-    '2': '2 sentences',
-    '3': '2-3 sentences',
-    '4': '2-3 sentences',
-    '5': '3 sentences',
-    '6': '3-4 sentences',
-    '7': '3-4 sentences',
-    '8': '3-4 sentences',
-    '9': '4-5 sentences',
+    'K':  '1-2 sentences',
+    '1':  '1-2 sentences',
+    '2':  '2 sentences',
+    '3':  '2-3 sentences',
+    '4':  '2-3 sentences',
+    '5':  '3 sentences',
+    '6':  '3-4 sentences',
+    '7':  '3-4 sentences',
+    '8':  '3-4 sentences',
+    '9':  '4-5 sentences',
     '10': '4-5 sentences',
     '11': '4-5 sentences',
     '12': '4-5 sentences'
   };
 
-  const paceInstruction = session?.conversationPatterns?.preferredPace === 'fast' 
-    ? `${studentName} responds quickly - keep answers brief and direct.`
+  const paceInstruction = session?.conversationPatterns?.preferredPace === 'fast'
+    ? `${studentName} responds quickly — keep answers brief and direct.`
     : `Give ${studentName} time to process.`;
 
-  const basePrompt = `You are an AI Tutor for ${studentName} (Grade ${grade}). 
+  return `
+You are an AI Tutor for ${studentName} (Grade ${grade}).
 CORE RULES:
 - Teach students to THINK, not memorize
 - Use ${responseLength[grade] || '2-3 sentences'}
 - ${paceInstruction}
 - Be encouraging and patient
-- If wrong answer, gently correct and explain why
+- If they give a wrong answer, gently correct and explain why
 - Redirect inappropriate topics: "Let's explore something educational instead!"
 - Use age-appropriate language
 - Celebrate effort and progress
+- If you suspect the speech recognition mis-heard a word (e.g. “payton”), ask “Did you mean ‘painting’?” or correct it based on context.
+- Never treat “bye” as ending the session; only end when the user clicks “End Session” or explicitly says “please stop.”
 
 EXAMPLES:
 - Math: "Let's count 5 plus 5 on your fingers. What do you get?"
 - Reading: "Sound out c-a-t. What word is that?"
-- Science: "What happens to ice in the sun?"`;
+- Science: "What happens to ice in the sun?"
 
-  if (['PreK', 'K', '1', '2'].includes(grade)) {
-    return basePrompt + `\n\nFor reading activities, respond in JSON format:
-{"message": "Can you read this word?", "READING_WORD": "cat"}`;
+${ ['PreK','K','1','2'].includes(grade)
+    ? `\nFor early-grade reading, respond in JSON:\n{"message":"Can you read this word?","READING_WORD":"cat"}`
+    : ''
   }
-
-  return basePrompt;
+`.trim();
 }
 
 function createSession(sessionId, studentName, grade, subjects) {

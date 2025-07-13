@@ -679,17 +679,17 @@ utterance.onend = () => {
             }
         }
 
+// FRONTEND: handleUserInput with proper try/catch/finally for your streaming fetch
 async function handleUserInput(input) {
   if (state.isProcessing || !state.sessionStarted) return;
 
-  // stop listening…
   if (state.isListening) {
     try {
       state.recognition.stop();
-      state.isListening = false;
     } catch (e) {
       console.warn('Recognition stop error:', e);
     }
+    state.isListening = false;
   }
 
   state.isProcessing = true;
@@ -699,34 +699,34 @@ async function handleUserInput(input) {
   try {
     // — STREAMING FETCH BEGIN —
     const res = await fetch(`${API_BASE_URL}/chat`, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: state.currentSessionId,
-        message: input
-      })
+      body:    JSON.stringify({ sessionId: state.currentSessionId, message: input })
     });
     if (!res.ok) throw new Error('Failed to get response');
 
-    const reader = res.body.getReader();
+    const reader  = res.body.getReader();
     const decoder = new TextDecoder();
-    let done, chunk;
-    let fullResponse = '';
+    let done = false, fullResponse = '';
 
-    while (({ done, value: chunk } = await reader.read(), !done)) {
-      const text = decoder.decode(chunk, { stream: true });
-      fullResponse += text;
-      await speakWithPromise(text.replace(/^data:\s?/, ''));
+    while (!done) {
+      const { value, done: d } = await reader.read();
+      done = d;
+      if (value) {
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+        await speakWithPromise(chunk.replace(/^data:\s?/, ''));
+      }
     }
 
-    // parse final JSON if any
+    // parse JSON if readingWord
     let readingWord = null;
     let messageText = fullResponse.trim();
     try {
       const parsed = JSON.parse(messageText);
       readingWord = parsed.READING_WORD;
       messageText = parsed.message;
-    } catch (_) {}
+    } catch (_) { /* not JSON */ }
 
     if (readingWord) {
       showReadingWordPrompt(messageText, readingWord);
@@ -737,19 +737,14 @@ async function handleUserInput(input) {
 
     updateDynamicSuggestions(input, messageText);
     // — STREAMING FETCH END —
-
-  } catch (error) {
-    console.error('Streaming error in handleUserInput:', error);
+  } catch (err) {
+    console.error('handleUserInput error:', err);
     const fallback = generateFallbackResponse(input);
     addToConversation('tutor', fallback);
     await speakWithPromise(fallback);
   } finally {
     state.isProcessing = false;
-    updateStatus("Listening for your response…");
-    if (state.sessionStarted && !state.isListening) {
-      try { state.recognition.start(); }
-      catch (e) { console.warn('Recognition restart error:', e); }
-    }
+    updateStatus("Continue our conversation!");
   }
 }
 
