@@ -73,7 +73,9 @@
         
         .btn-danger { background: linear-gradient(45deg, #f44336, #d32f2f); }
         .btn-warning { background: linear-gradient(45deg, #ffcc00, #ffa500); color: #333; }
+        .btn-mic { background: linear-gradient(45deg, #2196F3, #1976D2); }
         .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .status {
             font-size: 1.2rem;
@@ -198,6 +200,28 @@
             margin: 1rem 0;
         }
         
+        .voice-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+        
+        .listening-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
         @media (max-width: 768px) {
             .suggestion-grid { grid-template-columns: 1fr; }
             h1 { font-size: 2rem; }
@@ -250,11 +274,13 @@
             <div class="mascot">🤖</div>
             <h2>Let's Learn Together!</h2>
             
-            <div class="glass-panel status" id="status">Click the mic or tap suggestions to start!</div>
+            <div class="glass-panel status" id="status">Click the mic to start talking!</div>
             
             <div id="reading-word-container" class="hidden">
                 <div class="reading-word-display" id="reading-word"></div>
             </div>
+            
+            <button class="btn btn-mic" id="mic-btn" onclick="toggleMic()">🎤 Start Talking</button>
             
             <div class="glass-panel suggestions">
                 <h3>🎯 What sounds fun today?</h3>
@@ -286,7 +312,7 @@
     </div>
 
     <script>
-        // Consolidated state
+        // State management
         const state = {
             listening: false,
             processing: false,
@@ -296,19 +322,24 @@
             synthesis: window.speechSynthesis,
             selectedVoice: null,
             chatHistory: [],
-            currentSubject: null
+            currentSubject: null,
+            waitingForResponse: false,
+            voiceConfidence: 100
         };
 
+        // Update this to match your backend URL
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
         
         // Utility functions
         const $ = id => document.getElementById(id);
-        const updateStatus = msg => $('status').textContent = msg;
+        const updateStatus = msg => {
+            $('status').innerHTML = msg;
+        };
         const showElement = id => $(id).classList.remove('hidden');
         const hideElement = id => $(id).classList.add('hidden');
-        const addToHistory = (sender, message) => state.chatHistory.push({sender, message});
+        const addToHistory = (sender, message) => state.chatHistory.push({sender, message, timestamp: new Date()});
         
-        // Enhanced speech synthesis with better voice selection
+        // Enhanced speech synthesis
         async function initSpeech() {
             return new Promise(resolve => {
                 const selectVoice = () => {
@@ -331,7 +362,7 @@
             });
         }
         
-        // Enhanced TTS with interruption handling
+        // Enhanced TTS with better timing
         function speak(text, type = 'bot') {
             return new Promise(resolve => {
                 if (state.synthesis.speaking) state.synthesis.cancel();
@@ -348,10 +379,6 @@
                     utterance.onstart = () => showCaption(text, type);
                     utterance.onend = () => {
                         hideElement('live-captions');
-                        if (state.sessionStarted && !state.listening) {
-                            updateStatus("Listening for your response…");
-                            startListening();
-                        }
                         resolve();
                     };
                     utterance.onerror = resolve;
@@ -370,7 +397,7 @@
             if (type === 'user') setTimeout(() => hideElement('live-captions'), 2000);
         }
         
-        // Streamlined speech recognition
+        // Speech recognition setup
         function initRecognition() {
             if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
                 updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
@@ -387,103 +414,160 @@
             
             state.recognition.onstart = () => {
                 state.listening = true;
-                updateStatus("I'm listening! Go ahead and speak.");
+                updateStatus("<span class='listening-indicator'></span>I'm listening! Go ahead and speak.");
+                updateMicButton();
             };
             
-            state.recognition.onend = () => state.listening = false;
+            state.recognition.onend = () => {
+                state.listening = false;
+                updateMicButton();
+            };
             
             state.recognition.onresult = (event) => {
-                // Grab the best result
                 const result = event.results[event.resultIndex][0];
                 const transcript = result.transcript.trim();
-                const confidence = result.confidence;
-
-                // Show the live caption
-                const cap = $('live-captions');
-                cap.textContent = transcript;
-                cap.classList.remove('hidden');
-
-                // Only act on final results that are likely real speech
+                
+                showCaption(transcript, 'user');
+                
                 if (event.results[event.resultIndex].isFinal && !state.processing) {
-                    // Filter out low-confidence or too-short snippets
-                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
-                    if (isNoise) {
-                        updateStatus("Sorry, I didn't catch that. Please try again.");
-                    } else {
-                        // If the tutor is still speaking, cut them off
-                        if (state.synthesis.speaking) {
-                            state.synthesis.cancel();
-                        }
-                        handleUserInput(transcript);
+                    // Filter out very short or low-confidence results
+                    if (transcript.length < 2) {
+                        updateStatus("I didn't catch that. Please try again.");
+                        return;
                     }
-
-                    // Hide caption after a brief moment
-                    setTimeout(() => cap.classList.add('hidden'), 600);
+                    
+                    handleUserInput(transcript);
                 }
             };
             
             state.recognition.onerror = event => {
                 state.processing = false;
-                const errorMsg = {
+                state.listening = false;
+                updateMicButton();
+                
+                const errorMessages = {
                     'no-speech': "I didn't hear anything. Please try again.",
                     'audio-capture': "Couldn't access microphone. Check permissions.",
                     'not-allowed': "Microphone access denied. Please enable it.",
                     'network': "Network error. Check your connection.",
                     'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
-                }[event.error] || "Please try speaking again!";
+                };
                 
-                updateStatus(errorMsg);
+                updateStatus(errorMessages[event.error] || "Please try speaking again!");
             };
             
             return true;
         }
         
-        function startListening() {
-            if (state.recognition && !state.listening && !state.processing) {
-                try { state.recognition.start(); }
-                catch (e) { console.warn('Recognition start error:', e); }
+        // Mic button management
+        function updateMicButton() {
+            const btn = $('mic-btn');
+            if (state.listening) {
+                btn.textContent = '🔴 Listening...';
+                btn.disabled = false;
+            } else if (state.processing) {
+                btn.textContent = '⏳ Processing...';
+                btn.disabled = true;
+            } else {
+                btn.textContent = '🎤 Start Talking';
+                btn.disabled = false;
             }
         }
         
-        // Enhanced reading word display
-        function showReadingWord(prompt, word) {
+        function toggleMic() {
+            if (state.processing) return;
+            
+            if (state.listening) {
+                state.recognition.stop();
+            } else {
+                startListening();
+            }
+        }
+        
+        function startListening() {
+            if (state.recognition && !state.listening && !state.processing) {
+                try { 
+                    state.recognition.start(); 
+                } catch (e) { 
+                    console.warn('Recognition start error:', e); 
+                }
+            }
+        }
+        
+        // Reading word display
+        function showReadingWord(word) {
             const container = $('reading-word-container');
             const wordDisplay = $('reading-word');
             
             wordDisplay.innerHTML = `
-                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">${prompt}</div>
+                <div style="font-size: 1.4rem; margin-bottom: 1rem; font-weight: bold;">Can you read this word?</div>
                 <div>${word}</div>
             `;
             
             showElement('reading-word-container');
         }
         
-        // Streamlined user input handling
+        // Enhanced user input handling with backend integration
         async function handleUserInput(input) {
             if (state.processing || !state.sessionStarted) return;
             
             state.processing = true;
-            updateStatus("Processing your request...");
+            updateStatus("Processing your message...");
+            updateMicButton();
+            
             addToHistory('user', input);
             
             try {
                 const response = await fetch(`${API_BASE_URL}/chat`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         sessionId: state.sessionId,
                         message: input,
-                        context: {}
+                        voiceMetadata: {
+                            confidence: 0.8,
+                            timestamp: Date.now()
+                        }
                     })
                 });
                 
-                if (!response.ok) throw new Error('API request failed');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 
-                // Handle reading word display
+                // Handle different response types
+                if (data.status === 'waiting_for_main_user') {
+                    updateStatus(`Voice confidence: ${data.voiceConfidence}% - ${data.response}`);
+                    await speak(data.response);
+                    return;
+                }
+                
+                if (data.status === 'paused') {
+                    updateStatus(data.response);
+                    await speak(data.response);
+                    return;
+                }
+                
+                if (data.status === 'listening') {
+                    updateStatus(data.response);
+                    await speak(data.response);
+                    return;
+                }
+                
+                if (data.status === 'redirected') {
+                    updateStatus("Let's focus on learning topics!");
+                    await speak(data.response);
+                    updateSuggestions(data.suggestions);
+                    return;
+                }
+                
+                // Handle normal response
                 if (data.readingWord) {
-                    showReadingWord(data.response, data.readingWord);
+                    showReadingWord(data.readingWord);
                     await speak(data.response);
                     addToHistory('tutor', data.response + ' (See word above)');
                 } else {
@@ -492,57 +576,56 @@
                     addToHistory('tutor', data.response);
                 }
                 
+                // Update UI with response data
                 if (data.subject) state.currentSubject = data.subject;
-                updateSuggestions(input, data.response);
+                if (data.voiceConfidence) state.voiceConfidence = data.voiceConfidence;
+                if (data.waitingForResponse) state.waitingForResponse = data.waitingForResponse;
+                
+                updateSuggestions(data.suggestions);
+                
+                // Show session stats if available
+                if (data.sessionStats) {
+                    console.log('Session stats:', data.sessionStats);
+                }
                 
             } catch (error) {
                 console.error('Error:', error);
                 const fallback = generateFallback(input);
                 addToHistory('tutor', fallback);
                 await speak(fallback);
+                updateSuggestions(['Try asking about math', 'Tell me about animals', 'Let\'s read together']);
             } finally {
                 state.processing = false;
                 updateStatus("Ready for your next question!");
+                updateMicButton();
             }
         }
         
         // Smart suggestion system
-        function updateSuggestions(userInput, tutorResponse) {
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
+        function updateSuggestions(suggestions) {
             const grid = $('suggestion-grid');
             
-            const suggestionSets = {
-                math: [
-                    {text: '🔢 More math problems', query: 'Give me another math problem'},
-                    {text: '📊 Explain this concept', query: 'Explain this math topic more'},
-                    {text: '🎲 Math games', query: 'Let\'s play a math game'},
-                    {text: '🧮 Real-world math', query: 'How is this used in real life?'}
-                ],
-                reading: [
-                    {text: '📖 Read together', query: 'Can we read something together?'},
-                    {text: '📝 New vocabulary', query: 'Teach me new words'},
-                    {text: '✍️ Write a story', query: 'Help me write a story'},
-                    {text: '🎭 Act it out', query: 'Can we act out this story?'}
-                ],
-                science: [
-                    {text: '🔬 Try experiment', query: 'Can we do a science experiment?'},
-                    {text: '🌟 Learn about space', query: 'Tell me about space'},
-                    {text: '🐾 Explore animals', query: 'I want to learn about animals'},
-                    {text: '🌱 Discover plants', query: 'Tell me about plants'}
-                ],
-                default: [
-                    {text: '❓ Ask anything', query: 'I have a question'},
-                    {text: '🎯 New topic', query: 'What should we learn next?'},
-                    {text: '🔍 Explore more', query: 'Tell me more about this'},
-                    {text: '🎉 Something fun', query: 'Let\'s do something fun'}
-                ]
-            };
+            // Use provided suggestions or generate defaults
+            const defaultSuggestions = [
+                {text: '🔢 Math problems', query: 'Give me a math problem'},
+                {text: '📖 Read together', query: 'Can we read something together?'},
+                {text: '🔬 Science fun', query: 'Tell me about science'},
+                {text: '🎯 Ask anything', query: 'I have a question'},
+                {text: '🌟 Space facts', query: 'Tell me about space'},
+                {text: '🐾 Animal facts', query: 'I want to learn about animals'}
+            ];
             
-            const suggestions = Object.keys(suggestionSets).find(key => 
-                combined.includes(key) || combined.includes(key.slice(0, -1))
-            ) || 'default';
+            let suggestionItems;
+            if (Array.isArray(suggestions)) {
+                suggestionItems = suggestions.map(s => ({
+                    text: s,
+                    query: s
+                }));
+            } else {
+                suggestionItems = defaultSuggestions;
+            }
             
-            grid.innerHTML = suggestionSets[suggestions].map(s => 
+            grid.innerHTML = suggestionItems.map(s => 
                 `<div class="suggestion-item" onclick="handleUserInput('${s.query}')">${s.text}</div>`
             ).join('');
         }
@@ -552,6 +635,7 @@
                 math: "I love math! Let's work on this together.",
                 read: "Reading is so much fun! What stories do you enjoy?",
                 animal: "Animals are amazing! Do you have a favorite?",
+                science: "Science is fascinating! What would you like to explore?",
                 default: "That sounds interesting! Tell me more about what you're thinking."
             };
             
@@ -569,17 +653,26 @@
             const grade = $('student-grade').value || 'K';
             
             try {
-                updateStatus("Starting session...");
+                updateStatus("Starting your learning session...");
                 
                 const response = await fetch(`${API_BASE_URL}/session/start`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({studentName: name, grade, subjects: []})
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        studentName: name,
+                        grade: grade,
+                        subjects: []
+                    })
                 });
                 
-                if (!response.ok) throw new Error('Session start failed');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
+                
                 state.sessionId = data.sessionId;
                 state.sessionStarted = true;
                 
@@ -590,11 +683,12 @@
                 await speak(welcome);
                 addToHistory('tutor', welcome);
                 
-                updateSuggestions('', welcome);
+                updateSuggestions();
+                updateStatus("Click the mic button when you're ready to talk!");
                 
             } catch (error) {
                 console.error('Session start error:', error);
-                alert("Failed to start session. Please try again.");
+                updateStatus("Failed to start session. Please check your connection and try again.");
             }
         }
         
@@ -603,13 +697,16 @@
             if (state.listening) state.recognition.stop();
             
             try {
-                const [summaryRes] = await Promise.all([
+                updateStatus("Ending session...");
+                
+                const [summaryRes, endRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/session/${state.sessionId}/summary`),
                     fetch(`${API_BASE_URL}/session/${state.sessionId}/end`, {method: 'POST'})
                 ]);
                 
                 const summary = summaryRes.ok ? await summaryRes.json() : null;
                 showSessionSummary(summary);
+                
             } catch (error) {
                 console.error('End session error:', error);
                 showSessionSummary(null);
@@ -623,22 +720,19 @@
             const content = $('summary-content');
             
             if (summary) {
-                const suggestions = [
-                    ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
-                    ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
-                ].filter(Boolean);
-                
                 content.innerHTML = `
                     <div><strong>Duration:</strong> ${summary.duration}</div>
                     <div><strong>Topics:</strong> ${summary.topicsExplored}</div>
+                    <div><strong>Voice Interactions:</strong> ${summary.voiceInteractions}</div>
+                    <div><strong>Voice Confidence:</strong> ${summary.avgVoiceConfidence}%</div>
                     <div><strong>Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
-                    <div><strong>Next Steps:</strong><br>${suggestions.length ? suggestions.join('<br>') : 'Keep asking great questions!'}</div>
+                    <div><strong>Suggestions:</strong><br>${summary.suggestions.join('<br>')}</div>
                 `;
             } else {
                 content.innerHTML = '<div><strong>Session Complete!</strong> You had a wonderful learning session today!</div>';
             }
             
-            speak("You had a wonderful learning session today! Keep being curious!");
+            speak("You did great today! Keep being curious and asking questions!");
         }
         
         function startNewSession() {
@@ -649,7 +743,9 @@
                 sessionStarted: false,
                 listening: false,
                 chatHistory: [],
-                currentSubject: null
+                currentSubject: null,
+                waitingForResponse: false,
+                voiceConfidence: 100
             });
             
             hideElement('session-summary');
@@ -666,6 +762,7 @@
             $('full-chat-history').innerHTML = state.chatHistory.map(msg =>
                 `<div class="chat-message ${msg.sender}-message">
                     <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
+                    <br><small>${msg.timestamp.toLocaleTimeString()}</small>
                 </div>`
             ).join('');
             showElement('chat-history-modal');
@@ -681,7 +778,20 @@
             await initSpeech();
             
             // Initialize default suggestions
-            updateSuggestions('', 'Welcome');
+            updateSuggestions();
+            
+            // Check if API is available
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    console.log('✅ Backend connected successfully!');
+                } else {
+                    console.warn('⚠️ Backend not responding properly');
+                }
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                updateStatus("Backend connection failed. Please check if the server is running.");
+            }
             
             console.log('✅ AI Tutor ready!');
         };
