@@ -26,7 +26,7 @@
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            box-sizing: border;
         }
 
         body {
@@ -86,7 +86,7 @@
             margin-bottom: 1.5rem;
         }
 
-        .student-info, .suggestions, .session-summary {
+        .student-info, .session-summary { /* Removed .suggestions */
             background: var(--bg-card-light);
             padding: 2.2rem; /* Consistent padding */
             border-radius: var(--border-radius-md);
@@ -220,44 +220,7 @@
             margin: 1.2rem;
         }
 
-        .suggestions h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1.2rem;
-            color: var(--accent-color); /* Accent color for suggestions title */
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .suggestion-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly wider grid items */
-            gap: 0.8rem; /* More gap */
-            margin-top: 1.5rem;
-        }
-
-        .suggestion-item {
-            background: rgba(255,255,255,0.25); /* Less transparent */
-            padding: 1rem 1.2rem; /* More padding */
-            border-radius: 25px; /* More rounded */
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            border: 1px solid rgba(255,255,255,0.4);
-            font-size: 1rem;
-            font-weight: 500;
-            text-align: center;
-            color: var(--text-light);
-            box-shadow: var(--shadow-light);
-        }
-
-        .suggestion-item:hover {
-            background: rgba(255,255,255,0.4);
-            transform: translateY(-4px); /* More lift */
-            border-color: rgba(255,255,255,0.6);
-            box-shadow: var(--shadow-medium);
-        }
-        .suggestion-item:active {
-            transform: translateY(0);
-            box-shadow: var(--shadow-light);
-        }
+        /* Removed .suggestions h3, .suggestion-grid, .suggestion-item CSS */
 
         .voice-controls {
             display: flex;
@@ -267,13 +230,22 @@
         }
 
         .live-captions {
+            /* Changed from fixed to absolute to avoid interfering with layout,
+               but still positioned relative to the viewport */
+            position: fixed; 
             bottom: 6vh; /* Higher position */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            width: fit-content; /* Adjust width to content */
+            max-width: 80%; /* Prevent it from being too wide */
             font-size: 1.5rem; /* Larger text */
             padding: 1.3rem 2.5rem; /* More padding */
             border-radius: 35px; /* More rounded */
             box-shadow: var(--shadow-strong);
             opacity: 0.98;
             font-weight: 600;
+            text-align: center; /* Center text within caption */
+            z-index: 1000; /* Ensure it's on top */
         }
 
         .live-captions.user-caption {
@@ -292,7 +264,7 @@
             padding: 0.8rem 2.2rem;
             font-size: 1.2rem;
             box-shadow: var(--shadow-light);
-            margin-top: 2rem; /* More space from suggestions */
+            /* margin-top: 2rem; Removed from here as it's now in .summary-actions */
             display: inline-block; /* Make it respect margin auto */
         }
 
@@ -304,6 +276,15 @@
 
         .chat-history-modal {
             background: rgba(0,0,0,0.7); /* Darker overlay */
+            position: fixed; /* Ensures it covers the whole screen */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Higher than live captions */
         }
 
         .modal-content {
@@ -315,17 +296,28 @@
             max-height: 90vh; /* Taller modal */
             box-shadow: var(--shadow-strong);
             border: 1px solid rgba(0,0,0,0.1);
+            position: relative; /* For close button positioning */
+            overflow-y: auto; /* Enable scrolling for history */
         }
 
         .close-btn {
+            position: absolute;
             top: 18px;
             right: 22px;
             font-size: 2.5rem; /* Larger close button */
             color: #666;
+            background: transparent; /* Ensure no background */
+            border: none; /* No border */
+            padding: 0; /* No padding */
+            line-height: 1; /* For vertical alignment */
+            cursor: pointer;
+            text-shadow: none; /* No text shadow */
         }
 
         .close-btn:hover {
             color: var(--primary-gradient-end); /* Matches theme color */
+            transform: none; /* No transform on hover for close button */
+            box-shadow: none; /* No shadow on hover */
         }
 
         .chat-message {
@@ -350,6 +342,20 @@
         .session-summary {
             text-align: left;
             padding: 2.5rem;
+            display: flex; /* Use flexbox for summary content */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center horizontally */
+        }
+
+        .session-summary h2 {
+            width: 100%; /* Take full width */
+            text-align: center; /* Center the heading */
+            margin-bottom: 2rem;
+        }
+
+        #summary-content {
+            width: 100%; /* Ensure content takes full width */
+            margin-bottom: 2rem; /* Space between summary items and buttons */
         }
 
         .summary-item {
@@ -360,6 +366,20 @@
             font-size: 1.1rem;
             line-height: 1.5;
         }
+
+        .summary-actions { /* New div for organizing buttons in summary */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 350px; /* Control max width of buttons */
+        }
+        .summary-actions .start-button,
+        .summary-actions .history-btn {
+            margin: 0; /* Reset margins from general rules */
+            width: 100%;
+        }
+
 
         #reading-word-prompt-display { /* Styles for the dynamic reading word prompt */
             margin-top: 2.5rem;
@@ -421,16 +441,14 @@
                 font-size: 1.4rem;
             }
             .status { font-size: 1.1rem; padding: 1rem; }
-            .student-info, .suggestions, .session-summary {
+            .student-info, .session-summary { /* Removed .suggestions */
                 padding: 1.8rem;
             }
             .form-group input, .form-group select {
                 padding: 0.8rem 1rem;
                 font-size: 1rem;
             }
-            .suggestion-grid {
-                grid-template-columns: 1fr;
-            }
+            /* Removed .suggestion-grid, .suggestion-item responsive CSS */
             .live-captions {
                 font-size: 1.2rem;
                 padding: 1rem 1.8rem;
@@ -442,6 +460,10 @@
             }
             .modal-content {
                 padding: 1.5rem;
+            }
+            .session-summary .start-button,
+            .session-summary .history-btn {
+                max-width: 250px; /* Smaller buttons on mobile in summary */
             }
         }
 
@@ -465,10 +487,7 @@
                 font-size: 0.9rem;
                 min-height: 2.5rem;
             }
-            .suggestion-item {
-                font-size: 0.85rem;
-                padding: 0.8rem 1rem;
-            }
+            /* Removed .suggestion-item responsive CSS */
             .live-captions {
                 font-size: 1rem;
                 padding: 0.8rem 1.5rem;
@@ -477,6 +496,10 @@
                 font-size: 2rem;
                 padding: 0.8rem 1.5rem;
                 letter-spacing: 0.15em;
+            }
+            .session-summary .start-button,
+            .session-summary .history-btn {
+                max-width: 200px; /* Even smaller buttons on very small screens */
             }
         }
     </style>
@@ -530,25 +553,15 @@
                 <button class="end-session-btn" onclick="endSession()">End Session</button>
             </div>
 
-            <div id="suggestions" class="suggestions">
-                <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-grid" id="suggestion-grid">
-                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
-                </div>
             </div>
-
-            <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
-        </div>
 
         <div id="session-summary" class="session-summary hidden">
             <h2>Session Complete! 🎉</h2>
             <div id="summary-content"></div>
-            <button class="start-button" onclick="startNewSession()">Start New Session</button>
+            <div class="summary-actions">
+                <button class="start-button" onclick="startNewSession()">Start New Session</button>
+                <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
+            </div>
         </div>
 
         <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
@@ -575,7 +588,6 @@
             statusText: document.getElementById('status'),
             micBtn: document.getElementById('mic-btn'),
             liveCaptions: document.getElementById('live-captions'),
-            suggestionGrid: document.getElementById('suggestion-grid'),
             fullChatHistoryDiv: document.getElementById('full-chat-history'),
             chatHistoryModal: document.getElementById('chat-history-modal'),
             summaryContent: document.getElementById('summary-content')
@@ -628,6 +640,17 @@
             DOM.liveCaptions.classList[type === 'user' ? 'add' : 'remove']('user-caption');
             DOM.liveCaptions.classList[type === 'bot' ? 'add' : 'remove']('bot-caption');
         }
+
+        /** Hides live captions after a brief delay. */
+        function hideLiveCaption() {
+            // Give a small moment for the user to read the last word
+            setTimeout(() => {
+                DOM.liveCaptions.classList.add('hidden');
+                DOM.liveCaptions.textContent = ''; // Clear text
+                DOM.liveCaptions.classList.remove('user-caption', 'bot-caption'); // Clean up classes
+            }, 500); // Wait 0.5 seconds after speech ends
+        }
+
 
         /** Adds a message to the chat history log. */
         function addToConversation(sender, message) {
@@ -723,7 +746,7 @@
         /** Speaks the given text using the selected voice. */
         async function speakWithPromise(text) {
             return new Promise((resolve) => {
-                speechSynthesis.cancel(); // Always cancel current speech to prevent overlap
+                speechSynthesis.cancel(); // ALWAYS cancel current speech to prevent queueing/speed-up
 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.rate = 1.1; // Slightly faster for a more engaging tutor
@@ -737,14 +760,12 @@
                     showLiveCaption(text, 'bot');
                 };
                 utterance.onend = () => {
-                    DOM.liveCaptions.classList.add('hidden');
-                    DOM.liveCaptions.textContent = ''; // Clear text
+                    hideLiveCaption(); // Hide caption ONLY when speech ends
                     resolve();
                 };
                 utterance.onerror = (event) => {
                     console.error('Speech synthesis error:', event.error);
-                    DOM.liveCaptions.classList.add('hidden');
-                    DOM.liveCaptions.textContent = '';
+                    hideLiveCaption(); // Hide caption on error as well
                     resolve(); // Resolve to not block the flow even on error
                 };
 
@@ -752,8 +773,7 @@
                     speechSynthesis.speak(utterance);
                 } catch (error) {
                     console.error('Speech synthesis speak error:', error);
-                    DOM.liveCaptions.classList.add('hidden');
-                    DOM.liveCaptions.textContent = '';
+                    hideLiveCaption(); // Hide caption on error
                     resolve();
                 }
             });
@@ -786,12 +806,7 @@
                 if (!appState.isProcessing) {
                     updateStatus("Press the microphone to continue our conversation!");
                 }
-                // Hide and clear user caption after handling
-                setTimeout(() => {
-                    DOM.liveCaptions.classList.add('hidden');
-                    DOM.liveCaptions.textContent = '';
-                    DOM.liveCaptions.classList.remove('user-caption');
-                }, 600);
+                // hideLiveCaption(); // This was the old call, now it's done within the result/error handler
             };
 
             recognition.onresult = (event) => {
@@ -803,8 +818,10 @@
 
                 if (event.results[event.results.length - 1].isFinal) {
                     if (transcript.trim().length > 0 && !appState.isProcessing) {
+                        hideLiveCaption(); // Hide user caption immediately after final result
                         handleUserInput(transcript.trim());
                     } else if (!appState.isProcessing) {
+                        hideLiveCaption(); // Hide user caption even if no clear speech
                         updateStatus("I didn't catch that clearly. Please try speaking again!");
                     }
                 }
@@ -816,8 +833,7 @@
                 updateMicButton();
                 const message = SPEECH_ERROR_MESSAGES[event.error] || "I didn't catch that clearly. Please try speaking again!";
                 updateStatus(message);
-                DOM.liveCaptions.classList.add('hidden');
-                DOM.liveCaptions.classList.remove('user-caption');
+                hideLiveCaption(); // Hide caption on error
             };
 
             return true;
@@ -838,6 +854,9 @@
             if (appState.isListening) {
                 recognition.stop();
             } else {
+                // Ensure any bot speech is cancelled before user starts speaking
+                speechSynthesis.cancel(); 
+                hideLiveCaption(); // Clear any lingering bot caption before listening
                 try {
                     recognition.start();
                 } catch (error) {
@@ -892,8 +911,6 @@
                 
                 appState.conversationContext.push({ role: 'assistant', content: tutorResponse });
 
-                updateDynamicSuggestions(input, tutorResponse);
-
             } catch (error) {
                 console.error('Error getting response from AI Tutor API:', error);
                 const fallbackResponse = generateFallbackResponse(input);
@@ -903,52 +920,6 @@
                 appState.isProcessing = false;
                 updateStatus("Press the microphone to continue our conversation!");
             }
-        }
-
-        /** Dynamically updates suggested topics based on conversation context. */
-        function updateDynamicSuggestions(userInput, tutorResponse) {
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
-            let suggestions = [];
-            
-            if (combined.includes('math') || combined.includes('number')) {
-                suggestions = [
-                    { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
-                    { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
-                    { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
-                    { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
-                ];
-            } else if (combined.includes('read') || combined.includes('story') || combined.includes('vocabulary')) {
-                suggestions = [
-                    { text: '📖 Read together', query: 'Can we read something together?' },
-                    { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
-                    { text: '✍️ Write a story', query: 'Help me write a creative story' },
-                    { text: '🎭 Act out the story', query: 'Can we act out this story?' }
-                ];
-            } else if (combined.includes('animal') || combined.includes('science') || combined.includes('experiment') || combined.includes('space') || combined.includes('plant')) {
-                suggestions = [
-                    { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
-                    { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
-                    { text: '🐾 Explore animals', query: 'I want to learn about animals' },
-                    { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
-                ];
-            } else {
-                // Default suggestions
-                suggestions = [
-                    { text: '❓ Ask me anything', query: 'I have a question about something' },
-                    { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
-                    { text: '🔍 Explore more', query: 'Can you tell me more about this?' },
-                    { text: '🎉 Try something fun', query: 'Let\'s do something fun and educational' }
-                ];
-            }
-            
-            DOM.suggestionGrid.innerHTML = '';
-            suggestions.forEach(suggestion => {
-                const suggestionDiv = document.createElement('div');
-                suggestionDiv.className = 'suggestion-item';
-                suggestionDiv.textContent = suggestion.text;
-                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
-                DOM.suggestionGrid.appendChild(suggestionDiv);
-            });
         }
 
         // --- Session Management Functions ---
@@ -1002,10 +973,11 @@
 
         /** Ends the current tutoring session and shows a summary. */
         async function endSession() {
-            speechSynthesis.cancel();
+            speechSynthesis.cancel(); // Cancel any ongoing speech
             if (appState.isListening) {
-                recognition.stop();
+                recognition.stop(); // Stop recognition
             }
+            hideLiveCaption(); // Ensure captions are hidden
             
             updateStatus("Ending session and generating summary...");
 
@@ -1066,6 +1038,7 @@
             if (recognition) {
                 recognition.stop();
             }
+            hideLiveCaption(); // Ensure captions are hidden
             
             // Reset state variables
             currentSessionId = null;
