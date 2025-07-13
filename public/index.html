@@ -543,6 +543,7 @@
                 }
             };
             
+ 
             state.recognition.onresult = (event) => {
                 const result = event.results[event.resultIndex][0];
                 const transcript = result.transcript.trim();
@@ -555,9 +556,13 @@
                 if (event.results[event.resultIndex].isFinal && !state.processing) {
                     const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
                     
-                    if (isNoise) {
-                        updateStatus("Sorry, I didn't catch that. Please try again.");
-                        setTimeout(() => hideElement('live-captions'), 1000);
+                    // Enhanced filtering for educational content
+                    const isEducational = /\b(what|how|tell|explain|teach|learn|math|read|spell|calculate|solve|question|help|show|where|when|why|who)\b/i.test(transcript);
+                    const isDirectedAtTutor = /\b(tutor|teacher|hey|hi|hello|can you|please|I need|I want)\b/i.test(transcript) || transcript.endsWith('?');
+                    
+                    if (isNoise || (!isEducational && !isDirectedAtTutor)) {
+                        updateStatus("I'm listening for learning questions! Try asking 'What is 2+2?' or 'Teach me about...'");
+                        setTimeout(() => hideElement('live-captions'), 2000);
                     } else {
                         // Stop current speech if user interrupts
                         if (state.speaking) {
