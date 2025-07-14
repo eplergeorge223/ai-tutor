@@ -4,13 +4,13 @@ const OpenAI = require('openai');
 require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const sqlite3 = require('sqlite3').verbose(); // For database
 
 // --- Configuration Constants ---
 const config = {
   PORT: process.env.PORT || 3000,
   SESSION_TTL: 45 * 60 * 1000, // 45 minutes of inactivity
   CLEANUP_INTERVAL: 5 * 60 * 1000, // Check for expired sessions every 5 minutes
-  MAX_SESSION_INTERACTIONS: 100, // Max interactions per session before a soft limit (currently unused for strict enforcement)
   GPT_MODEL: 'gpt-4o-mini',
   GPT_TEMPERATURE: 0.7, // Slightly higher for more engaging responses
   GPT_PRESENCE_PENALTY: 0.1, // Encourage more varied responses
@@ -32,12 +32,45 @@ if (!process.env.OPENAI_API_KEY) {
 
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const sessions = new Map();
+// sessions Map will now be a cache, with database as source of truth
+const sessionsCache = new Map();
+
+// --- Database Setup ---
+const db = new sqlite3.Database('./tutor_sessions.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+  if (err) {
+    console.error('❌ Database connection error:', err.message);
+  } else {
+    console.log('✅ Connected to the SQLite database.');
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        studentName TEXT,
+        grade TEXT,
+        subjects TEXT, -- JSON string
+        startTime INTEGER,
+        lastActivity INTEGER,
+        messages TEXT, -- JSON string
+        totalWarnings INTEGER,
+        topicsDiscussed TEXT, -- JSON string
+        currentTopic TEXT,
+        topicBreakdown TEXT, -- JSON string
+        conversationContext TEXT, -- JSON string
+        achievements TEXT, -- JSON string
+        strugglingAreas TEXT, -- JSON string
+        preferredLearningStyle TEXT,
+        difficultyLevel REAL -- New field for adaptive difficulty
+      )
+    `, (err) => {
+      if (err) console.error('❌ Error creating sessions table:', err.message);
+      else console.log('✅ Sessions table checked/created.');
+    });
+  }
+});
 
 // --- Middleware ---
 app.use(cors());
 app.use(express.json({ limit: '4kb' }));
-app.use(helmet({ contentSecurityPolicy: false })); // Helmet configured for easier local dev
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({
   windowMs: 60_000,
   max: 50,
@@ -48,19 +81,100 @@ app.use(rateLimit({
 app.use(express.static('public'));
 
 // --- Session Management & Cleanup ---
-setInterval(() => {
+// Modified to clean up from cache and database
+setInterval(async () => {
   const now = Date.now();
-  for (const [id, sess] of sessions) {
+  for (const [id, sess] of sessionsCache) {
     if (now - sess.lastActivity > config.SESSION_TTL) {
-      console.log(`🧹 Cleaning up expired session ${id.slice(-6)}. Inactivity: ${((now - sess.lastActivity) / 1000 / 60).toFixed(1)} minutes.`);
-      sessions.delete(id);
+      console.log(`🧹 Cleaning up expired session ${id.slice(-6)} from cache. Inactivity: ${((now - sess.lastActivity) / 1000 / 60).toFixed(1)} minutes.`);
+      sessionsCache.delete(id);
+      // Optionally, mark as inactive in DB or delete after longer period
+      // For now, let's keep in DB for summary retrieval
     }
   }
+
+  // Future: Add a database cleanup for truly old/inactive sessions
 }, config.CLEANUP_INTERVAL);
+
+// Helper to load session from DB or cache
+async function getSession(sessionId) {
+  if (sessionsCache.has(sessionId)) {
+    const session = sessionsCache.get(sessionId);
+    session.lastActivity = Date.now(); // Update activity on access
+    return session;
+  }
+
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM sessions WHERE id = ?', [sessionId], (err, row) => {
+      if (err) return reject(err);
+      if (!row) return resolve(null);
+
+      try {
+        const session = {
+          ...row,
+          subjects: JSON.parse(row.subjects || '[]'),
+          messages: JSON.parse(row.messages || '[]'),
+          topicsDiscussed: new Set(JSON.parse(row.topicsDiscussed || '[]')),
+          topicBreakdown: JSON.parse(row.topicBreakdown || '{}'),
+          conversationContext: JSON.parse(row.conversationContext || '[]'),
+          achievements: JSON.parse(row.achievements || '[]'),
+          strugglingAreas: JSON.parse(row.strugglingAreas || '[]'),
+          // Ensure default for new fields
+          difficultyLevel: row.difficultyLevel !== undefined ? row.difficultyLevel : 0.5,
+          lastActivity: Date.now() // Update activity on load
+        };
+        sessionsCache.set(sessionId, session); // Add to cache
+        return resolve(session);
+      } catch (parseErr) {
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+// Helper to save session to DB
+async function saveSession(session) {
+  return new Promise((resolve, reject) => {
+    const serializedSession = {
+      ...session,
+      subjects: JSON.stringify(Array.from(session.subjects)),
+      messages: JSON.stringify(session.messages),
+      topicsDiscussed: JSON.stringify(Array.from(session.topicsDiscussed)),
+      topicBreakdown: JSON.stringify(session.topicBreakdown),
+      conversationContext: JSON.stringify(session.conversationContext),
+      achievements: JSON.stringify(session.achievements),
+      strugglingAreas: JSON.stringify(session.strugglingAreas),
+      // Ensure existing fields are correctly handled
+      difficultyLevel: session.difficultyLevel !== undefined ? session.difficultyLevel : 0.5
+    };
+
+    const query = `
+      INSERT OR REPLACE INTO sessions (
+        id, studentName, grade, subjects, startTime, lastActivity, messages,
+        totalWarnings, topicsDiscussed, currentTopic, topicBreakdown,
+        conversationContext, achievements, strugglingAreas, preferredLearningStyle, difficultyLevel
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      serializedSession.id, serializedSession.studentName, serializedSession.grade,
+      serializedSession.subjects, serializedSession.startTime, serializedSession.lastActivity,
+      serializedSession.messages, serializedSession.totalWarnings,
+      serializedSession.topicsDiscussed, serializedSession.currentTopic,
+      serializedSession.topicBreakdown, serializedSession.conversationContext,
+      serializedSession.achievements, serializedSession.strugglingAreas,
+      serializedSession.preferredLearningStyle, serializedSession.difficultyLevel
+    ];
+
+    db.run(query, params, function(err) {
+      if (err) return reject(err);
+      resolve(this.lastID);
+    });
+  });
+}
+
 
 // --- Helper Functions ---
 
-// Consolidate response for inappropriate content to reduce repetition
 const getInappropriateResponse = (category, session) => ({
   response: {
     sexual: `That's not something we talk about in our learning time, ${session.studentName}! Let's explore something educational instead. What subject interests you today?`,
@@ -71,7 +185,7 @@ const getInappropriateResponse = (category, session) => ({
   }[category] || `Let's find something fun to learn instead!`,
   subject: null,
   suggestions: generateSafeSuggestions(session.grade),
-  encouragement: `Let's get back to learning, ${session.studentName}!`, // Always encourage safe learning
+  encouragement: `Let's get back to learning, ${session.studentName}!`,
   status: 'redirected'
 });
 
@@ -79,7 +193,7 @@ const containsInappropriateContent = (text) => {
   const lowerText = text.toLowerCase();
   for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
     for (const word of words) {
-      if (new RegExp(`\\b${word}\\b`, 'i').test(lowerText)) { // Use RegExp for word boundaries
+      if (new RegExp(`\\b${word}\\b`, 'i').test(lowerText)) {
         return { inappropriate: true, category, word };
       }
     }
@@ -87,8 +201,8 @@ const containsInappropriateContent = (text) => {
   return { inappropriate: false };
 };
 
-// Improved system prompt generation - more concise with template literals
-function getTutorSystemPrompt(grade, studentName) {
+// Improved system prompt generation - now includes difficulty level
+function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5) { // difficultyLevel from 0 (easier) to 1 (harder)
   const isEarlyGrade = ['PreK', 'K', '1', '2'].includes(grade);
   const gradeGuidelines = {
     'PreK': 'Use very simple words. 1 sentence max. Focus on basic concepts like colors, shapes, and sounds.',
@@ -107,6 +221,16 @@ function getTutorSystemPrompt(grade, studentName) {
     '12': 'Complete answers, efficient. 4–5 sentences. Prepare them for higher-level thinking and application.'
   };
 
+  let difficultyAdjustment = '';
+  if (difficultyLevel < 0.3) {
+    difficultyAdjustment = "The student seems to be struggling. Provide extra clear, simpler steps, more direct hints, and fundamental concepts. Be extra patient and break down tasks into smaller parts.";
+  } else if (difficultyLevel > 0.7) {
+    difficultyAdjustment = "The student seems to be grasping concepts quickly. Challenge them with more complex questions, encourage deeper inquiry, and introduce related advanced concepts. Keep the pace engaging.";
+  } else {
+    difficultyAdjustment = "Maintain a steady, encouraging pace. Offer clear guidance and prompt critical thinking.";
+  }
+
+
   return `
 You are an AI Tutor for ${studentName}. Your job: teach students to THINK, not just memorize!
 Keep replies short, simple, and step-by-step.
@@ -115,7 +239,7 @@ Keep replies short, simple, and step-by-step.
 - Use their name in responses sometimes.
 - Be patient, encouraging, and celebrate effort.
 - If the student gives a wrong or incomplete answer, gently point out the mistake, explain *why* it's not quite right (without giving the correct answer), and encourage them to try again with a guiding question.
-- If they answer with something unrelated, gently redirect back to the learning point.
+- If they answer with something unrelated, or say "I don't know", or ask you to just tell them the answer, gently redirect back to the learning point. Propose 2-3 specific, child-friendly learning options if they are stuck or passive.
 - Strictly avoid adult/inappropriate topics: if they come up, say "Let's find something fun to learn instead!" and change the subject.
 - Never discuss personal/private matters.
 
@@ -136,17 +260,18 @@ Examples:
 
 Stay positive, focused, and always teach the process!
 ${gradeGuidelines[grade] || gradeGuidelines['K']}
+${difficultyAdjustment}
 `.trim();
 }
 
-const createSession = (sessionId, studentName, grade, subjects) => ({
+const createSessionObject = (sessionId, studentName, grade, subjects) => ({
   id: sessionId,
   studentName: studentName || 'Student',
   grade: grade || 'K',
   subjects: subjects || [],
-  startTime: new Date(),
+  startTime: Date.now(), // Store as timestamp
   lastActivity: Date.now(),
-  messages: [{ role: 'system', content: getTutorSystemPrompt(grade, studentName), timestamp: new Date() }],
+  messages: [{ role: 'system', content: getTutorSystemPrompt(grade, studentName), timestamp: Date.now() }],
   totalWarnings: 0,
   topicsDiscussed: new Set(),
   currentTopic: null,
@@ -155,29 +280,22 @@ const createSession = (sessionId, studentName, grade, subjects) => ({
   achievements: [],
   strugglingAreas: [],
   preferredLearningStyle: null,
-  sessionNotes: []
+  difficultyLevel: 0.5 // Start at neutral difficulty
 });
 
 const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
+// More engaging welcome message
 const generateWelcomeMessage = (studentName, grade) => {
-  const messages = {
-    'PreK': `Hi ${studentName}! Let's learn together!`,
-    'K': `Hello ${studentName}! What sounds fun today?`,
-    '1': `Hi ${studentName}! Ready to learn cool things?`,
-    '2': `Hey ${studentName}! What should we explore?`,
-    '3': `Hi ${studentName}! What are you curious about?`,
-    '4': `Hello ${studentName}! What interests you today?`,
-    '5': `Hi ${studentName}! What would you like to learn?`,
-    '6': `Hey ${studentName}! What's on your mind?`,
-    '7': `Hi ${studentName}! What interests you?`,
-    '8': `Hello ${studentName}! What should we discover?`,
-    '9': `Hi ${studentName}! What can I help with?`,
-    '10': `Hey ${studentName}! What's your focus today?`,
-    '11': `Hello ${studentName}! What topic interests you?`,
-    '12': `Hi ${studentName}! What can we explore today?`
+  const common = `Hi ${studentName}! I'm your tutor today. What are you curious about?`;
+  const gradeSpecific = {
+    'PreK': `Hi ${studentName}! Let's learn together! What sounds fun to explore today, like colors or animal sounds?`,
+    'K': `Hello ${studentName}! What sounds fun today? We could count, learn letters, or talk about animals!`,
+    '1': `Hi ${studentName}! Ready to learn cool things? Do you want to practice reading, try some math, or discover science?`,
+    '2': `Hey ${studentName}! What should we explore? Maybe a tricky math problem, an interesting story, or a science question?`,
+    '3': `Hi ${studentName}! What are you curious about today? We can dive into anything—math, reading, science, or even history!`
   };
-  return messages[grade] || messages['K'];
+  return gradeSpecific[grade] || common;
 };
 
 const generateSafeSuggestions = (grade) => {
@@ -190,6 +308,7 @@ const generateSafeSuggestions = (grade) => {
   return (gradeSpecific[grade] || general).sort(() => 0.5 - Math.random()).slice(0, 3);
 };
 
+// Enhanced dynamic suggestions with concept introduction
 const generateDynamicSuggestions = (session) => {
   const ctx = (session.conversationContext || []).slice(-5);
   const recentUser = ctx.filter(e => e.role === 'user');
@@ -198,29 +317,76 @@ const generateDynamicSuggestions = (session) => {
   const struggling = recentUser.length >= 2 &&
     recentUser[recentUser.length - 1].topic === recentUser[recentUser.length - 2].topic &&
     recentUser[recentUser.length - 1].subtopic === recentUser[recentUser.length - 2].subtopic;
+  const masterySignals = session.achievements.filter(a => a.topic === topic && a.subtopic === subtopic).length > 0;
 
   const suggestionsMap = {
     math: {
-      addition: struggling ? ["Want to review some addition tips together?", "Need help with addition? Try using your fingers or objects around you!", "Let’s slow down and try a different example."] : ["Ready to try a harder addition problem?", "Want to switch to subtraction for a bit?", "Curious how addition works with bigger numbers?"],
-      multiplication: ["Want a quick times table game?", "Ready for a real-world multiplication problem?", "Switch to division for a challenge?"],
-      default: ["Want a math puzzle?", "Switch to a different math topic?", "Try a quick math quiz?"]
+      addition: {
+        struggling: ["Want to review some addition tips together?", "Need help with addition? Try using your fingers or objects around you!", "Let’s slow down and try a different example."],
+        mastered: ["Ready to try a harder addition problem?", "Want to switch to subtraction for a bit?", "How about exploring *multiplication*, which builds on addition?", "Curious how addition works with bigger numbers?"],
+        default: ["Want a quick addition game?", "Let's practice addition with some real-world examples!", "What's another addition problem you'd like to try?"]
+      },
+      multiplication: {
+        struggling: ["Let's review the multiplication tables.", "How about drawing arrays to understand multiplication?", "We can use repeated addition to solve this."],
+        mastered: ["Ready for some division challenges?", "How about *fractions* next, they involve multiplication!", "Let's explore word problems with multiplication!"],
+        default: ["Want a quick times table game?", "Ready for a real-world multiplication problem?", "Try a quick multiplication quiz?"]
+      },
+      default: ["Want a math puzzle?", "Switch to a different math topic?", "Try a quick math quiz?", "Explore how math is used in daily life!"]
     },
     reading: {
-      vocabulary: ["Want to learn new words?", "Try using those words in a sentence?", "Want to read a short story?"],
-      default: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?"]
+      vocabulary: {
+        struggling: ["Let's try finding the definition of that word again.", "Can you think of a synonym for that word?", "Let's read a simpler sentence with that word."],
+        mastered: ["Want to learn new words from a specific story?", "Try using those words in your own sentences?", "How about exploring *grammar* next, using those new words?", "Let's try a vocabulary quiz!"],
+        default: ["Want to learn new words?", "Try using those words in a sentence?", "Want to read a short story?"]
+      },
+      comprehension: {
+        struggling: ["Let's re-read that part slowly. What do you notice?", "Can you tell me in your own words what happened here?", "Let's break down the main idea into smaller pieces."],
+        mastered: ["Ready to read a longer story and discuss it?", "How about we explore different types of stories, like *fables* or *myths*?", "Let's practice summarizing a more complex paragraph!"],
+        default: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?"]
+      },
+      default: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?", "Explore different kinds of books!"]
     },
     science: {
-      animals: ["Want to learn about a different animal?", "Curious about animal habitats?", "How about animal adaptations?"],
-      space: ["Want to learn about planets?", "How about stars and galaxies?", "What about astronauts and rockets?"],
-      default: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!"]
-    },
-    // Add more subjects as needed
+      animals: {
+        struggling: ["Let's look at some pictures of different animal groups.", "What's one thing you know about this animal?", "We can compare two animals to see their differences."],
+        mastered: ["Want to learn about a different animal or animal group?", "Curious about animal habitats or how they *adapt* to their environment?", "How about exploring animal life cycles?", "Let's learn about *ecosystems* next!"],
+        default: ["Want to learn about a different animal?", "Curious about animal habitats?", "How about animal adaptations?"]
+      },
+      space: {
+        struggling: ["Let's look at a picture of our solar system again.", "Can you name one planet you know?", "What's one question you have about space?"],
+        mastered: ["Want to learn about stars and galaxies?", "How about astronauts and rockets, and how they travel in space?", "Let's explore *gravity* next, how does it affect space?", "What about exploring the concept of time in space?"],
+        default: ["Want to learn about planets?", "How about stars and galaxies?", "What about astronauts and rockets?"]
+      },
+      default: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!", "How about exploring the human body?"]
+    }
+    // Add more subjects and their specific subtopic suggestions for struggling/mastered
   };
 
-  return (suggestionsMap[topic] && suggestionsMap[topic][subtopic]) ||
-         (suggestionsMap[topic] && suggestionsMap[topic].default) ||
-         ["Pick a new topic to explore!", "Ask me anything!", "Want a fun learning game!"];
+  let suggestions = [];
+  if (topic && subtopic && suggestionsMap[topic] && suggestionsMap[topic][subtopic]) {
+    if (struggling) {
+      suggestions = suggestionsMap[topic][subtopic].struggling || suggestionsMap[topic][subtopic].default;
+      // Mark as struggling in session if not already
+      if (!session.strugglingAreas.includes(`${topic} - ${subtopic}`)) {
+        session.strugglingAreas.push(`${topic} - ${subtopic}`);
+      }
+    } else if (masterySignals) {
+      suggestions = suggestionsMap[topic][subtopic].mastered || suggestionsMap[topic][subtopic].default;
+      // Remove from struggling if they master it
+      session.strugglingAreas = session.strugglingAreas.filter(s => s !== `${topic} - ${subtopic}`);
+    } else {
+      suggestions = suggestionsMap[topic][subtopic].default;
+    }
+  } else if (topic && suggestionsMap[topic] && suggestionsMap[topic].default) {
+    suggestions = suggestionsMap[topic].default;
+  } else {
+    suggestions = generateSafeSuggestions(session.grade); // General fallback
+  }
+
+  // Ensure unique suggestions and always offer to change topic if stuck
+  return Array.from(new Set([...suggestions.slice(0, 2), "Want to pick a new topic?", "What else are you curious about?"])).slice(0, 3);
 };
+
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -252,7 +418,7 @@ function generateRecommendations(session) {
     const top = getTopSubtopic(subject);
     if (top) {
       recs.push(`Keep practicing **${capitalize(top)}** in ${capitalize(subject)}—you're making awesome progress!`);
-    } else if (breakdown[subject]) { // Only add default if the subject was discussed at all
+    } else if (breakdown[subject]) {
       recs.push(defaultMsg);
     }
   };
@@ -264,6 +430,13 @@ function generateRecommendations(session) {
   addRec('pe', 'Remember to keep moving and play your favorite sports!');
   addRec('technology', 'Explore more about how technology works around you!');
   addRec('language', 'Try learning new words in a different language!');
+
+  if (session.strugglingAreas && session.strugglingAreas.length > 0) {
+    recs.push(`Consider spending more time on: ${session.strugglingAreas.map(s => `**${s}**`).join(', ')}.`);
+  }
+  if (session.achievements && session.achievements.length > 0) {
+    recs.push(`Great job mastering: ${session.achievements.map(a => `**${a.subtopic} in ${a.topic}**`).join(', ')}!`);
+  }
 
   return recs.length ? recs : [`Continue exploring topics that spark your curiosity, ${session.studentName}!`];
 }
@@ -293,48 +466,76 @@ function generateNextSteps(session) {
 }
 
 async function generateAIResponse(sessionId, userMessage) {
-  const session = sessions.get(sessionId);
+  const session = await getSession(sessionId); // Load from DB or cache
   if (!session) throw new Error('Session not found');
 
-  session.messages.push({ role: 'user', content: userMessage, timestamp: new Date() });
+  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
   // Keep only last 6 messages (including system prompt) for brevity and cost
   session.messages = session.messages.slice(-6);
 
   // Prepare messages for AI (system + last 4 user/assistant exchanges)
   const messagesToSendToAI = [
-    { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName) },
+    { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel) }, // Pass difficulty
     ...session.messages.filter(m => m.role !== 'system').slice(-4).map(msg => ({ role: msg.role, content: msg.content }))
   ];
 
   try {
     let maxTokens = getMaxTokensForGrade(session.grade);
-    if (userMessage.toLowerCase().includes('story')) { // Allow slightly longer responses for explicit story requests
+    if (userMessage.toLowerCase().includes('story')) {
       maxTokens = Math.min(maxTokens * 2, 300);
     }
+    // Adjust temperature based on difficulty: lower for struggling, higher for mastering
+    const adjustedTemperature = session.difficultyLevel < 0.3 ? 0.5 : (session.difficultyLevel > 0.7 ? 0.8 : config.GPT_TEMPERATURE);
 
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
       messages: messagesToSendToAI,
       max_tokens: maxTokens,
-      temperature: config.GPT_TEMPERATURE,
+      temperature: adjustedTemperature, // Use adjusted temperature
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,", "In conclusion"] // Added one more stop word to prevent rambling
+      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"] // CRITICAL FIX: MAX LENGTH 4
     });
 
-    const aiText = completion.choices[0].message.content.trim();
+    let aiText = completion.choices[0].message.content.trim();
 
-    session.messages.push({ role: 'assistant', content: aiText, timestamp: new Date() });
+    // Check for "I don't know" or similar from user to trigger specific helpful suggestions
+    const lowerUserMessage = userMessage.toLowerCase();
+    if (["i don't know", "i dunno", "tell me", "what is the answer"].some(phrase => lowerUserMessage.includes(phrase))) {
+        // AI should have been prompted to give specific options, if not, layer them on here
+        const options = generateSafeSuggestions(session.grade).map(s => s.toLowerCase());
+        if (!options.some(opt => aiText.toLowerCase().includes(opt))) { // Only add if AI didn't already
+             aiText += `\n\nWould you like to explore: ${options.map(o => `**${capitalize(o.replace('let\'s explore ', '').replace('want to learn about ', ''))}**`).join(', or ')}?`;
+        }
+    }
 
-    const { subject, subtopic } = classifySubject(userMessage); // Classify based on user's message
+
+    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() });
+
+    const { subject, subtopic } = classifySubject(userMessage);
     const encouragement = generateEncouragement(session);
 
-    return { text: aiText, subject, subtopic, encouragement }; // Return subject and subtopic for tracking
+    // Update difficulty level based on response (placeholder logic)
+    // A more advanced system would analyze user engagement, correctness of subsequent answers, etc.
+    // For now, let's assume if the user keeps asking for help or "I don't know", difficulty decreases.
+    // If user is moving forward, difficulty increases.
+    const lastUserMessage = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
+    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down"].some(phrase => lastUserMessage.includes(phrase))) {
+        session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1); // Decrease difficulty
+    } else if (aiText.length > 50 && !aiText.includes("wrong") && !aiText.includes("mistake")) { // Heuristic for progress
+        session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05); // Increase difficulty slightly
+    }
+
+
+    await saveSession(session); // Save updated session state
+
+    return { text: aiText, subject, subtopic, encouragement };
   } catch (error) {
     console.error(`❌ AI API Error for session ${sessionId.slice(-6)}:`, error.message);
-    const fallbackResponse = generateContextualFallback(userMessage, session); // Use contextual fallback for API errors
+    const fallbackResponse = generateContextualFallback(userMessage, session);
 
-    session.messages.push({ role: 'assistant', content: fallbackResponse, timestamp: new Date() });
+    session.messages.push({ role: 'assistant', content: fallbackResponse, timestamp: Date.now() });
+    await saveSession(session); // Save fallback response
 
     return {
       text: fallbackResponse,
@@ -346,27 +547,29 @@ async function generateAIResponse(sessionId, userMessage) {
 
 const getMaxTokensForGrade = (grade) => {
   const gradeLevel = parseInt(grade) || 0;
-  if (gradeLevel <= 2) return 50;   // PreK-2: Very short
-  if (gradeLevel <= 5) return 75;   // 3-5: Short
-  if (gradeLevel <= 8) return 100;  // 6-8: Medium
-  return 125; // 9-12: Longer but still reasonable
+  if (gradeLevel <= 2) return 50;
+  if (gradeLevel <= 5) return 75;
+  if (gradeLevel <= 8) return 100;
+  return 125;
 };
 
-// Removed generateShortFallback, favoring generateContextualFallback for all non-inappropriate fallbacks
+// Adjusted contextual fallback to be more guiding immediately
 const generateContextualFallback = (input, session) => {
+  // If the user has just been passive or asking for answers, offer clear choices
+  const passivePhrases = ["i don't know", "i dunno", "tell me", "what is the answer", "break what down", "what are you talking about"];
+  if (passivePhrases.some(phrase => input.toLowerCase().includes(phrase))) {
+      return `No worries, ${session.studentName}! Sometimes it helps to pick. Would you like to explore **math**, **reading**, or **science** right now?`;
+  }
+
   const fallbacks = [
-    `That's really interesting, ${session.studentName}! What do you think is a good next step for us to learn more about that?`,
-    `I love how you think about things! How might we explore that question together?`,
-    `You're asking such good questions! Let's think about this a bit more. What are your ideas?`,
-    `That's a great point! How can we break that down to understand it better?`,
-    `I can see you're really thinking hard about this! What connections can you make, ${session.studentName}?`,
-    `Your curiosity is wonderful! What specific part of this topic do you want to discover first?`,
-    `That's a thoughtful question! How could we figure out the answer together?`
+    `That's a really interesting thought, ${session.studentName}! How do you think we could explore that question together?`,
+    `I love how you're thinking! To help us learn, what specific part of this topic are you most curious about?`,
+    `You're asking such good questions! Let's break it down. What's the first thing we should consider?`
   ];
   return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 };
 
-// UNIVERSAL K-12 SUBJECTS & SUBTOPICS CLASSIFIER
+// UNIVERSAL K-12 SUBJECTS & SUBTOPICS CLASSIFIER (same as before, but included for completeness)
 const subjects = {
   math: {
     keywords: ['math', 'number', 'add', 'subtract', 'plus', 'minus', 'multiply', 'times', 'divide', 'calculation', 'fraction', 'decimal', 'percent', 'equation', 'algebra', 'geometry', 'graph', 'problem', 'count', 'multiplication', 'division', 'sum', 'difference', 'product', 'quotient'],
@@ -465,7 +668,7 @@ const subjects = {
   },
 };
 
-// Classifier function
+// Classifier function (kept the same)
 const classifySubject = (input) => {
   if (!input) return { subject: null, subtopic: null };
   const lowerInput = input.toLowerCase();
@@ -520,8 +723,10 @@ app.post('/api/session/start', async (req, res) => {
     const validatedName = studentName && studentName.trim() ? studentName.trim() : 'Student';
 
     const sessionId = generateSessionId();
-    const session = createSession(sessionId, validatedName, validatedGrade, studentSubjects);
-    sessions.set(sessionId, session);
+    const session = createSessionObject(sessionId, validatedName, validatedGrade, studentSubjects);
+
+    await saveSession(session); // Save to DB
+    sessionsCache.set(sessionId, session); // Add to cache
 
     console.log(`🚀 Session started: ID ending in ${sessionId.slice(-6)}, Student: ${validatedName}, Grade: ${validatedGrade}`);
 
@@ -532,7 +737,7 @@ app.post('/api/session/start', async (req, res) => {
       sessionInfo: {
         studentName: validatedName,
         grade: validatedGrade,
-        startTime: session.startTime
+        startTime: new Date(session.startTime).toISOString()
       }
     });
   } catch (error) {
@@ -546,21 +751,23 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
 
-    if (!sessionId || !sessions.has(sessionId)) {
+    // Use getSession to load from cache or DB
+    const session = await getSession(sessionId);
+    if (!session) {
       return res.status(400).json({ error: 'Invalid or expired session. Please start a new session.' });
     }
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message cannot be empty.' });
     }
 
-    const session = sessions.get(sessionId);
-    session.lastActivity = Date.now();
+    session.lastActivity = Date.now(); // Update activity for both cache and DB save
 
     // Check for inappropriate content in user's message
     const contentCheckUser = containsInappropriateContent(message);
     if (contentCheckUser.inappropriate) {
       session.totalWarnings = (session.totalWarnings || 0) + 1;
       console.warn(`🚨 SECURITY ALERT: Inappropriate content detected in session ${sessionId.slice(-6)}: "${contentCheckUser.word}" (Category: ${contentCheckUser.category}).`);
+      await saveSession(session); // Save updated warnings
       return res.json(getInappropriateResponse(contentCheckUser.category, session));
     }
 
@@ -574,6 +781,7 @@ app.post('/api/chat', async (req, res) => {
     if (contentCheckAI.inappropriate) {
       session.totalWarnings = (session.totalWarnings || 0) + 1;
       console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${contentCheckAI.word}" (Category: ${contentCheckAI.category}).`);
+      await saveSession(session); // Save updated warnings
       return res.json(getInappropriateResponse(contentCheckAI.category, session));
     }
 
@@ -610,10 +818,12 @@ app.post('/api/chat', async (req, res) => {
       }
     } catch (e) { /* Not JSON; keep as regular text */ }
 
+    await saveSession(session); // Save session state after all updates
+
     res.json({
       response: messageText,
       readingWord: readingWord,
-      subject: subject, // Return subject based on user input
+      subject: subject,
       suggestions: generateDynamicSuggestions(session),
       encouragement: generateEncouragement(session),
       status: 'success',
@@ -625,18 +835,22 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error(`❌ Error processing chat for session: ${req.body.sessionId ? req.body.sessionId.slice(-6) : 'N/A'}:`, error.message);
+    // Attempt to load session for contextual fallback even in error state
+    let sessionForFallback;
+    try { sessionForFallback = await getSession(req.body.sessionId); } catch (e) { /* ignore */ }
+
     res.status(500).json({
       error: 'Failed to process message due to an internal error. Please try again.',
-      fallback: generateContextualFallback(req.body.message || '', sessions.get(req.body.sessionId)) // Use session if available
+      fallback: generateContextualFallback(req.body.message || '', sessionForFallback || { studentName: 'learner' }) // Provide a default student name if session is entirely lost
     });
   }
 });
 
 // Get session summary with enhanced details
-app.get('/api/session/:sessionId/summary', (req, res) => {
+app.get('/api/session/:sessionId/summary', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const session = sessions.get(sessionId);
+    const session = await getSession(sessionId); // Load from DB or cache
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found.' });
@@ -656,7 +870,7 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
           .join(', ')
       : 'Showed curiosity and asked thoughtful questions.';
 
-    const duration = Math.floor((Date.now() - session.startTime.getTime()) / 60000);
+    const duration = Math.floor((Date.now() - session.startTime) / 60000); // Use timestamp directly
 
     const summary = {
       duration: duration > 0 ? `${duration} minutes` : 'Less than a minute',
@@ -665,7 +879,7 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
       studentName: session.studentName,
       grade: session.grade,
       highlights: highlights,
-      recommendations: generateRecommendations(session), // Renamed from suggestions for clarity in summary
+      recommendations: generateRecommendations(session),
       nextSteps: generateNextSteps(session)
     };
 
@@ -676,13 +890,21 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
   }
 });
 
-app.post('/api/session/:sessionId/end', (req, res) => {
+app.post('/api/session/:sessionId/end', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    if (!sessions.delete(sessionId)) {
-      return res.status(404).json({ error: 'Session not found or already ended.' });
-    }
-    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user.`);
+    sessionsCache.delete(sessionId); // Remove from cache
+
+    // Optionally delete from DB, or mark as 'inactive' for historical purposes
+    await new Promise((resolve, reject) => {
+      db.run('DELETE FROM sessions WHERE id = ?', [sessionId], function(err) {
+        if (err) return reject(err);
+        if (this.changes === 0) return resolve(false); // No rows deleted
+        resolve(true); // Successfully deleted
+      });
+    });
+
+    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user (and deleted from DB).`);
     res.json({ status: 'ended', message: 'Session successfully closed.' });
   } catch (error) {
     console.error('❌ Error ending session:', error.message);
@@ -691,9 +913,9 @@ app.post('/api/session/:sessionId/end', (req, res) => {
 });
 
 // Session management endpoints (status)
-app.get('/api/session/:sessionId/status', (req, res) => {
+app.get('/api/session/:sessionId/status', async (req, res) => {
   const { sessionId } = req.params;
-  const session = sessions.get(sessionId);
+  const session = await getSession(sessionId); // Load from DB or cache
 
   if (!session) {
     return res.status(404).json({ error: 'Session not found.' });
@@ -701,8 +923,9 @@ app.get('/api/session/:sessionId/status', (req, res) => {
 
   res.json({
     active: true,
-    duration: Math.floor((Date.now() - session.startTime.getTime()) / 60000),
-    topics: Array.from(session.topicsDiscussed)
+    duration: Math.floor((Date.now() - session.startTime) / 60000),
+    topics: Array.from(session.topicsDiscussed),
+    difficultyLevel: session.difficultyLevel
   });
 });
 
@@ -711,7 +934,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date(),
-    activeSessions: sessions.size,
+    activeSessionsInCache: sessionsCache.size,
     uptime: process.uptime()
   });
 });
@@ -719,9 +942,10 @@ app.get('/api/health', (req, res) => {
 // Start server and keep reference for shutdown
 const server = app.listen(config.PORT, () => {
   console.log(`🎓 Enhanced AI Tutor Backend running on port ${config.PORT}`);
-  console.log(`📊 Health check: http://localhost:${config.PORT}/api/health`); // Adjusted for local dev clarity
+  console.log(`📊 Health check: http://localhost:${config.PORT}/api/health`);
   console.log(`🚀 Ready to help students learn safely!`);
   console.log(`🛡️ Content filtering active for child safety`);
+  console.log(`💾 Sessions persistent via SQLite: ./tutor_sessions.db`);
 });
 
 // Graceful shutdown (SIGTERM and Ctrl+C)
@@ -730,7 +954,11 @@ const server = app.listen(config.PORT, () => {
     console.log(`Received ${signal}, shutting down gracefully...`);
     server.close(() => {
       console.log('Server closed.');
-      process.exit(0);
+      db.close((err) => {
+        if (err) console.error('❌ Error closing database:', err.message);
+        else console.log('✅ Database connection closed.');
+        process.exit(0);
+      });
     });
   });
 });
