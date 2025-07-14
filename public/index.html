@@ -1,1046 +1,752 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            padding: 1rem;
-        }
-
-        .container {
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-            padding: 1rem;
-        }
-
-        .mascot {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            animation: gentle-float 3s ease-in-out infinite;
-        }
-
-        @keyframes gentle-float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .student-info {
-            background: rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 15px;
-            margin: 2rem 0;
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .form-group label {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: white;
-        }
-
-        .form-group input,
-        .form-group select {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            color: white;
-            font-size: 1rem;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .form-group input::placeholder {
-            color: rgba(255,255,255,0.7);
-        }
-
-        .form-group select {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .form-group select option {
-            background: #764ba2;
-            color: white;
-        }
-
-        .start-button {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            border: none;
-            border-radius: 50px;
-            padding: 1.5rem 3rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            font-family: inherit;
-            margin: 1rem 0;
-        }
-
-        .start-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
-        }
-
-        .voice-button {
-            background: linear-gradient(45deg, #2196F3, #1976D2);
-            border: none;
-            border-radius: 50%;
-            width: 120px;
-            height: 120px;
-            font-size: 2rem;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            margin: 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .voice-button:hover {
-            transform: scale(1.05);
-        }
-
-        .voice-button:active {
-            transform: scale(0.95);
-        }
-
-        .voice-button.listening {
-            background: linear-gradient(45deg, #f44336, #d32f2f);
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .status {
-            font-size: 1.2rem;
-            margin: 1rem 0;
-            min-height: 3rem;
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .end-session-btn {
-            background: linear-gradient(45deg, #f44336, #d32f2f);
-            border: none;
-            border-radius: 25px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-            margin: 1rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .end-session-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .suggestions {
-            background: rgba(255,255,255,0.1);
-            padding: 1rem;
-            border-radius: 15px;
-            margin: 1rem 0;
-            backdrop-filter: blur(10px);
-        }
-
-        .suggestions h3 {
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-        }
-
-        .suggestion-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .suggestion-item {
-            background: rgba(255,255,255,0.2);
-            padding: 0.75rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        .suggestion-item:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-            border-color: rgba(255,255,255,0.5);
-        }
-
-        .suggestion-item:active {
-            transform: translateY(0);
-        }
-
-        .voice-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .live-captions {
-            position: fixed;
-            bottom: 8vh;
-            left: 50%;
-            transform: translateX(-50%);
-            min-width: 220px;
-            max-width: 90vw;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            font-size: 1.3rem;
-            padding: 1.1rem 2rem;
-            border-radius: 30px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            text-align: center;
-            z-index: 100;
-            opacity: 0.97;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .live-captions.user-caption {
-            background: rgba(56, 183, 74, 0.88); /* Greenish for user speech */
-            color: #fff;
-            border: 2px solid #2ecc40;
-        }
-        .live-captions.bot-caption {
-            background: rgba(52, 152, 219, 0.88); /* Bluish for bot TTS */
-            color: #fff;
-            border: 2px solid #2980b9;
-        }
-
-
-        .history-btn {
-            background: linear-gradient(45deg, #ffcc00, #ffa500);
-            color: #333;
-            border: none;
-            border-radius: 18px;
-            padding: 0.7rem 2rem;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 1rem auto;
-            display: block;
-        }
-
-        .history-btn:hover {
-            background: linear-gradient(45deg, #ffa500, #ffcc00);
-            transform: translateY(-2px);
-        }
-
-        .chat-history-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.55);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: #fff;
-            color: #333;
-            border-radius: 16px;
-            padding: 2rem;
-            width: 95vw;
-            max-width: 600px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 32px rgba(0,0,0,0.3);
-            position: relative;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            background: none;
-            border: none;
-            font-size: 2rem;
-            color: #888;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .close-btn:hover {
-            color: #f44336;
-        }
-
-        .chat-message {
-            margin: 0.5rem 0;
-            padding: 0.5rem 1rem;
-            border-radius: 10px;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        .user-message {
-            background: rgba(76, 175, 80, 0.2);
-            margin-left: 1rem;
-        }
-
-        .tutor-message {
-            background: rgba(33, 150, 243, 0.2);
-            margin-right: 1rem;
-        }
-
-        .session-summary {
-            background: rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 20px;
-            margin: 2rem 0;
-            backdrop-filter: blur(10px);
-            text-align: left;
-        }
-
-        .summary-item {
-            margin: 1rem 0;
-            padding: 0.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .suggestion-grid {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-            
-            .voice-controls {
-                flex-direction: row;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 0.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .voice-button {
-                width: 100px;
-                height: 100px;
-                font-size: 1.5rem;
-            }
-
-            .start-button {
-                padding: 1rem 2rem;
-                font-size: 1.2rem;
-            }
-
-            .status {
-                font-size: 1rem;
-                padding: 0.75rem;
-            }
-
-            .student-info {
-                padding: 1.5rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div id="welcome-screen">
-            <div class="mascot">🎓</div>
-            <h1>Hi! I'm your AI Tutor!</h1>
-            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Ready to learn and explore together?</p>
-            
-            <div class="student-info">
-                <div class="form-group">
-                    <label for="student-name">Name</label>
-                    <input type="text" id="student-name" placeholder="What's your name?" maxlength="50" />
-                </div>
-                
-                <div class="form-group">
-                    <label for="student-grade">Grade</label>
-                    <select id="student-grade">
-                        <option value="">Select your grade</option>
-                        <option value="PreK">Pre-K</option>
-                        <option value="K">Kindergarten</option>
-                        <option value="1">1st Grade</option>
-                        <option value="2">2nd Grade</option>
-                        <option value="3">3rd Grade</option>
-                        <option value="4">4th Grade</option>
-                        <option value="5">5th Grade</option>
-                        <option value="6">6th Grade</option>
-                        <option value="7">7th Grade</option>
-                        <option value="8">8th Grade</option>
-                        <option value="9">9th Grade</option>
-                        <option value="10">10th Grade</option>
-                        <option value="11">11th Grade</option>
-                        <option value="12">12th Grade</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button class="start-button" id="start-btn" onclick="startTutoring()">Start Learning!</button>
-        </div>
-
-        <div id="tutor-interface" class="hidden">
-            <div class="mascot">🤖</div>
-            <h2>Let's Learn Together!</h2>
-            
-            <div class="status" id="status">Press the microphone to start talking!</div>
-            
-            <div class="voice-controls">
-                <button class="voice-button" id="mic-btn" onclick="toggleListening()">🎤</button>
-                <button class="end-session-btn" onclick="endSession()">End Session</button>
-            </div>
-
-            <div id="suggestions" class="suggestions">
-                <h3>🎯 What sounds fun today?</h3>
-                <div class="suggestion-grid" id="suggestion-grid">
-                    <div class="suggestion-item" onclick="speakSuggestion('Can you help me with math?')">🔢 Numbers & Math</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I want to practice reading')">📖 Reading Fun</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me about animals')">🦁 Cool Animals</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Can we do a creative activity?')">🎨 Art & Creative</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('I have a question about homework')">📚 Homework Help</div>
-                    <div class="suggestion-item" onclick="speakSuggestion('Tell me a story')">📚 Story Time</div>
-                </div>
-            </div>
-
-            <button id="show-history-btn" class="history-btn" onclick="showHistory()">View Full Chat History</button>
-        </div>
-
-        <div id="session-summary" class="session-summary hidden">
-            <h2>Session Complete! 🎉</h2>
-            <div id="summary-content"></div>
-            <button class="start-button" onclick="startNewSession()">Start New Session</button>
-        </div>
-
-        <div id="live-captions" class="live-captions hidden" aria-live="polite"></div>
-
-
-        <div id="chat-history-modal" class="chat-history-modal hidden">
-            <div class="modal-content">
-                <button onclick="closeHistory()" class="close-btn">&times;</button>
-                <h3>Chat History</h3>
-                <div id="full-chat-history"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // App State
-        let isListening = false;
-        let recognition;
-        let speechSynthesis = window.speechSynthesis;
-        let currentSessionId = null;
-        let isProcessing = false;
-        let sessionStarted = false;
-        let selectedVoice = null;
-        let conversationContext = [];
-        let chatHistory = [];
-        let currentSubject = null;
-        
-        const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
-
-        function showReadingWordPrompt(prompt, word) {
-            // Remove any previous prompt
-            let existing = document.getElementById('reading-word-prompt');
-            if (existing) existing.remove();
-
-            // Create a new prompt
-            const container = document.createElement('div');
-            container.id = 'reading-word-prompt';
-            container.style.position = 'relative';
-            container.style.margin = '2rem 0';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.alignItems = 'center';
-
-            // Prompt text
-            const promptDiv = document.createElement('div');
-            promptDiv.textContent = prompt;
-            promptDiv.style.fontSize = '1.4rem';
-            promptDiv.style.marginBottom = '1.3rem';
-            promptDiv.style.fontWeight = 'bold';
-
-            // The BIG word display
-            const wordDiv = document.createElement('div');
-            wordDiv.textContent = word;
-            wordDiv.style.fontSize = '3.2rem';
-            wordDiv.style.letterSpacing = '0.15em';
-            wordDiv.style.background = 'linear-gradient(90deg,#fff8,#fffb)';
-            wordDiv.style.color = '#764ba2';
-            wordDiv.style.padding = '1.1rem 3.4rem';
-            wordDiv.style.borderRadius = '1.1em';
-            wordDiv.style.boxShadow = '0 4px 30px rgba(33,150,243,0.18)';
-            wordDiv.style.fontWeight = '900';
-            wordDiv.style.border = '3px solid #eee';
-
-            container.appendChild(promptDiv);
-            container.appendChild(wordDiv);
-
-            // Insert at the top of tutor interface
-            const tutorInterface = document.getElementById('tutor-interface');
-            tutorInterface.insertBefore(container, tutorInterface.children[2] || null);
-        }
-
-
-        // Initialize speech synthesis
-        function initializeSpeechSynthesis() {
-            return new Promise((resolve) => {
-                let voices = speechSynthesis.getVoices();
-                
-                if (voices.length > 0) {
-                    selectBestVoice(voices);
-                    resolve();
-                } else {
-                    speechSynthesis.onvoiceschanged = () => {
-                        voices = speechSynthesis.getVoices();
-                        selectBestVoice(voices);
-                        resolve();
-                    };
-                    
-                    setTimeout(() => {
-                        voices = speechSynthesis.getVoices();
-                        selectBestVoice(voices);
-                        resolve();
-                    }, 1000);
-                }
-            });
-        }
-
-        function selectBestVoice(voices) {
-            const preferredVoices = [
-                'Samantha', 'Karen', 'Susan', 'Victoria', 'Allison',
-                'Google UK English Female', 'Google US English', 'Microsoft Zira',
-                'Alex', 'Daniel', 'Fred'
-            ];
-            
-            for (let preferred of preferredVoices) {
-                selectedVoice = voices.find(voice =>
-                    voice.name.includes(preferred) ||
-                    voice.name.toLowerCase().includes(preferred.toLowerCase())
-                );
-                if (selectedVoice) break;
-            }
-            
-            if (!selectedVoice) {
-                selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+const express = require('express');
+const cors = require('cors');
+const OpenAI = require('openai');
+require('dotenv').config();
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+
+// --- Configuration Constants ---
+const config = {
+  PORT: process.env.PORT || 3000,
+  SESSION_TTL: 45 * 60 * 1000, // 45 minutes of inactivity
+  CLEANUP_INTERVAL: 5 * 60 * 1000, // Check for expired sessions every 5 minutes
+  GPT_MODEL: 'gpt-4o-mini',
+  GPT_TEMPERATURE: 0.7, // Slightly higher for more engaging responses
+  GPT_PRESENCE_PENALTY: 0.1, // Encourage more varied responses
+  GPT_FREQUENCY_PENALTY: 0.1, // Penalize frequent tokens
+  VALID_GRADES: ['PreK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+  INAPPROPRIATE_TOPICS: {
+    sexual: ['sex', 'sexual', 'porn', 'vagina', 'penis', 'breasts', 'naked', 'intercourse', 'masturbate', 'orgasm', 'condom', 'pregnancy'],
+    violence: ['kill', 'murder', 'bomb', 'gun', 'knife', 'suicide', 'violence', 'abuse', 'hurt', 'pain', 'blood', 'weapon'],
+    profanity: ['fuck', 'shit', 'asshole', 'bitch', 'cunt', 'damn', 'hell', 'crap', 'piss', 'dick', 'cock'],
+    drugs: ['drugs', 'drug', 'marijuana', 'weed', 'cocaine', 'heroin', 'alcohol', 'beer', 'wine', 'smoking', 'high', 'drunk'],
+    hateSpeech: ['racist', 'n-word', 'faggot', 'retard', 'idiot', 'stupid', 'loser', 'ugly', 'fat', 'dumb', 'hate'],
+    inappropriateGeneral: ['gang', 'crime', 'cult', 'gossip', 'rumor', 'cheating', 'fraud']
+  }
+};
+
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ FATAL: Missing OPENAI_API_KEY environment variable. Please set it in your .env file.');
+  process.exit(1);
+}
+
+const app = express();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const sessions = new Map(); // Sessions stored purely in memory
+
+// --- Middleware ---
+app.use(cors());
+app.use(express.json({ limit: '4kb' }));
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(rateLimit({
+  windowMs: 60_000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+}));
+app.use(express.static('public'));
+
+// --- Session Management & Cleanup (In-memory) ---
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, sess] of sessions) {
+    if (now - sess.lastActivity > config.SESSION_TTL) {
+      console.log(`🧹 Cleaning up expired session ${id.slice(-6)}. Inactivity: ${((now - sess.lastActivity) / 1000 / 60).toFixed(1)} minutes.`);
+      sessions.delete(id);
+    }
+  }
+}, config.CLEANUP_INTERVAL);
+
+
+// --- Helper Functions ---
+
+const getInappropriateResponse = (category, session) => {
+    const baseMessage = {
+        sexual: `That's not something we talk about in our learning time, ${session.studentName}! Let's explore something educational instead. What subject interests you today?`,
+        violence: `I'm here to help you learn positive and educational things, ${session.studentName}! What would you like to learn about instead?`,
+        profanity: `Let's use kind words in our learning space, ${session.studentName}. What would you like to learn about today?`,
+        drugs: `That's not an appropriate topic for our learning time, ${session.studentName}! Let's focus on something educational. What interests you?`,
+        hateSpeech: `Let's make sure our learning space is respectful and kind, ${session.studentName}. What topic would you like to explore today?`,
+        inappropriateGeneral: `I'm here to help you learn amazing things, ${session.studentName}! What educational topic would you like to explore today?`
+    }[category] || `Let's find something fun to learn instead!`;
+
+    return {
+        response: baseMessage,
+        subject: null,
+        suggestions: generateSafeSuggestions(session.grade, true), // Force general suggestions here
+        encouragement: `Let's get back to learning, ${session.studentName}!`,
+        status: 'redirected'
+    };
+};
+
+const containsInappropriateContent = (text) => {
+  const lowerText = text.toLowerCase();
+  for (const [category, words] of Object.entries(config.INAPPROPRIATE_TOPICS)) {
+    for (const word of words) {
+      if (new RegExp(`\\b${word}\\b`, 'i').test(lowerText) || lowerText.includes(` ${word} `)) {
+        return { inappropriate: true, category, word };
+      }
+    }
+  }
+  return { inappropriate: false };
+};
+
+// --- ENHANCED SYSTEM PROMPT ---
+function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null) {
+  const isEarlyGrade = ['PreK', 'K', '1', '2'].includes(grade);
+  const gradeGuidelines = {
+    'PreK': 'Use very simple words. 1-2 sentences max. Focus on basic concepts like colors, shapes, and sounds. Be extra gentle and nurturing.',
+    'K': 'Simple words, basic ideas. 1-2 sentences. Focus on counting, letters, and simple stories. Encourage exploration.',
+    '1': 'Easy words, encourage trying. 1-2 sentences. Guide them through sounding out words and basic addition. Celebrate small wins.',
+    '2': 'Build confidence, simple steps. 2-3 sentences. Focus on early reading comprehension and two-digit math. Prompt for their ideas.',
+    '3': 'A bit more detail, still brief. 2-3 sentences. Encourage problem-solving for elementary math and reading analysis. Use relatable examples.',
+    '4': 'Explain clearly, don’t ramble. 2-3 sentences. Help them break down complex ideas in all subjects. Ask "why" and "how".',
+    '5': 'Good explanations, stay on topic. 3 sentences. Foster independent thinking and deeper understanding. Encourage them to explain their reasoning.',
+    '6': 'A little more complex, still short. 3-4 sentences. Encourage critical thinking for middle school topics. Connect concepts to real-world scenarios.',
+    '7': 'Focused and clear. 3-4 sentences. Guide towards analytical skills and deeper inquiry. Promote researching ideas.',
+    '8': 'Explain in detail, don’t overwhelm. 3-4 sentences. Help them connect concepts and apply knowledge. Challenge them to think creatively.',
+    '9': 'Cover fully, be efficient. 4-5 sentences. Promote self-directed learning and advanced problem-solving. Encourage debate and diverse perspectives.',
+    '10': 'Thorough, but keep it moving. 4-5 sentences. Encourage complex reasoning and independent research. Guide them to form their own conclusions.',
+    '11': 'Go in-depth, stay focused. 4-5 sentences. Challenge them with nuanced questions and diverse perspectives. Facilitate critical evaluation.',
+    '12': 'Complete answers, efficient. 4-5 sentences. Prepare them for higher-level thinking and application. Encourage deep dives and interdisciplinary connections.'
+  };
+
+  let difficultyAdjustment = '';
+  if (difficultyLevel < 0.3) {
+    difficultyAdjustment = "The student seems to be struggling. Provide extra clear, simpler steps, more direct hints, and fundamental concepts. Be extra patient and break down tasks into smaller parts. Ensure responses are very encouraging and reframe mistakes as learning opportunities.";
+  } else if (difficultyLevel > 0.7) {
+    difficultyAdjustment = "The student seems to be grasping concepts quickly. Challenge them with more complex questions, encourage deeper inquiry, and introduce related advanced concepts. Keep the pace engaging and encourage independent exploration.";
+  } else {
+    difficultyAdjustment = "Maintain a steady, encouraging pace. Offer clear guidance and prompt critical thinking. Balance challenge with support.";
+  }
+
+  let foundationalReviewInstruction = '';
+  if (needsFoundationalReview && needsFoundationalReview.skill === 'counting') {
+    foundationalReviewInstruction = `
+    The student is currently struggling with basic counting, which is essential for the current math problem.
+    **CRITICAL TASK**: Temporarily pause the original problem. Your sole focus is now to gently teach and reinforce basic counting from 1 to 10 or 1 to 20 (depending on grade).
+    Guide them through counting step-by-step, patiently. For example, ask them to count to 5, then to 10.
+    Once they demonstrate they can count accurately, you will smoothly transition back to the original problem: "${needsFoundationalReview.originalProblem}". Acknowledge their counting success and then re-introduce the original question.
+    Do NOT return to the original problem until they show competence in counting.
+    `;
+  }
+
+  return `
+You are an AI Tutor named Byte. Your job: teach students to THINK, not just memorize!
+Keep replies short, simple, and step-by-step.
+- NEVER give the answer directly. Always guide them with questions, hints, or by showing *how* to approach the problem.
+- Always use language a kid that age will understand.
+- Use their name in responses sometimes, like "Great thinking, ${studentName}!"
+- Be patient, encouraging, and celebrate effort. Use a warm, empathetic, and vibrant tone.
+- If the student gives a wrong or incomplete answer, gently point out the mistake, explain *why* it's not quite right (without giving the correct answer), and encourage them to try again with a guiding question. Frame it as a step in learning.
+- **CRITICAL**: If the student says "I don't know" or asks you to just tell them the answer, *stay on the current topic or gently guide them to pick one*.
+    - If there's an active learning topic, rephrase the question, offer a different hint, or break the *current problem* into smaller, more manageable steps. **DO NOT abruptly change the subject.**
+    - If no specific topic has been established yet (e.g., in an initial "I don't know" scenario), offer 2-3 diverse and appealing educational options. Phrase them as exciting opportunities, e.g., "We could dive into the mysteries of space, explore fun math puzzles, or read an exciting story. Which one sparks your curiosity?"
+    - If the student says "you pick one" or similar, acknowledge it and then propose 1-2 engaging options and ask for their preference. E.g., "Okay, I can pick a fun one for us! How about we start with a little math puzzle? Or maybe an exciting science fact? Which sounds more interesting to you, ${studentName}?"
+- **FOUNDATIONAL SKILL MANAGEMENT**: If a student reveals a misunderstanding of a *foundational skill* required for the current problem (e.g., struggling with counting for an addition problem), gently pivot the lesson to focus on that foundational skill until competency is shown, then gracefully return to the original problem. This is critical for building true understanding.
+- **NEVER** ask the student to perform physical actions that the AI cannot see or verify (e.g., "show me fingers", "point to"). Instead, use imagination or conceptual examples (e.g., "Imagine you have 5 apples...", "Think about what happens when you combine...").
+- Only activate the "inappropriate topic" response if the topic is genuinely non-educational, harmful, or explicitly listed in the restricted words. If a topic like 'music' is brought up, engage with it educationally unless specific inappropriate keywords are used.
+- Strictly avoid adult/inappropriate topics: if they come up, say "That's not something we talk about in our learning time, ${studentName}! Let's explore something educational instead. What subject interests you today?" and immediately change the subject to general educational options.
+- Never discuss personal/private matters.
+
+${isEarlyGrade ? `
+For reading activities (PreK–2), NEVER say the target word in your message.
+Instead, reply in JSON format like this:
+{
+  "message": "Can you sound out this word, ${studentName}?",
+  "READING_WORD": "cat"
+}
+Pick any age-appropriate word you want for each turn.
+` : ''}
+
+Examples:
+- Math: "Imagine you have 5 red blocks and 5 blue blocks. If you put them all together, how many blocks do you have in total, ${studentName}?" (Instead of "It's 10.")
+- Reading: "Sound out c-a-t. What word is that?" (Instead of "The word is cat.")
+- Science: "What do you think happens to ice in the sun?" (Instead of "It melts.")
+
+Stay positive, focused, and always teach the process!
+${gradeGuidelines[grade] || gradeGuidelines['K']}
+${difficultyAdjustment}
+${foundationalReviewInstruction}
+`.trim();
+}
+
+const createSessionObject = (sessionId, studentName, grade, subjects) => ({
+  id: sessionId,
+  studentName: studentName || 'Student',
+  grade: grade || 'K',
+  subjects: subjects || [],
+  startTime: Date.now(),
+  lastActivity: Date.now(),
+  messages: [{ role: 'system', content: getTutorSystemPrompt(grade, studentName), timestamp: Date.now() }],
+  totalWarnings: 0,
+  topicsDiscussed: new Set(),
+  currentTopic: null,
+  currentSubtopic: null, // Track current subtopic more explicitly
+  topicBreakdown: {},
+  conversationContext: [],
+  achievements: [],
+  strugglingAreas: [],
+  preferredLearningStyle: null,
+  difficultyLevel: 0.5,
+  needsFoundationalReview: null // { skill: 'counting', originalProblem: '7 apples and 3 more' }
+});
+
+const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+const generateWelcomeMessage = (studentName, grade) => {
+  const common = `Hi ${studentName}! I'm your tutor today. What are you curious about?`;
+  const gradeSpecific = {
+    'PreK': `Hi ${studentName}! I'm Byte, your tutor! Let's learn together! What sounds fun to explore today, like colors or animal sounds?`,
+    'K': `Hello ${studentName}! I'm Byte! What sounds fun today? We could count, learn letters, or talk about animals!`,
+    '1': `Hi ${studentName}! I'm Byte! Ready to learn cool things? Do you want to practice reading, try some math, or discover science?`,
+    '2': `Hey ${studentName}! I'm Byte! What should we explore? Maybe a tricky math problem, an interesting story, or a science question?`,
+    '3': `Hi ${studentName}! I'm Byte! What are you curious about today? We can dive into anything—math, reading, science, or even history!`
+  };
+  return gradeSpecific[grade] || common;
+};
+
+// --- ENHANCED SUGGESTIONS ---
+const generateSafeSuggestions = (grade, forceGeneral = false) => {
+  const generalSuggestions = [
+    'Let\'s explore the wonders of science!',
+    'Want to learn about fascinating animals?',
+    'How about some fun math puzzles?',
+    'Let\'s read an exciting story together!',
+    'What about discovering new music rhythms?',
+    'Curious about how technology works?',
+    'How about a peek into history?'
+  ].sort(() => 0.5 - Math.random()); // Shuffle for variety
+
+  if (forceGeneral) {
+    return generalSuggestions.slice(0, 3);
+  }
+
+  const gradeSpecific = {
+    'PreK': ['Let\'s learn colors!', 'What about shapes?', 'Let\'s sing a song!'],
+    'K': ['Let\'s count!', 'What about letters?', 'Let\'s learn animal sounds!'],
+    '1': ['Let\'s practice ABCs!', 'How about counting to 100?', 'Tell me about your favorite animal!']
+  };
+
+  const currentSuggestions = (gradeSpecific[grade] || generalSuggestions).sort(() => 0.5 - Math.random());
+  
+  // Ensure a mix, and always allow picking new topic
+  const finalSuggestions = Array.from(new Set([
+    ...currentSuggestions.slice(0, 2),
+    'Want to pick a new topic?',
+    'What else are you curious about?'
+  ]));
+
+  return finalSuggestions.slice(0, 3); // Keep it concise
+};
+
+// --- ENHANCED DYNAMIC SUGGESTIONS ---
+const generateDynamicSuggestions = (session) => {
+  const ctx = (session.conversationContext || []).slice(-5);
+  const recentUser = ctx.filter(e => e.role === 'user');
+  const lastUser = recentUser[recentUser.length - 1] || {};
+  const { topic, subtopic } = lastUser;
+
+  const struggling = recentUser.length >= 2 &&
+    recentUser[recentUser.length - 1].topic === recentUser[recentUser.length - 2].topic &&
+    recentUser[recentUser.length - 1].subtopic === recentUser[recentUser.length - 2].subtopic;
+  const masterySignals = session.achievements.filter(a => a.topic === topic && a.subtopic === subtopic).length > 0;
+
+  const suggestionsMap = {
+    math: {
+      addition: {
+        struggling: ["Let's review some addition tips together, ${studentName}!", "Need help with addition? Try using objects or drawing!", "Let’s slow down and try a different example of addition."],
+        mastered: ["Ready to try a harder addition problem, ${studentName}?", "Want to switch to subtraction for a bit?", "How about exploring multiplication, which builds on addition?", "Curious how addition works with bigger numbers?"],
+        default: ["Want a quick addition game?", "Let's practice addition with some real-world examples!", "What's another addition problem you'd like to try?"]
+      },
+      multiplication: {
+        struggling: ["Let's review the multiplication tables.", "How about drawing arrays to understand multiplication?", "We can use repeated addition to solve this."],
+        mastered: ["Ready for some division challenges?", "How about fractions next, they involve multiplication!", "Let's explore word problems with multiplication!"],
+        default: ["Want a quick times table game?", "Ready for a real-world multiplication problem?", "Try a quick multiplication quiz?"]
+      },
+      default: ["Want a math puzzle?", "Switch to a different math topic?", "Try a quick math quiz?", "Explore how math is used in daily life!"]
+    },
+    reading: {
+      vocabulary: {
+        struggling: ["Let's try finding the definition of that word again.", "Can you think of a synonym for that word?", "Let's read a simpler sentence with that word."],
+        mastered: ["Want to learn new words from a specific story?", "Try using those words in your own sentences?", "How about exploring grammar next, using those new words?", "Let's try a vocabulary quiz!"],
+        default: ["Want to learn new words?", "Try using those words in a sentence?", "Want to read a short story?"]
+      },
+      comprehension: {
+        struggling: ["Let's re-read that part slowly. What do you notice?", "Can you tell me in your own words what happened here?", "Let's break down the main idea into smaller pieces."],
+        mastered: ["Ready to read a longer story and discuss it?", "How about we explore different types of stories, like fables or myths?", "Let's practice summarizing a more complex paragraph!"],
+        default: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?"]
+      },
+      default: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?", "Explore different kinds of books!"]
+    },
+    science: {
+      animals: {
+        struggling: ["Let's look at some pictures of different animal groups.", "What's one thing you know about this animal?", "We can compare two animals to see their differences."],
+        mastered: ["Want to learn about a different animal or animal group?", "Curious about animal habitats or how they adapt to their environment?", "How about exploring animal life cycles?", "Let's learn about ecosystems next!"],
+        default: ["Want to learn about a different animal?", "Curious about animal habitats?", "How about animal adaptations?"]
+      },
+      space: {
+        struggling: ["Let's look at a picture of our solar system again.", "Can you name one planet you know?", "What's one question you have about space?"],
+        mastered: ["Want to learn about stars and galaxies?", "How about astronauts and rockets, and how they travel in space?", "Let's explore gravity next, how does it affect space?", "What about exploring the concept of time in space?"],
+        default: ["Want to learn about planets?", "How about stars and galaxies?", "What about astronauts and rockets?"]
+      },
+      default: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!", "How about exploring the human body!"]
+    },
+    music: {
+      instruments: {
+        struggling: ["Let's listen to sounds from different instruments again.", "Can you name one instrument you know?", "What's one question you have about instruments?"],
+        mastered: ["Want to learn about different types of music?", "How about exploring the history of music?", "Let's try composing a simple rhythm!", "Curious about how instruments make sound?"],
+        default: ["Want to learn about different instruments?", "How about music from around the world?", "What about composing a simple song?"]
+      },
+      rhythm: {
+        struggling: ["Let's clap out a simple rhythm together.", "Can you feel the beat in this song?", "How about we try a different rhythm pattern?"],
+        mastered: ["Ready to try a more complex rhythm?", "How about exploring melody next, and how it works with rhythm?", "Let's try writing your own rhythm pattern!"],
+        default: ["Want to learn about different rhythms?", "How about listening for rhythm in songs?", "What about creating your own rhythm?"]
+      },
+      default: ["Want to learn about different types of music?", "How about music history?", "What about composing a simple melody?", "Let's discover how sound works!"]
+    },
+    socialStudies: {
+      history: {
+        struggling: ["Let's review the timeline of this historical event.", "Can you tell me one fact about this time period?", "How about we focus on one key figure or moment?"],
+        mastered: ["Ready to explore a different era in history?", "How about we discuss the impact of this event on the world?", "Let's dive into primary sources from this time!"],
+        default: ["Want to learn about famous historical events?", "How about exploring different cultures through history?", "What about significant historical figures?"]
+      },
+      geography: {
+        struggling: ["Let's look at a map of this region again.", "Can you name one famous landmark here?", "How about we learn about the climate of this place?"],
+        mastered: ["Ready to explore a new continent or country?", "How about learning about different types of landforms?", "Let's try drawing a map of your neighborhood!"],
+        default: ["Want to learn about different countries and capitals?", "How about exploring the world's oceans?", "What about famous mountains?"]
+      },
+      default: ["Want to learn about world cultures?", "How about famous leaders?", "What about different forms of government?"]
+    },
+    pe: {
+      fitness: {
+        struggling: ["Let's try a simpler exercise to warm up.", "What's one way you like to stay active?", "How about we learn about the benefits of a healthy snack?"],
+        mastered: ["Ready to try a new sport?", "How about learning about advanced fitness techniques?", "Let's explore the science behind how our bodies move!"],
+        default: ["Want to learn about different sports?", "How about healthy eating tips?", "What about fun ways to exercise?"]
+      },
+      sports: {
+        struggling: ["Let's review the rules of this game.", "Can you tell me one skill used in this sport?", "How about we watch a video clip to understand it better?"],
+        mastered: ["Ready to learn about a new sport?", "How about strategies for playing this game better?", "Let's explore the history of sports!"],
+        default: ["Want to learn about different sports?", "How about famous athletes?", "What about the rules of your favorite game?"]
+      },
+      default: ["Want to learn about staying active?", "How about healthy habits?", "What about different ways to play and move?"]
+    },
+    technology: {
+      coding: {
+        struggling: ["Let's break down this code into smaller steps.", "What's the first thing you think this code does?", "How about we try a simpler coding puzzle?"],
+        mastered: ["Ready to try a more complex coding challenge?", "How about creating your own simple program?", "Let's explore different coding languages!"],
+        default: ["Want to learn about how computers think?", "How about creating your own small game?", "What about solving a coding puzzle?"]
+      },
+      robotics: {
+        struggling: ["Let's look at the different parts of a robot.", "What's one thing you think robots can do?", "How about we imagine a robot and what it could help us with?"],
+        mastered: ["Ready to design your own robot?", "How about learning about advanced robotics?", "Let's explore how robots are used in the real world!"],
+        default: ["Want to learn about different types of robots?", "How about how robots move?", "What about building simple robots?"]
+      },
+      default: ["Want to learn about how technology helps us?", "How about exploring the internet?", "What about designing a new app idea?"]
+    },
+    language: {
+      vocabulary: {
+        struggling: ["Let's review the new words and their meanings.", "Can you think of a sentence using this word?", "How about we practice saying the word aloud?"],
+        mastered: ["Ready to learn more words in this language?", "How about using these words in a conversation?", "Let's explore phrases and idioms!"],
+        default: ["Want to learn new words in a different language?", "How about practicing common phrases?", "What about learning simple greetings?"]
+      },
+      grammar: {
+        struggling: ["Let's look at how sentences are built in this language.", "Can you identify the subject or verb in this sentence?", "How about we simplify the sentence structure?"],
+        mastered: ["Ready to explore more complex grammar rules?", "How about practicing writing sentences in this language?", "Let's learn about different tenses!"],
+        default: ["Want to learn how to build sentences?", "How about understanding verbs and nouns?", "What about common grammar rules?"]
+      },
+      default: ["Want to learn about a new language?", "How about exploring common phrases?", "What about understanding different alphabets?"]
+    }
+  };
+
+  let suggestions = [];
+  // Prioritize current topic/subtopic suggestions
+  if (topic && subtopic && suggestionsMap[topic] && suggestionsMap[topic][subtopic]) {
+    if (struggling) {
+      suggestions = suggestionsMap[topic][subtopic].struggling || suggestionsMap[topic][subtopic].default;
+      if (!session.strugglingAreas.includes(`${topic} - ${subtopic}`)) {
+        session.strugglingAreas.push(`${topic} - ${subtopic}`);
+      }
+    } else if (masterySignals) {
+      suggestions = suggestionsMap[topic][subtopic].mastered || suggestionsMap[topic][subtopic].default;
+      session.strugglingAreas = session.strugglingAreas.filter(s => s !== `${topic} - ${subtopic}`);
+    } else {
+      suggestions = suggestionsMap[topic][subtopic].default;
+    }
+  } else if (topic && suggestionsMap[topic] && suggestionsMap[topic].default) {
+    // If only topic, but no specific subtopic progress, use general topic suggestions
+    suggestions = suggestionsMap[topic].default;
+  } else {
+    // If no topic detected or conversation is very early, use safe general suggestions
+    suggestions = generateSafeSuggestions(session.grade, true);
+  }
+
+  // Ensure unique and relevant suggestions, always include an option to change topics
+  return Array.from(new Set([...suggestions.slice(0, 2), "Want to pick a new topic?", "What else are you curious about?", "Let's try a different challenge!"]))
+             .slice(0, 3) // Keep it to 3 concise options
+             .map(s => s.replace('${studentName}', session.studentName)); // Personalize
+};
+
+
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+function buildPersonalizedSummary(session) {
+  const lines = [];
+  for (const [subject, breakdown] of Object.entries(session.topicBreakdown)) {
+    const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
+    const [topSub, topCount] = Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0] || [];
+    if (topSub) {
+      lines.push(`${session.studentName} focused mostly on **${capitalize(topSub)}** in **${capitalize(subject)}** (${Math.round((topCount / total) * 100)}% of their questions in this area).`);
+    } else {
+      lines.push(`${session.studentName} showed an interest in **${capitalize(subject)}**.`);
+    }
+  }
+  return lines.length ? lines.join(' ') : `Showed curiosity and asked thoughtful questions throughout the session.`;
+}
+
+function generateRecommendations(session) {
+  const { topicBreakdown: breakdown = {} } = session;
+  const recs = [];
+
+  const getTopSubtopic = (subject) => {
+    if (!breakdown[subject]) return null;
+    const subs = Object.entries(breakdown[subject]);
+    return subs.length ? subs.sort((a, b) => b[1] - a[1])[0][0] : null;
+  };
+
+  const addRec = (subject, defaultMsg) => {
+    const top = getTopSubtopic(subject);
+    if (top) {
+      recs.push(`Keep practicing **${capitalize(top)}** in **${capitalize(subject)}**—you're making awesome progress!`);
+    } else if (breakdown[subject]) {
+      recs.push(defaultMsg);
+    }
+  };
+
+  addRec('math', 'Practice math problems regularly to build confidence.');
+  addRec('reading', 'Keep reading different types of books to expand vocabulary.');
+  addRec('science', 'Try simple science experiments at home.');
+  addRec('music', 'Discover different types of music and instruments!');
+  addRec('pe', 'Remember to keep moving and play your favorite sports!');
+  addRec('technology', 'Explore more about how technology works around you!');
+  addRec('language', 'Try learning new words in a different language!');
+  addRec('socialStudies', 'Dive deeper into fascinating historical events or world cultures!');
+
+
+  if (session.strugglingAreas && session.strugglingAreas.length > 0) {
+    recs.push(`Consider spending more time on: **${session.strugglingAreas.map(s => `${s}`).join(', ')}** to build even stronger understanding.`);
+  }
+  if (session.achievements && session.achievements.length > 0) {
+    recs.push(`Great job mastering: **${session.achievements.map(a => `${a.subtopic} in ${a.topic}`).join(', ')}**! Keep building on these successes!`);
+  }
+
+  return recs.length ? recs : [`Continue exploring topics that spark your curiosity, ${session.studentName}! There's so much to learn!`];
+}
+
+function generateNextSteps(session) {
+  if (session.strugglingAreas && session.strugglingAreas.length > 0) {
+    const lastStruggle = session.strugglingAreas[session.strugglingAreas.length - 1];
+    return [`You could use some extra practice on **${lastStruggle}**. Let's focus more on this next time to turn challenges into triumphs!`];
+  }
+
+  const { topicBreakdown: breakdown = {} } = session;
+  let bestSubject = null, bestSub = null, bestCount = 0;
+
+  for (const [subject, subs] of Object.entries(breakdown)) {
+    for (const [sub, count] of Object.entries(subs)) {
+      if (count > bestCount) {
+        bestSubject = subject;
+        bestSub = sub;
+        bestCount = count;
+      }
+    }
+  }
+  if (bestSubject && bestSub) {
+    return [`Great job with **${capitalize(bestSub)}** in **${capitalize(bestSubject)}**! Try more exercises to master it completely and become a real expert!`];
+  }
+  return ['Keep exploring and practicing what interests you most! Every question makes you smarter!'];
+}
+
+// --- NEW: Foundational Skill Check Function ---
+function checkFoundationalSkills(userMessage, session) {
+  const lowerMessage = userMessage.toLowerCase();
+  const currentProblem = session.currentProblem || ''; // Store the current problem the AI posed
+
+  // Logic for counting errors in a math context
+  if (session.currentTopic === 'math' && session.currentSubtopic === 'addition' || session.currentSubtopic === 'counting' || session.needsFoundationalReview?.skill === 'counting') {
+    // Detect clear counting missequences or extremely off answers for simple sums
+    const countingErrors = [
+      'one two three four five seven eight fifteen', // direct example from chat
+      'one three five',
+      'two four six',
+      'nine five one',
+      'zero ten twenty' // Indicates misunderstanding of small number sequence
+    ];
+    
+    // If user's message matches a counting error pattern OR their numerical answer is wildly off for a simple sum
+    if (countingErrors.some(error => lowerMessage.includes(error))) {
+      session.currentProblem = session.messages.slice(-2, -1)[0]?.content; // Store the problem AI just asked
+      return { skill: 'counting', originalProblem: session.currentProblem };
+    }
+
+    // Heuristic for wildly incorrect answers to simple math problems (e.g., 7+3=97)
+    const mathProblemRegex = /(\d+)\s*(plus|\+|\-|\*|\/|times|divided by)\s*(\d+)/;
+    const match = currentProblem.match(mathProblemRegex);
+    if (match) {
+        const num1 = parseFloat(match[1]);
+        const num2 = parseFloat(match[3]);
+        const operator = match[2];
+        let expectedAnswer = null;
+        if (operator === '+' || operator === 'plus') expectedAnswer = num1 + num2;
+
+        if (expectedAnswer !== null) {
+            const userNumericAnswer = parseFloat(lowerMessage.replace(/[^0-9.]/g, '')); // Extract number from user response
+            // If user's numerical answer is present and wildly off for a simple sum
+            if (!isNaN(userNumericAnswer) && Math.abs(userNumericAnswer - expectedAnswer) > Math.max(5, expectedAnswer * 0.5)) { // e.g., off by more than 5 or 50%
+                session.currentProblem = session.messages.slice(-2, -1)[0]?.content;
+                return { skill: 'counting', originalProblem: session.currentProblem }; // Assume counting is often the root cause for early math errors
             }
         }
+    }
+  }
+  return null; // No foundational skill issue detected
+}
 
-        function speakWithPromise(text) {
-            return new Promise((resolve) => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                }
+async function generateAIResponse(sessionId, userMessage) {
+  const session = sessions.get(sessionId);
+  if (!session) throw new Error('Session not found');
 
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    
-                    utterance.rate = 0.8;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    
-                    if (selectedVoice) {
-                        utterance.voice = selectedVoice;
-                    }
-                    
-                    utterance.onstart = () => {
-                        showLiveCaption(text);
-                    };
-                    
-                    utterance.onend = () => {
-                        document.getElementById('live-captions').classList.add('hidden');
-                        resolve();
-                    };
-                    
-                    utterance.onerror = () => {
-                        resolve();
-                    };
-                    
-                    try {
-                        speechSynthesis.speak(utterance);
-                    } catch (error) {
-                        console.error('Speech synthesis error:', error);
-                        resolve();
-                    }
-                }, 100);
-            });
+  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
+  // Keep only last few messages (including system prompt) for brevity and context
+  session.messages = session.messages.slice(-6); // Maintain a rolling window of recent conversation
+
+  // --- Foundational Skill Check BEFORE AI call ---
+  let detectedFoundationalIssue = checkFoundationalSkills(userMessage, session);
+  if (session.needsFoundationalReview && session.needsFoundationalReview.skill === 'counting') {
+      // If we are currently in foundational review, check if counting is mastered
+      const lowerMessage = userMessage.toLowerCase();
+      // Heuristic for counting mastery: user counts sequentially up to at least 5-10
+      const countingMasteryRegex = /(one two three four five six seven eight nine ten)/;
+      if (countingMasteryRegex.test(lowerMessage)) {
+          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered. Returning to original problem.`);
+          session.needsFoundationalReview = null; // Clear the flag
+          // Now the prompt will guide the AI to return to the original problem.
+      } else if (lowerMessage.match(/\b\d+\b/g) && lowerMessage.match(/\b\d+\b/g).length > 2) {
+        // If they provided numbers, check for rough sequence
+        const numbers = lowerMessage.match(/\b\d+\b/g).map(Number);
+        let inSequence = true;
+        for (let i = 0; i < numbers.length - 1; i++) {
+          if (numbers[i+1] !== numbers[i] + 1) {
+            inSequence = false;
+            break;
+          }
         }
-
-        function initializeSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                updateStatus("Sorry, your browser doesn't support speech recognition. Try Chrome or Edge!");
-                return false;
-            }
-
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-            recognition.maxAlternatives = 1;
-
-            recognition.onstart = () => {
-                isListening = true;
-                updateMicButton();
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
-
-            recognition.onend = () => {
-                isListening = false;
-                updateMicButton();
-                if (!isProcessing) {
-                    updateStatus("Press the microphone to continue our conversation!");
-                }
-            };
-
-            recognition.onresult = (event) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    transcript += event.results[i][0].transcript;
-                }
-                // Show live, whether interim or final
-                document.getElementById('live-captions').textContent = transcript;
-                document.getElementById('live-captions').classList.remove('hidden');
-
-                // If it's final (user stopped speaking)
-                if (event.results[event.results.length - 1].isFinal) {
-                    if (transcript.trim().length > 0 && !isProcessing) {
-                        handleUserInput(transcript.trim());
-                    } else if (!isProcessing) {
-                        updateStatus("I didn't catch that clearly. Please try speaking again!");
-                    }
-                    // Hide caption after handling (or keep for a second if you want)
-                    setTimeout(() => {
-                        document.getElementById('live-captions').classList.add('hidden');
-                    }, 600);
-                }
-            };
-
-            recognition.onerror = (event) => {
-                isListening = false;
-                isProcessing = false;
-                updateMicButton();
-                
-                const errorMessages = {
-                    'no-speech': "I didn't hear anything. Please try speaking closer to your device.",
-                    'audio-capture': "I couldn't access your microphone. Please check your permissions.",
-                    'not-allowed': "Microphone access was denied. Please enable it in your browser settings.",
-                    'network': "Network error. Please check your internet connection.",
-                    'service-not-allowed': "Your browser may not support speech recognition. Try using Chrome and allow microphone access."
-                };
-                
-                const message = errorMessages[event.error] || "I didn't catch that clearly. Please try speaking again!";
-                updateStatus(message);
-            };
-
-            return true;
+        if (inSequence && numbers.length >=5) { // If they counted at least 5 numbers in sequence
+          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered (sequential). Returning to original problem.`);
+          session.needsFoundationalReview = null; // Clear the flag
         }
+      }
+  } else if (detectedFoundationalIssue) {
+      // If a new foundational issue is detected, set the flag
+      session.needsFoundationalReview = detectedFoundationalIssue;
+      console.log(`⚠️ Session ${sessionId.slice(-6)}: Foundational skill issue detected: ${detectedFoundationalIssue.skill}. Pivoting lesson.`);
+  }
 
-        async function startTutoring() {
-            
-            await initializeSpeechSynthesis();
-            
-            const speechSupported = initializeSpeechRecognition();
-            
-            if (!speechSupported) {
-                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge for the best experience.');
-                return;
-            }
+  const messagesToSendToAI = [
+    { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview) },
+    ...session.messages.filter(m => m.role !== 'system').slice(-4).map(msg => ({ role: msg.role, content: msg.content }))
+  ];
 
-            const studentName = document.getElementById('student-name').value.trim();
-            const studentGrade = document.getElementById('student-grade').value;
+  try {
+    let maxTokens = getMaxTokensForGrade(session.grade);
+    if (userMessage.toLowerCase().includes('story')) { // Allow more tokens for stories
+      maxTokens = Math.min(maxTokens * 2, 300);
+    }
+    // Adjust max tokens slightly higher for early grades for less abrupt cutoffs
+    if (['PreK', 'K', '1', '2'].includes(session.grade)) {
+      maxTokens = Math.max(maxTokens, 80); // Ensure a minimum of 80 tokens for early grades
+    } else {
+      maxTokens = Math.max(maxTokens, 150); // Ensure a minimum of 150 tokens for others
+    }
 
-            try {
-                updateStatus("Starting your session...");
-                
-                const response = await fetch(`${API_BASE_URL}/session/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        studentName: studentName || 'Student',
-                        grade: studentGrade || 'K',
-                        subjects: []
-                    })
-                });
 
-                if (!response.ok) throw new Error('Failed to start session');
+    const adjustedTemperature = session.difficultyLevel < 0.3 ? 0.5 : (session.difficultyLevel > 0.7 ? 0.8 : config.GPT_TEMPERATURE);
 
-                const data = await response.json();
-                currentSessionId = data.sessionId;
-                sessionStarted = true;
-                
-                document.getElementById('welcome-screen').classList.add('hidden');
-                document.getElementById('tutor-interface').classList.remove('hidden');
-                
-                const welcomeMessage = data.welcomeMessage || `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                await speakWithPromise(welcomeMessage);
-                addToConversation('tutor', welcomeMessage);
-                updateStatus("Press the microphone to start talking!");
+    const completion = await openai.chat.completions.create({
+      model: config.GPT_MODEL,
+      messages: messagesToSendToAI,
+      max_tokens: maxTokens,
+      temperature: adjustedTemperature,
+      presence_penalty: config.GPT_PRESENCE_PENALTY,
+      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+      stop: ["\n\n", "Additionally:", "Furthermore:", "Moreover:"] // Added colons to reduce premature stopping
+    });
 
-            } catch (error) {
-                console.error('Error starting session:', error);
-                alert("Failed to start session. Please try again later.");
-            }
-        }
+    let aiText = completion.choices[0].message.content.trim();
 
-        async function handleUserInput(input) {
-            if (isProcessing || !sessionStarted) return;
+    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() });
 
-            isProcessing = true;
-            updateStatus("Processing your request...");
+    // Classify user's input to update session topic tracking
+    const { subject, subtopic } = classifySubject(userMessage);
+    if (subject) {
+      session.topicsDiscussed.add(subject);
+      session.currentTopic = subject;
+      session.currentSubtopic = subtopic; // Update current subtopic
+      session.topicBreakdown[subject] = session.topicBreakdown[subject] || {};
+      if (subtopic) {
+        session.topicBreakdown[subject][subtopic] = (session.topicBreakdown[subject][subtopic] || 0) + 1;
+      }
+    }
 
-            addToConversation('user', input);
-            conversationContext.push({ role: 'user', content: input });
+    const encouragement = generateEncouragement(session);
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        message: input,
-                        context: {}
-                    })
-                });
+    // Update difficulty level based on response (placeholder logic)
+    const lastUserMessageContent = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
+    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down", "what are you talking about", "give me something", "you pick one"].some(phrase => lastUserMessageContent.includes(phrase))) {
+        session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1); // Decrease difficulty if student is passive
+    } else if (aiText.length > 50 && !aiText.includes("wrong") && !aiText.includes("mistake") && !session.needsFoundationalReview) { // Heuristic for progress
+        session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05); // Increase difficulty slightly if AI is able to give longer, presumably helpful response
+    }
 
-                if (!response.ok) throw new Error('Failed to get response');
+    // Capture the problem AI posed, if it's the start of a new problem
+    if (aiText.includes("apples") || aiText.includes("count") || aiText.includes("problem")) { // Simple heuristic for a problem
+        session.currentProblem = aiText;
+    }
 
-                const data = await response.json();
-                let tutorResponse = data.response;
+    let messageText = aiResponse.text;
+    let readingWord = null;
 
-                // ===== MOVE THIS BLOCK *HERE* =====
-                if (!data.readingWord) {
-                    let existing = document.getElementById('reading-word-prompt');
-                    if (existing) existing.remove();
-                }
-                // ===================================
+    try {
+      const maybeJson = JSON.parse(messageText);
+      if (maybeJson && maybeJson.READING_WORD) {
+        messageText = maybeJson.message;
+        readingWord = maybeJson.READING_WORD;
+      }
+    } catch (e) { /* Not JSON; keep as regular text */ }
 
-                // If AI sent a reading word, handle display and speech separately
-                if (data.readingWord) {
-                    showReadingWordPrompt(tutorResponse, data.readingWord);
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse + ' (See word above)');
-                    conversationContext.push({ role: 'assistant', content: tutorResponse });
-                } else {
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse);
-                    conversationContext.push({ role: 'assistant', content: tutorResponse });
-                }
+    res.json({
+      response: messageText,
+      readingWord: readingWord,
+      subject: subject,
+      suggestions: generateDynamicSuggestions(session),
+      encouragement: encouragement,
+      status: 'success',
+      sessionStats: {
+        totalWarnings: session.totalWarnings || 0,
+        topicsDiscussed: Array.from(session.topicsDiscussed)
+      }
+    });
 
-                if (data.subject) {
-                    currentSubject = data.subject;
-                }
+  } catch (error) {
+    console.error(`❌ Error processing chat for session: ${sessionId.slice(-6)}:`, error.message);
+    const sessionForFallback = sessions.get(sessionId);
 
-                updateDynamicSuggestions(input, tutorResponse);
+    res.status(500).json({
+      error: 'Failed to process message due to an internal error. Please try again.',
+      fallback: generateContextualFallback(userMessage || '', sessionForFallback || { studentName: 'learner', messages: [] })
+    });
+  }
+});
 
-            } catch (error) {
-                console.error('Error getting response:', error);
-                const fallbackResponse = generateFallbackResponse(input);
-                addToConversation('tutor', fallbackResponse);
-                await speakWithPromise(fallbackResponse);
-            } finally {
-                isProcessing = false;
-                updateStatus("Press the microphone to continue our conversation!");
-            }
-        }
+app.get('/api/session/:sessionId/summary', (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = sessions.get(sessionId);
 
-        function updateDynamicSuggestions(userInput, tutorResponse) {
-            const suggestionGrid = document.getElementById('suggestion-grid');
-            const combined = (userInput + ' ' + tutorResponse).toLowerCase();
-            let suggestions = [];
-            
-            if (combined.includes('math') || combined.includes('number')) {
-                suggestions = [
-                    { text: '🔢 Practice more math problems', query: 'Can you give me another math problem?' },
-                    { text: '📊 Explain this math concept', query: 'Can you explain this math topic more?' },
-                    { text: '🎲 Fun math games', query: 'Let\'s play a math game!' },
-                    { text: '🧮 Real-world math', query: 'How is this math used in real life?' }
-                ];
-            } else if (combined.includes('read') || combined.includes('story')) {
-                suggestions = [
-                    { text: '📖 Read together', query: 'Can we read something together?' },
-                    { text: '📝 Learn new words', query: 'Can you teach me new vocabulary?' },
-                    { text: '✍️ Write a story', query: 'Help me write a creative story' },
-                    { text: '🎭 Act out the story', query: 'Can we act out this story?' }
-                ];
-            } else if (combined.includes('science') || combined.includes('animal')) {
-                suggestions = [
-                    { text: '🔬 Try an experiment', query: 'Can we do a science experiment?' },
-                    { text: '🌟 Learn about space', query: 'Tell me about space and planets' },
-                    { text: '🐾 Explore animals', query: 'I want to learn about animals' },
-                    { text: '🌱 Discover plants', query: 'Tell me about plants and how they grow' }
-                ];
-            } else {
-                suggestions = [
-                    { text: '❓ Ask me anything', query: 'I have a question about something' },
-                    { text: '🎯 Pick a new topic', query: 'What should we learn about next?' },
-                    { text: '🔍 Explore more', query: 'Can you tell me more about this?' },
-                    { text: '🎉 Try something fun', query: 'Let\'s do something fun and educational' }
-                ];
-            }
-            
-            suggestionGrid.innerHTML = '';
-            suggestions.forEach(suggestion => {
-                const suggestionDiv = document.createElement('div');
-                suggestionDiv.className = 'suggestion-item';
-                suggestionDiv.textContent = suggestion.text;
-                suggestionDiv.onclick = () => speakSuggestion(suggestion.query);
-                suggestionGrid.appendChild(suggestionDiv);
-            });
-        }
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found.' });
+    }
 
-        function generateFallbackResponse(input) {
-            const lower = input.toLowerCase();
-            
-            if (lower.includes('math') || lower.includes('number')) {
-                return "I love math! Let's work on this together. Can you tell me more about what you'd like to practice?";
-            } else if (lower.includes('read') || lower.includes('story')) {
-                return "Reading is so much fun! What kind of stories do you enjoy?";
-            } else if (lower.includes('animal')) {
-                return "Animals are amazing! Do you have a favorite animal?";
-            } else {
-                return "That sounds really interesting! Can you tell me more about what you're thinking?";
-            }
-        }
+    const topicCounts = {};
+    session.conversationContext.forEach(c => {
+      if (!c.topic) return;
+      topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
+    });
+    const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]);
+    const totalTopicMentions = sortedTopics.reduce((acc, curr) => acc + curr[1], 0);
 
-        function addToConversation(sender, message) {
-            chatHistory.push({ sender, message });
-        }
+    const highlights = sortedTopics.length > 0
+      ? `${session.studentName} showed interest in: ` + sortedTopics
+          .map(([topic, count]) => `**${capitalize(topic)}** (${Math.round((count / totalTopicMentions) * 100)}%)`)
+          .join(', ')
+      : 'Showed curiosity and asked thoughtful questions throughout the session.';
 
-        function showLiveCaption(text, type = 'bot') {
-            const captionsDiv = document.getElementById('live-captions');
-            captionsDiv.classList.add('hidden'); // Always hide first to ensure toggle works
-            captionsDiv.textContent = text;
-            captionsDiv.classList.remove('hidden');
-            captionsDiv.classList.toggle('user-caption', type === 'user');
-            captionsDiv.classList.toggle('bot-caption', type === 'bot');
-        }
+    const duration = Math.floor((Date.now() - session.startTime) / 60000);
 
-        function showHistory() {
-            const fullHistoryDiv = document.getElementById('full-chat-history');
-            fullHistoryDiv.innerHTML = chatHistory.map(msg =>
-                `<div class="chat-message ${msg.sender}-message">
-                    <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
-                </div>`
-            ).join('');
-            document.getElementById('chat-history-modal').classList.remove('hidden');
-        }
+    const summary = {
+      duration: duration > 0 ? `${duration} minutes` : 'Less than a minute',
+      totalWarnings: session.totalWarnings || 0,
+      topicsExplored: buildPersonalizedSummary(session),
+      studentName: session.studentName,
+      grade: session.grade,
+      highlights: highlights,
+      recommendations: generateRecommendations(session),
+      nextSteps: generateNextSteps(session)
+    };
 
-        function closeHistory() {
-            document.getElementById('chat-history-modal').classList.add('hidden');
-        }
+    res.json(summary);
+  } catch (error) {
+    console.error(`❌ Error getting summary for session ${req.params.sessionId ? req.params.sessionId.slice(-6) : 'N/A'}:`, error.message);
+    res.status(500).json({ error: 'Failed to get session summary. Please try again.' });
+  }
+});
 
-        function toggleListening() {
-            if (!recognition) {
-                updateStatus("Speech recognition not available. Try Chrome or Edge!");
-                return;
-            }
-            
-            if (isProcessing) {
-                updateStatus("Please wait, I'm still processing your last message...");
-                return;
-            }
-            
-            if (isListening) {
-                recognition.stop();
-            } else {
-                try {
-                    recognition.start();
-                } catch (error) {
-                    console.error('Error starting recognition:', error);
-                    updateStatus("Error starting microphone. Please try again.");
-                }
-            }
-        }
+app.post('/api/session/:sessionId/end', (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    if (!sessions.delete(sessionId)) {
+      return res.status(404).json({ error: 'Session not found or already ended.' });
+    }
+    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user.`);
+    res.json({ status: 'ended', message: 'Session successfully closed.' });
+  } catch (error) {
+    console.error('❌ Error ending session:', error.message);
+    res.status(500).json({ error: 'Internal error ending session.' });
+  }
+});
 
-        function updateMicButton() {
-            const micBtn = document.getElementById('mic-btn');
-            if (isListening) {
-                micBtn.classList.add('listening');
-                micBtn.innerHTML = '🔴';
-            } else {
-                micBtn.classList.remove('listening');
-                micBtn.innerHTML = '🎤';
-            }
-        }
+app.get('/api/session/:sessionId/status', (req, res) => {
+  const { sessionId } = req.params;
+  const session = sessions.get(sessionId);
 
-        function updateStatus(message) {
-            document.getElementById('status').textContent = message;
-        }
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found.' });
+  }
 
-        async function speakSuggestion(suggestion) {
-            if (!isProcessing && !isListening) {
-                handleUserInput(suggestion);
-            }
-        }
+  res.json({
+    active: true,
+    duration: Math.floor((Date.now() - session.startTime) / 60000),
+    topics: Array.from(session.topicsDiscussed),
+    difficultyLevel: session.difficultyLevel
+  });
+});
 
-        async function endSession() {
-            speechSynthesis.cancel();
-            
-            if (isListening) {
-                recognition.stop();
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/session/${currentSessionId}/summary`);
-                await fetch(`${API_BASE_URL}/session/${currentSessionId}/end`, { method: 'POST' });
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date(),
+    activeSessionsInCache: sessions.size,
+    uptime: process.uptime()
+  });
+});
 
-                const summary = response.ok ? await response.json() : null;
-                showSessionSummary(summary);
-            } catch (error) {
-                console.error('Error getting session summary:', error);
-                showSessionSummary(null);
-            }
-        }
+const server = app.listen(config.PORT, () => {
+  console.log(`🎓 Enhanced AI Tutor Backend running on port ${config.PORT}`);
+  console.log(`📊 Health check: http://localhost:${config.PORT}/api/health`);
+  console.log(`🚀 Ready to help students learn safely and effectively!`);
+  console.log(`🛡️ Content filtering active for child safety`);
+  console.log(`⚠️ Sessions are in-memory and will be lost if the server restarts or expires.`);
+});
 
-        // Show session summary
-        async function showSessionSummary(summary) {
-            document.getElementById('tutor-interface').classList.add('hidden');
-            document.getElementById('session-summary').classList.remove('hidden');
-            
-            const summaryContent = document.getElementById('summary-content');
-            
-            if (summary) {
-                // Merge suggestions and next steps into one contextual block
-                const allSuggestions = [
-                    ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
-                    ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
-                ].filter(Boolean);
+['SIGTERM', 'SIGINT'].forEach(signal => {
+  process.on(signal, () => {
+    console.log(`Received ${signal}, shutting down gracefully...`);
+    server.close(() => {
+      console.log('Server closed.');
+      process.exit(0);
+    });
+  });
+});
 
-                summaryContent.innerHTML = 
-                    `<div class="summary-item"><strong>Session Duration:</strong> ${summary.duration}</div>
-                    <div class="summary-item"><strong>Number of Inappropriate or Off-topic Requests:</strong> ${summary.totalWarnings}</div>
-                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-                    <div class="summary-item"><strong>Learning Highlights:</strong><br>
-                        ${summary.highlights.join('<br>')}
-                    </div>
-                    <div class="summary-item"><strong>Suggestions & Next Steps:</strong><br>
-                        ${allSuggestions.length > 0
-                            ? allSuggestions.join('<br>')
-                            : 'Keep asking great questions!'}
-                    </div>`;
-            } else {
-                summaryContent.innerHTML = 
-                    `<div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>`;
-            }
-            
-            await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
-        }
-
-        // Start new session
-        function startNewSession() {
-            // Stop any speech and reset state
-            speechSynthesis.cancel();
-            currentSessionId = null;
-            isProcessing = false;
-            sessionStarted = false;
-            isListening = false;
-            
-            // Reset UI
-            document.getElementById('session-summary').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden');
-            
-            // Clear form
-            document.getElementById('student-name').value = '';
-            document.getElementById('student-grade').value = '';
-            
-            // Reset microphone button
-            updateMicButton();
-            updateStatus("Ready to start a new session!");
-        }
-
-        // Initialize on load
-        window.onload = async function() {
-            console.log('🚀 App loading...');
-            
-            // Initialize speech synthesis
-            await initializeSpeechSynthesis();
-            
-            // Test basic functionality
-            console.log('Speech synthesis supported:', 'speechSynthesis' in window);
-            console.log('Speech recognition supported:', 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-            
-            console.log('✅ App loaded successfully');
-        };
-    </script>
-</body>
-</html>
+module.exports = app;

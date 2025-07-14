@@ -93,7 +93,7 @@ const containsInappropriateContent = (text) => {
 };
 
 // --- ENHANCED SYSTEM PROMPT ---
-function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5) {
+function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null) {
   const isEarlyGrade = ['PreK', 'K', '1', '2'].includes(grade);
   const gradeGuidelines = {
     'PreK': 'Use very simple words. 1-2 sentences max. Focus on basic concepts like colors, shapes, and sounds. Be extra gentle and nurturing.',
@@ -121,6 +121,17 @@ function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5) {
     difficultyAdjustment = "Maintain a steady, encouraging pace. Offer clear guidance and prompt critical thinking. Balance challenge with support.";
   }
 
+  let foundationalReviewInstruction = '';
+  if (needsFoundationalReview && needsFoundationalReview.skill === 'counting') {
+    foundationalReviewInstruction = `
+    The student is currently struggling with basic counting, which is essential for the current math problem.
+    **CRITICAL TASK**: Temporarily pause the original problem. Your sole focus is now to gently teach and reinforce basic counting from 1 to 10 or 1 to 20 (depending on grade).
+    Guide them through counting step-by-step, patiently. For example, ask them to count to 5, then to 10.
+    Once they demonstrate they can count accurately, you will smoothly transition back to the original problem: "${needsFoundationalReview.originalProblem}". Acknowledge their counting success and then re-introduce the original question.
+    Do NOT return to the original problem until they show competence in counting.
+    `;
+  }
+
   return `
 You are an AI Tutor named Byte. Your job: teach students to THINK, not just memorize!
 Keep replies short, simple, and step-by-step.
@@ -132,6 +143,8 @@ Keep replies short, simple, and step-by-step.
 - **CRITICAL**: If the student says "I don't know" or asks you to just tell them the answer, *stay on the current topic or gently guide them to pick one*.
     - If there's an active learning topic, rephrase the question, offer a different hint, or break the *current problem* into smaller, more manageable steps. **DO NOT abruptly change the subject.**
     - If no specific topic has been established yet (e.g., in an initial "I don't know" scenario), offer 2-3 diverse and appealing educational options. Phrase them as exciting opportunities, e.g., "We could dive into the mysteries of space, explore fun math puzzles, or read an exciting story. Which one sparks your curiosity?"
+    - If the student says "you pick one" or similar, acknowledge it and then propose 1-2 engaging options and ask for their preference. E.g., "Okay, I can pick a fun one for us! How about we start with a little math puzzle? Or maybe an exciting science fact? Which sounds more interesting to you, ${studentName}?"
+- **FOUNDATIONAL SKILL MANAGEMENT**: If a student reveals a misunderstanding of a *foundational skill* required for the current problem (e.g., struggling with counting for an addition problem), gently pivot the lesson to focus on that foundational skill until competency is shown, then gracefully return to the original problem. This is critical for building true understanding.
 - **NEVER** ask the student to perform physical actions that the AI cannot see or verify (e.g., "show me fingers", "point to"). Instead, use imagination or conceptual examples (e.g., "Imagine you have 5 apples...", "Think about what happens when you combine...").
 - Only activate the "inappropriate topic" response if the topic is genuinely non-educational, harmful, or explicitly listed in the restricted words. If a topic like 'music' is brought up, engage with it educationally unless specific inappropriate keywords are used.
 - Strictly avoid adult/inappropriate topics: if they come up, say "That's not something we talk about in our learning time, ${studentName}! Let's explore something educational instead. What subject interests you today?" and immediately change the subject to general educational options.
@@ -155,6 +168,7 @@ Examples:
 Stay positive, focused, and always teach the process!
 ${gradeGuidelines[grade] || gradeGuidelines['K']}
 ${difficultyAdjustment}
+${foundationalReviewInstruction}
 `.trim();
 }
 
@@ -169,12 +183,14 @@ const createSessionObject = (sessionId, studentName, grade, subjects) => ({
   totalWarnings: 0,
   topicsDiscussed: new Set(),
   currentTopic: null,
+  currentSubtopic: null, // Track current subtopic more explicitly
   topicBreakdown: {},
   conversationContext: [],
   achievements: [],
   strugglingAreas: [],
   preferredLearningStyle: null,
-  difficultyLevel: 0.5
+  difficultyLevel: 0.5,
+  needsFoundationalReview: null // { skill: 'counting', originalProblem: '7 apples and 3 more' }
 });
 
 const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -232,7 +248,6 @@ const generateDynamicSuggestions = (session) => {
   const lastUser = recentUser[recentUser.length - 1] || {};
   const { topic, subtopic } = lastUser;
 
-  // FIX: Corrected typo 'recentCuser' to 'recentUser'
   const struggling = recentUser.length >= 2 &&
     recentUser[recentUser.length - 1].topic === recentUser[recentUser.length - 2].topic &&
     recentUser[recentUser.length - 1].subtopic === recentUser[recentUser.length - 2].subtopic;
@@ -276,7 +291,7 @@ const generateDynamicSuggestions = (session) => {
         mastered: ["Want to learn about stars and galaxies?", "How about astronauts and rockets, and how they travel in space?", "Let's explore gravity next, how does it affect space?", "What about exploring the concept of time in space?"],
         default: ["Want to learn about planets?", "How about stars and galaxies?", "What about astronauts and rockets?"]
       },
-      default: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!", "How about exploring the human body?"]
+      default: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!", "How about exploring the human body!"]
     },
     music: {
       instruments: {
@@ -453,16 +468,93 @@ function generateNextSteps(session) {
   return ['Keep exploring and practicing what interests you most! Every question makes you smarter!'];
 }
 
+// --- NEW: Foundational Skill Check Function ---
+function checkFoundationalSkills(userMessage, session) {
+  const lowerMessage = userMessage.toLowerCase();
+  const currentProblem = session.currentProblem || ''; // Store the current problem the AI posed
+
+  // Logic for counting errors in a math context
+  if (session.currentTopic === 'math' && session.currentSubtopic === 'addition' || session.currentSubtopic === 'counting' || session.needsFoundationalReview?.skill === 'counting') {
+    // Detect clear counting missequences or extremely off answers for simple sums
+    const countingErrors = [
+      'one two three four five seven eight fifteen', // direct example from chat
+      'one three five',
+      'two four six',
+      'nine five one',
+      'zero ten twenty' // Indicates misunderstanding of small number sequence
+    ];
+    
+    // If user's message matches a counting error pattern OR their numerical answer is wildly off for a simple sum
+    if (countingErrors.some(error => lowerMessage.includes(error))) {
+      session.currentProblem = session.messages.slice(-2, -1)[0]?.content; // Store the problem AI just asked
+      return { skill: 'counting', originalProblem: session.currentProblem };
+    }
+
+    // Heuristic for wildly incorrect answers to simple math problems (e.g., 7+3=97)
+    const mathProblemRegex = /(\d+)\s*(plus|\+|\-|\*|\/|times|divided by)\s*(\d+)/;
+    const match = currentProblem.match(mathProblemRegex);
+    if (match) {
+        const num1 = parseFloat(match[1]);
+        const num2 = parseFloat(match[3]);
+        const operator = match[2];
+        let expectedAnswer = null;
+        if (operator === '+' || operator === 'plus') expectedAnswer = num1 + num2;
+
+        if (expectedAnswer !== null) {
+            const userNumericAnswer = parseFloat(lowerMessage.replace(/[^0-9.]/g, '')); // Extract number from user response
+            // If user's numerical answer is present and wildly off for a simple sum
+            if (!isNaN(userNumericAnswer) && Math.abs(userNumericAnswer - expectedAnswer) > Math.max(5, expectedAnswer * 0.5)) { // e.g., off by more than 5 or 50%
+                session.currentProblem = session.messages.slice(-2, -1)[0]?.content;
+                return { skill: 'counting', originalProblem: session.currentProblem }; // Assume counting is often the root cause for early math errors
+            }
+        }
+    }
+  }
+  return null; // No foundational skill issue detected
+}
+
 async function generateAIResponse(sessionId, userMessage) {
   const session = sessions.get(sessionId);
   if (!session) throw new Error('Session not found');
 
   session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
   // Keep only last few messages (including system prompt) for brevity and context
-  session.messages = session.messages.slice(-6);
+  session.messages = session.messages.slice(-6); // Maintain a rolling window of recent conversation
+
+  // --- Foundational Skill Check BEFORE AI call ---
+  let detectedFoundationalIssue = checkFoundationalSkills(userMessage, session);
+  if (session.needsFoundationalReview && session.needsFoundationalReview.skill === 'counting') {
+      // If we are currently in foundational review, check if counting is mastered
+      const lowerMessage = userMessage.toLowerCase();
+      // Heuristic for counting mastery: user counts sequentially up to at least 5-10
+      const countingMasteryRegex = /(one two three four five six seven eight nine ten)/;
+      if (countingMasteryRegex.test(lowerMessage)) {
+          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered. Returning to original problem.`);
+          session.needsFoundationalReview = null; // Clear the flag
+          // Now the prompt will guide the AI to return to the original problem.
+      } else if (lowerMessage.match(/\b\d+\b/g) && lowerMessage.match(/\b\d+\b/g).length > 2) {
+        // If they provided numbers, check for rough sequence
+        const numbers = lowerMessage.match(/\b\d+\b/g).map(Number);
+        let inSequence = true;
+        for (let i = 0; i < numbers.length - 1; i++) {
+          if (numbers[i+1] !== numbers[i] + 1) {
+            inSequence = false;
+            break;
+          }
+        }
+        if (inSequence && numbers.length >=5) { // If they counted at least 5 numbers in sequence
+          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered (sequential). Returning to original problem.`);
+          session.needsFoundationalReview = null; // Clear the flag
+        }
+      }
+  } else if (detectedFoundationalIssue) {
+      // If a new foundational issue is detected, set the flag
+      session.needsFoundationalReview = detectedFoundationalIssue;
+      console.log(`⚠️ Session ${sessionId.slice(-6)}: Foundational skill issue detected: ${detectedFoundationalIssue.skill}. Pivoting lesson.`);
+  }
 
   const messagesToSendToAI = [
-    { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel) },
+    { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview) },
     ...session.messages.filter(m => m.role !== 'system').slice(-4).map(msg => ({ role: msg.role, content: msg.content }))
   ];
 
@@ -471,6 +563,14 @@ async function generateAIResponse(sessionId, userMessage) {
     if (userMessage.toLowerCase().includes('story')) { // Allow more tokens for stories
       maxTokens = Math.min(maxTokens * 2, 300);
     }
+    // Adjust max tokens slightly higher for early grades for less abrupt cutoffs
+    if (['PreK', 'K', '1', '2'].includes(session.grade)) {
+      maxTokens = Math.max(maxTokens, 80); // Ensure a minimum of 80 tokens for early grades
+    } else {
+      maxTokens = Math.max(maxTokens, 150); // Ensure a minimum of 150 tokens for others
+    }
+
+
     const adjustedTemperature = session.difficultyLevel < 0.3 ? 0.5 : (session.difficultyLevel > 0.7 ? 0.8 : config.GPT_TEMPERATURE);
 
     const completion = await openai.chat.completions.create({
@@ -480,7 +580,7 @@ async function generateAIResponse(sessionId, userMessage) {
       temperature: adjustedTemperature,
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"] // Prevents overly long AI-generated lists/expansions
+      stop: ["\n\n", "Additionally:", "Furthermore:", "Moreover:"] // Added colons to reduce premature stopping
     });
 
     let aiText = completion.choices[0].message.content.trim();
@@ -489,298 +589,30 @@ async function generateAIResponse(sessionId, userMessage) {
 
     // Classify user's input to update session topic tracking
     const { subject, subtopic } = classifySubject(userMessage);
-    const encouragement = generateEncouragement(session);
-
-    // Update difficulty level based on response (placeholder logic)
-    const lastUserMessageContent = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
-    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down", "what are you talking about", "give me something"].some(phrase => lastUserMessageContent.includes(phrase))) {
-        session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1); // Decrease difficulty if student is passive
-    } else if (aiText.length > 50 && !aiText.includes("wrong") && !aiText.includes("mistake")) { // Heuristic for progress
-        session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05); // Increase difficulty slightly if AI is able to give longer, presumably helpful response
-    }
-
-    return { text: aiText, subject, subtopic, encouragement };
-  } catch (error) {
-    console.error(`❌ AI API Error for session ${sessionId.slice(-6)}:`, error.message);
-    const fallbackResponse = generateContextualFallback(userMessage, session);
-
-    session.messages.push({ role: 'assistant', content: fallbackResponse, timestamp: Date.now() });
-
-    return {
-      text: fallbackResponse,
-      subject: classifySubject(userMessage).subject,
-      encouragement: generateEncouragement(session)
-    };
-  }
-}
-
-const getMaxTokensForGrade = (grade) => {
-  const gradeLevel = parseInt(grade) || 0;
-  if (gradeLevel <= 2) return 50; // Very concise for early grades
-  if (gradeLevel <= 5) return 75;
-  if (gradeLevel <= 8) return 100;
-  return 125; // More detailed for higher grades
-};
-
-// --- REFINED CONTEXTUAL FALLBACK ---
-const generateContextualFallback = (input, session) => {
-  const lowerInput = input.toLowerCase();
-  
-  // Define phrases indicating a general lack of direction or a request for the AI to choose
-  const passivePhrases = ["i don't know", "i dunno", "tell me", "what is the answer", "give me something", "you choose"];
-  
-  // Check if the user is explicitly asking to change topic or is giving a very general "I don't know" at the start
-  const isExplicitlyPassiveOrUncertain = passivePhrases.some(phrase => lowerInput.includes(phrase));
-  const isEarlyConversation = session.messages.filter(m => m.role === 'user').length <= 2; // Check if it's one of the first user messages
-
-  if (isExplicitlyPassiveOrUncertain || isEarlyConversation) {
-    const studentName = session.studentName || 'learner';
-    const suggestions = generateSafeSuggestions(session.grade, true); // Force general suggestions for broad prompts
-    return `No worries, ${studentName}! There's a whole world to explore. How about we dive into: ${suggestions.slice(0, 3).join(', ')}? Which one sounds exciting to you?`;
-  }
-
-  // If we're already in a specific topic and the user is struggling but not explicitly asking to change
-  // The system prompt should guide the AI to rephrase/hint on the current topic.
-  // This fallback should be less likely to be hit in an ongoing, focused discussion.
-  const fallbacks = [
-    `That's a really interesting thought, ${session.studentName}! How do you think we could explore that question together?`,
-    `I love how you're thinking! To help us learn, what specific part of this topic are you most curious about?`,
-    `You're asking such good questions! Let's break it down. What's the first thing we should consider?`,
-    `You're doing great, ${session.studentName}! Let's try looking at it from a different angle. What if we think about...`
-  ];
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
-};
-
-
-// UNIVERSAL K-12 SUBJECTS & SUBTOPICS CLASSIFIER (expanded)
-const subjects = {
-  math: {
-    keywords: ['math', 'number', 'add', 'subtract', 'plus', 'minus', 'multiply', 'times', 'divide', 'calculation', 'fraction', 'decimal', 'percent', 'equation', 'algebra', 'geometry', 'graph', 'problem', 'count', 'multiplication', 'division', 'sum', 'difference', 'product', 'quotient', 'statistics', 'calculus'],
-    subtopics: {
-      counting: ['count', 'number', 'numbers', 'how many'],
-      addition: ['add', 'addition', 'plus', 'sum'],
-      subtraction: ['subtract', 'subtraction', 'minus', 'difference'],
-      multiplication: ['multiply', 'multiplication', 'times', 'product'],
-      division: ['divide', 'division', 'divided', 'quotient'],
-      fractions: ['fraction', 'fractions'],
-      decimals: ['decimal', 'decimals'],
-      percentages: ['percent', 'percentage'],
-      algebra: ['algebra', 'equation', 'variable', 'expression', 'solve x', 'formula'],
-      geometry: ['geometry', 'shape', 'angle', 'area', 'perimeter', 'circle', 'triangle', 'square', 'volume', 'dimension', 'polyhedron'],
-      graphing: ['graph', 'chart', 'plot', 'data', 'coordinate', 'axis'],
-      wordProblems: ['story problem', 'word problem'],
-      statistics: ['statistics', 'probability', 'average', 'mean', 'median', 'mode'],
-      calculus: ['calculus', 'derivative', 'integral', 'limit']
-    }
-  },
-  reading: {
-    keywords: ['read', 'reading', 'book', 'story', 'chapter', 'comprehension', 'vocabulary', 'sentence', 'phonics', 'letter', 'word', 'paragraph', 'main idea', 'summarize', 'author', 'character', 'literacy', 'fiction', 'non-fiction', 'poem', 'poetry', 'grammar', 'writing'],
-    subtopics: {
-      phonics: ['phonics', 'letter sound', 'sound it out', 'blends', 'sight words'],
-      vocabulary: ['vocabulary', 'word', 'definition', 'meaning', 'synonym', 'antonym'],
-      comprehension: ['comprehension', 'understand', 'main idea', 'summary', 'summarize', 'plot', 'theme', 'setting', 'infer', 'predict'],
-      stories: ['story', 'chapter', 'book', 'author', 'fiction', 'non-fiction', 'narrative', 'genre'],
-      characters: ['character', 'who', 'what about', 'motivation', 'trait'],
-      fluency: ['fluency', 'read aloud', 'speed', 'expression'],
-      writing: ['write', 'writing', 'sentence', 'paragraph', 'essay', 'compose', 'grammar', 'punctuation', 'structure', 'draft']
-    }
-  },
-  science: {
-    keywords: ['science', 'experiment', 'nature', 'animal', 'plant', 'biology', 'earth', 'space', 'physics', 'chemistry', 'weather', 'ecosystem', 'habitat', 'energy', 'force', 'motion', 'life cycle', 'observe', 'hypothesis', 'scientific', 'geology', 'astronomy', 'ecology', 'anatomy', 'health', 'environment'],
-    subtopics: {
-      animals: ['animal', 'mammal', 'reptile', 'amphibian', 'insect', 'bird', 'fish', 'habitat', 'zoology', 'diet', 'classification'],
-      plants: ['plant', 'tree', 'flower', 'seed', 'photosynthesis', 'botany', 'growth', 'parts of a plant'],
-      space: ['space', 'planet', 'star', 'moon', 'solar system', 'galaxy', 'astronomy', 'universe', 'telescope', 'astronaut'],
-      weather: ['weather', 'rain', 'cloud', 'storm', 'temperature', 'climate', 'forecast', 'wind'],
-      earthScience: ['earth', 'rock', 'soil', 'volcano', 'ocean', 'mountain', 'landform', 'geology', 'tectonic plates', 'minerals'],
-      physics: ['force', 'motion', 'gravity', 'energy', 'push', 'pull', 'magnet', 'light', 'sound', 'electricity', 'circuits'],
-      chemistry: ['chemistry', 'atom', 'molecule', 'element', 'mixture', 'solution', 'reaction', 'periodic table', 'compound'],
-      lifeCycles: ['life cycle', 'grow', 'change', 'metamorphosis', 'reproduction', 'birth', 'death'],
-      scientificMethod: ['experiment', 'observe', 'hypothesis', 'investigate', 'data', 'conclusion'],
-      humanBody: ['body', 'anatomy', 'organs', 'skeleton', 'muscles', 'brain', 'heart', 'health', 'nutrition']
-    }
-  },
-  socialStudies: {
-    keywords: ['history', 'government', 'president', 'country', 'community', 'citizen', 'geography', 'culture', 'economy', 'vote', 'map', 'war', 'historical', 'civics', 'world', 'continent', 'nation', 'ancient', 'democracy', 'election', 'explorer', 'constitution'],
-    subtopics: {
-      history: ['history', 'past', 'historical', 'war', 'revolution', 'event', 'timeline', 'ancient', 'middle ages', 'modern history', 'civil war'],
-      geography: ['map', 'globe', 'continent', 'country', 'state', 'city', 'river', 'mountain', 'landforms', 'regions', 'climate zones', 'population'],
-      government: ['government', 'president', 'democracy', 'vote', 'law', 'politics', 'senate', 'house', 'constitution', 'rights'],
-      culture: ['culture', 'tradition', 'custom', 'society', 'beliefs', 'diversity', 'holidays', 'art', 'music'],
-      economy: ['economy', 'money', 'trade', 'supply', 'demand', 'goods', 'services', 'business', 'market'],
-      civics: ['citizen', 'community', 'rights', 'responsibilities', 'rules', 'laws', 'justice']
-    }
-  },
-  music: {
-    keywords: ['music', 'song', 'sing', 'instrument', 'note', 'melody', 'rhythm', 'band', 'choir', 'composer', 'sound', 'orchestra', 'tune', 'harmony', 'pitch', 'genre', 'musical', 'concert'],
-    subtopics: {
-      instruments: ['instrument', 'piano', 'guitar', 'drum', 'violin', 'flute', 'trumpet', 'cello', 'clarinet', 'percussion', 'strings', 'brass', 'woodwinds'],
-      singing: ['sing', 'singing', 'choir', 'voice', 'vocal', 'lyrics'],
-      rhythm: ['rhythm', 'beat', 'tempo', 'drumming', 'meter', 'time signature'],
-      melody: ['melody', 'tune', 'pitch', 'harmony', 'chord', 'scale'],
-      musicTheory: ['note', 'scale', 'key', 'chord', 'music theory', 'treble clef', 'bass clef', 'staff'],
-      composers: ['composer', 'musician', 'band', 'artist', 'orchestra', 'symphony', 'famous composers'],
-      genres: ['genre', 'pop', 'rock', 'jazz', 'classical', 'hip hop', 'folk', 'country', 'blues', 'electronic']
-    }
-  },
-  pe: {
-    keywords: ['pe', 'gym', 'exercise', 'physical', 'activity', 'sports', 'run', 'jump', 'game', 'fitness', 'health', 'move', 'body', 'nutrition', 'wellness', 'teamwork'],
-    subtopics: {
-      fitness: ['fitness', 'exercise', 'workout', 'strength', 'endurance', 'flexibility', 'warm-up', 'cool-down'],
-      sports: ['sports', 'basketball', 'soccer', 'baseball', 'football', 'volleyball', 'swimming', 'tennis', 'rules', 'skills', 'team'],
-      games: ['game', 'tag', 'relay', 'teamwork', 'strategy', 'cooperation'],
-      health: ['health', 'nutrition', 'food', 'wellness', 'hygiene', 'safety', 'first aid'],
-      movement: ['run', 'jump', 'skip', 'throw', 'catch', 'balance', 'coordination', 'agility']
-    }
-  },
-  technology: {
-    keywords: ['computer', 'technology', 'robot', 'coding', 'program', 'type', 'internet', 'website', 'device', 'app', 'digital', 'screen', 'software', 'hardware', 'AI', 'robotics', 'cybersecurity', 'virtual reality'],
-    subtopics: {
-      coding: ['code', 'coding', 'programming', 'scratch', 'python', 'javascript', 'algorithm', 'loop', 'conditional', 'debugging'],
-      robotics: ['robot', 'robotics', 'automation', 'mechanics', 'sensors', 'design'],
-      typing: ['type', 'typing', 'keyboard', 'words per minute'],
-      internetSafety: ['internet', 'safety', 'cyber', 'online', 'website', 'privacy', 'security', 'digital citizenship'],
-      devices: ['device', 'tablet', 'laptop', 'desktop', 'app', 'phone', 'smartwatch', 'hardware', 'software'],
-      ai: ['ai', 'artificial intelligence', 'machine learning', 'neural network']
-    }
-  },
-  language: {
-    keywords: ['language', 'spanish', 'french', 'german', 'english', 'word', 'phrase', 'translate', 'conversation', 'speak', 'foreign language', 'vocabulary', 'grammar', 'pronunciation', 'communication', 'culture'],
-    subtopics: {
-      vocabulary: ['word', 'vocabulary', 'definition', 'phrase', 'idiom', 'expression', 'learn words'],
-      grammar: ['grammar', 'sentence', 'verb', 'noun', 'adjective', 'pronoun', 'syntax', 'tense', 'punctuation'],
-      conversation: ['speak', 'talk', 'conversation', 'dialogue', 'pronunciation', 'listen'],
-      translation: ['translate', 'translation', 'meaning'],
-      culture: ['culture', 'country', 'customs', 'traditions', 'cultural exchange'],
-      writing: ['writing', 'compose', 'essay', 'paragraph', 'storytelling']
-    }
-  },
-};
-
-const classifySubject = (input) => {
-  if (!input) return { subject: null, subtopic: null };
-  const lowerInput = input.toLowerCase();
-
-  for (const [subject, data] of Object.entries(subjects)) {
-    if (data.keywords.some(keyword => new RegExp(`\\b${keyword}\\b`).test(lowerInput))) {
-      let bestSub = null, bestLength = 0;
-      for (const [subtopic, subwords] of Object.entries(data.subtopics || {})) {
-        for (const subword of subwords) {
-          if (new RegExp(`\\b${subword}\\b`).test(lowerInput) && subword.length > bestLength) {
-            bestSub = subtopic;
-            bestLength = subword.length;
-          }
-        }
-      }
-      return { subject, subtopic: bestSub };
-    }
-  }
-  return { subject: null, subtopic: null };
-};
-
-const generateEncouragement = (session) => {
-  const encouragements = [
-    `You're doing great, ${session.studentName}!`,
-    `I love how curious you are!`,
-    `Keep up the excellent thinking!`,
-    `You're such a good learner!`,
-    `I'm proud of how hard you're working!`,
-    `Your questions show you're really thinking!`,
-    `You're making excellent progress!`,
-    `I can see you're really engaged in learning!`,
-    `That's a super question, ${session.studentName}!`,
-    `Fantastic effort!`,
-    `You're really getting the hang of this!`,
-    `Brilliant thinking!`
-  ];
-  return encouragements[Math.floor(Math.random() * encouragements.length)];
-};
-
-// --- API Endpoints ---
-
-app.post('/api/session/start', async (req, res) => {
-  try {
-    const { studentName, grade, subjects: studentSubjects } = req.body;
-
-    if (typeof studentName !== 'string' || typeof grade !== 'string' || (studentSubjects && !Array.isArray(studentSubjects))) {
-      return res.status(400).json({ error: 'Invalid session parameters.' });
-    }
-
-    const validatedGrade = config.VALID_GRADES.includes(grade) ? grade : 'K';
-    const validatedName = studentName && studentName.trim() ? studentName.trim() : 'Student';
-
-    const sessionId = generateSessionId();
-    const session = createSessionObject(sessionId, validatedName, validatedGrade, studentSubjects);
-    sessions.set(sessionId, session);
-
-    console.log(`🚀 Session started: ID ending in ${sessionId.slice(-6)}, Student: ${validatedName}, Grade: ${validatedGrade}`);
-
-    res.json({
-      sessionId,
-      welcomeMessage: generateWelcomeMessage(validatedName, validatedGrade),
-      status: 'success',
-      sessionInfo: {
-        studentName: validatedName,
-        grade: validatedGrade,
-        startTime: new Date(session.startTime).toISOString()
-      }
-    });
-  } catch (error) {
-    console.error('❌ Error starting session:', error.message);
-    res.status(500).json({ error: 'Failed to start session. Please try again.' });
-  }
-});
-
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { sessionId, message } = req.body;
-
-    const session = sessions.get(sessionId);
-    if (!session) {
-      return res.status(400).json({ error: 'Invalid or expired session. Please start a new session.' });
-    }
-    if (!message || message.trim().length === 0) {
-      return res.status(400).json({ error: 'Message cannot be empty.' });
-    }
-
-    session.lastActivity = Date.now();
-
-    const contentCheckUser = containsInappropriateContent(message);
-    if (contentCheckUser.inappropriate) {
-      session.totalWarnings = (session.totalWarnings || 0) + 1;
-      console.warn(`🚨 SECURITY ALERT: Inappropriate content detected in session ${sessionId.slice(-6)}: "${contentCheckUser.word}" (Category: ${contentCheckUser.category}).`);
-      return res.json(getInappropriateResponse(contentCheckUser.category, session));
-    }
-
-    console.log(`💬 Chat message for session ${sessionId.slice(-6)} from ${session.studentName} (Grade: ${session.grade}). Message: "${message.substring(0, Math.min(message.length, 50))}..."`);
-
-    const aiResponse = await generateAIResponse(sessionId, message.trim());
-
-    const contentCheckAI = containsInappropriateContent(aiResponse.text);
-    if (contentCheckAI.inappropriate) {
-      session.totalWarnings = (session.totalWarnings || 0) + 1;
-      console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${contentCheckAI.word}" (Category: ${contentCheckAI.category}).`);
-      return res.json(getInappropriateResponse(contentCheckAI.category, session));
-    }
-
-    const { subject, subtopic } = classifySubject(message);
     if (subject) {
       session.topicsDiscussed.add(subject);
       session.currentTopic = subject;
+      session.currentSubtopic = subtopic; // Update current subtopic
       session.topicBreakdown[subject] = session.topicBreakdown[subject] || {};
       if (subtopic) {
         session.topicBreakdown[subject][subtopic] = (session.topicBreakdown[subject][subtopic] || 0) + 1;
       }
     }
 
-    session.conversationContext.push({
-      role: 'user',
-      message: message,
-      topic: subject,
-      subtopic: subtopic,
-      timestamp: Date.now()
-    });
-    session.conversationContext = session.conversationContext.slice(-5);
+    const encouragement = generateEncouragement(session);
+
+    // Update difficulty level based on response (placeholder logic)
+    const lastUserMessageContent = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
+    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down", "what are you talking about", "give me something", "you pick one"].some(phrase => lastUserMessageContent.includes(phrase))) {
+        session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1); // Decrease difficulty if student is passive
+    } else if (aiText.length > 50 && !aiText.includes("wrong") && !aiText.includes("mistake") && !session.needsFoundationalReview) { // Heuristic for progress
+        session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05); // Increase difficulty slightly if AI is able to give longer, presumably helpful response
+    }
+
+    // Capture the problem AI posed, if it's the start of a new problem
+    if (aiText.includes("apples") || aiText.includes("count") || aiText.includes("problem")) { // Simple heuristic for a problem
+        session.currentProblem = aiText;
+    }
 
     let messageText = aiResponse.text;
     let readingWord = null;
@@ -798,7 +630,7 @@ app.post('/api/chat', async (req, res) => {
       readingWord: readingWord,
       subject: subject,
       suggestions: generateDynamicSuggestions(session),
-      encouragement: generateEncouragement(session),
+      encouragement: encouragement,
       status: 'success',
       sessionStats: {
         totalWarnings: session.totalWarnings || 0,
@@ -807,12 +639,12 @@ app.post('/api/chat', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(`❌ Error processing chat for session: ${req.body.sessionId ? req.body.sessionId.slice(-6) : 'N/A'}:`, error.message);
-    const sessionForFallback = sessions.get(req.body.sessionId);
+    console.error(`❌ Error processing chat for session: ${sessionId.slice(-6)}:`, error.message);
+    const sessionForFallback = sessions.get(sessionId);
 
     res.status(500).json({
       error: 'Failed to process message due to an internal error. Please try again.',
-      fallback: generateContextualFallback(req.body.message || '', sessionForFallback || { studentName: 'learner', messages: [] })
+      fallback: generateContextualFallback(userMessage || '', sessionForFallback || { studentName: 'learner', messages: [] })
     });
   }
 });
