@@ -354,7 +354,9 @@ const createSession = (id, name, grade, subjects) => ({
   totalWarnings: 0,
   messages: [{ role: 'system', content: getTutorPrompt(grade, name), timestamp: new Date() }],
   topicsDiscussed: new Set(), 
-  conversationContext: []
+  conversationContext: [],
+  lastQuestion: null,         // <--- ADD
+  expectedAnswer: null        // <--- ADD
 });
 
 // Routes
@@ -386,25 +388,51 @@ app.post('/api/session/start', (req, res) => {
     res.status(500).json({ error: 'Failed to start session' });
   }
 });
-
 app.post('/api/chat', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
-    
+
     if (!sessionId || !sessions.has(sessionId)) {
       return res.status(400).json({ error: 'Invalid session' });
     }
-    
+
     if (!message?.trim()) {
       return res.status(400).json({ error: 'Message cannot be empty' });
     }
-    
+
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
-    
+
+    // 1. Check if user is answering a pending flashcard/question
+    if (session.expectedAnswer) {
+      const userInput = message.trim().toLowerCase();
+      const expected = session.expectedAnswer.toString().trim().toLowerCase();
+      const cleanUser = userInput.replace(/[\s\-]/g, '');
+      const cleanExpected = expected.replace(/[\s\-]/g, '');
+      if (cleanUser === cleanExpected) {
+        session.lastQuestion = null;
+        session.expectedAnswer = null;
+        return res.json({
+          response: `That's correct! Great job!`,
+          encouragement: generateResponse('encourage', session.studentName),
+          status: 'success'
+        });
+      } else {
+        const explain = (session.lastQuestion && /^\d/.test(session.lastQuestion))
+          ? `Remember, ${session.lastQuestion} equals ${session.expectedAnswer}.`
+          : `The correct answer is ${session.expectedAnswer}. Let's try another!`;
+        session.lastQuestion = null;
+        session.expectedAnswer = null;
+        return res.json({
+          response: `That's not quite right. ${explain}`,
+          encouragement: generateResponse('encourage', session.studentName),
+          status: 'corrected'
+        });
+      }
+    }
+
+    // 2. Proceed as usual
     let cleanedMessage = message.trim();
-    
-    // Apply fuzzy correction only if needed
     try {
       cleanedMessage = fuzzyCorrect(cleanedMessage);
     } catch (error) {
@@ -420,7 +448,7 @@ app.post('/api/chat', async (req, res) => {
         status: 'success'
       });
     }
-    
+
     // Handle thinking pauses
     if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
       return res.json({
@@ -429,7 +457,7 @@ app.post('/api/chat', async (req, res) => {
         status: 'listening'
       });
     }
-    
+
     // Check for inappropriate content
     if (containsInappropriate(message)) {
       session.totalWarnings++;
@@ -440,15 +468,15 @@ app.post('/api/chat', async (req, res) => {
         status: 'redirected'
       });
     }
-    
+
     // Add user message
     session.messages.push({ role: 'user', content: cleanedMessage, timestamp: new Date() });
-    
+
     // Keep conversation manageable
     if (session.messages.length > 8) {
       session.messages = [session.messages[0], ...session.messages.slice(-7)];
     }
-    
+
     // Generate AI response
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
@@ -457,62 +485,78 @@ app.post('/api/chat', async (req, res) => {
       temperature: config.GPT_TEMPERATURE,
       stop: ["\n\n", "Additionally,", "Furthermore,"]
     });
-    
+
     let aiResponse = completion.choices[0].message.content.trim();
-    
+
     // Check AI response for inappropriate content
     if (containsInappropriate(aiResponse)) {
       session.totalWarnings++;
       aiResponse = generateResponse('redirect', session.studentName);
     }
-    
+
     // Add AI response to session
     session.messages.push({ role: 'assistant', content: aiResponse, timestamp: new Date() });
-    
+
     // Track topics
     const subject = classifySubject(message);
     if (subject) session.topicsDiscussed.add(subject);
-    
+
     // Update conversation context
     session.conversationContext.push(
       { role: 'user', message: cleanedMessage, topic: subject, timestamp: Date.now() },
       { role: 'assistant', message: aiResponse, topic: subject, timestamp: Date.now() }
     );
-    
+
     if (session.conversationContext.length > 6) {
       session.conversationContext = session.conversationContext.slice(-6);
     }
-    
-    // Check for flashcard opportunity
+
+    // 3. Check for flashcard opportunity
     const flashcardData = extractFlashcardData(aiResponse);
-    
+
+    // Only enable flashcard mode on explicit request (quiz/test/flashcard)
+    const wantsFlashcard = /quiz|test|flashcard/i.test(message);
+
+    if (flashcardData && wantsFlashcard) {
+      responseData = {
+        response: aiResponse,
+        subject,
+        suggestions: generateResponse('suggestions', null, session.grade),
+        encouragement: generateResponse('encourage', session.studentName),
+        status: 'success',
+        sessionStats: {
+          totalWarnings: session.totalWarnings,
+          topicsDiscussed: Array.from(session.topicsDiscussed)
+        },
+        flashcard: flashcardData,
+        flashcardMode: true
+      };
+      session.lastQuestion = flashcardData.front;
+      session.expectedAnswer = flashcardData.back;
+    } else {
+      responseData = {
+        response: aiResponse,
+        subject,
+        suggestions: generateResponse('suggestions', null, session.grade),
+        encouragement: generateResponse('encourage', session.studentName),
+        status: 'success',
+        sessionStats: {
+          totalWarnings: session.totalWarnings,
+          topicsDiscussed: Array.from(session.topicsDiscussed)
+        }
+      };
+      session.lastQuestion = null;
+      session.expectedAnswer = null;
+    }
+
     // Check for reading word (early grades only)
     const readingWord = extractReadingWord(aiResponse, session.grade);
-    
-    const responseData = {
-      response: aiResponse,
-      subject,
-      suggestions: generateResponse('suggestions', null, session.grade),
-      encouragement: generateResponse('encourage', session.studentName),
-      status: 'success',
-      sessionStats: {
-        totalWarnings: session.totalWarnings,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
-      }
-    };
-    
-    // Add flashcard data if available
-    if (flashcardData) {
-      responseData.flashcard = flashcardData;
-    }
-    
-    // Add reading word if available
     if (readingWord) {
       responseData.readingWord = readingWord;
     }
-    
+
     res.json(responseData);
-    
+
   } catch (error) {
     console.error('❌ Chat error:', error.message);
     res.status(500).json({
@@ -521,6 +565,7 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 });
+
 
 app.get('/api/session/:sessionId/summary', (req, res) => {
   try {
