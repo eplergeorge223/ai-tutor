@@ -316,6 +316,91 @@ function extractReadingWord(response, grade) {
   return null;
 }
 
+function checkAnswer(userInput, expectedAnswer, originalQuestion) {
+  const userClean = userInput.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const expectedClean = expectedAnswer.toString().toLowerCase().replace(/[^\w\s]/g, '').trim();
+  
+  // Direct match
+  if (userClean === expectedClean) return true;
+  
+  // Handle spelling answers (like "d o g" or "d-o-g")
+  if (originalQuestion && typeof originalQuestion === 'string') {
+    const spellPattern = userClean.replace(/[\s\-]/g, '');
+    const expectedSpell = expectedClean.replace(/[\s\-]/g, '');
+    if (spellPattern === expectedSpell) return true;
+  }
+  
+  // Handle math answers
+  if (!isNaN(userClean) && !isNaN(expectedClean)) {
+    return parseFloat(userClean) === parseFloat(expectedClean);
+  }
+  
+  return false;
+}
+
+function generateHint(question, answer, grade) {
+  if (typeof question === 'string' && question.length < 8) {
+    // Likely a spelling question
+    return `Not quite! Let's try again. Can you spell "${question}" letter by letter?`;
+  }
+  
+  if (!isNaN(answer)) {
+    // Math question
+    return `That's not quite right. Think about it step by step. What's ${question}?`;
+  }
+  
+  return `Good try! Let's think about this together. The answer is ${answer}.`;
+}
+
+function smartFuzzyCorrect(text) {
+  // Only correct obvious educational terms, leave everything else alone
+  const words = text.split(/\s+/);
+  return words.map(word => {
+    if (word.length <= 3) return word;
+    
+    // Only correct if it's clearly meant to be an educational term
+    for (const vocab of VOCABULARY) {
+      if (levenshteinDistance(word.toLowerCase(), vocab.toLowerCase()) <= 1 && 
+          Math.abs(word.length - vocab.length) <= 1) {
+        return vocab;
+      }
+    }
+    return word;
+  }).join(' ');
+}
+
+function createFocusedSystemPrompt(session) {
+  return `You are a patient, encouraging AI tutor for ${session.studentName}, a ${session.grade} grade student.
+
+CRITICAL RULES:
+1. Listen carefully to what the student actually says
+2. If they spell something correctly, acknowledge it positively
+3. Stay on topic and don't make up information
+4. Use simple language appropriate for ${session.grade} grade
+5. Be encouraging but don't overwhelm
+
+Current conversation context: ${Array.from(session.topicsDiscussed).join(', ') || 'Getting started'}
+
+Keep responses short and focused. Maximum ${getMaxTokens(session.grade)} tokens.`;
+}
+
+function shouldCreateFlashcard(userMessage, aiResponse) {
+  const userLower = userMessage.toLowerCase();
+  const aiLower = aiResponse.toLowerCase();
+  
+  // Create flashcard if:
+  // 1. User asks how to spell something
+  // 2. AI asks a direct question with clear answer
+  // 3. Math problem is presented
+  
+  return (
+    userLower.includes('spell') || 
+    userLower.includes('how to spell') ||
+    /what\s+is\s+\d+/.test(aiLower) ||
+    /can\s+you\s+spell/.test(aiLower)
+  );
+}
+
 const getSuggestions = (grade, topicsDiscussed = []) => {
   const level = parseInt(grade) || 0;
   let baseSuggestions = [];
@@ -418,17 +503,35 @@ app.post('/api/chat', async (req, res) => {
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
 
-    // Check if user is answering a pending flashcard/question
-    if (session.expectedAnswer) {
-      const userInput = message.trim().toLowerCase();
-      const expected = session.expectedAnswer.toString().trim().toLowerCase();
-      const cleanUser = userInput.replace(/[\s\-]/g, '');
-      const cleanExpected = expected.replace(/[\s\-]/g, '');
+    // Raw message for logging and processing
+    const rawMessage = message.trim();
+    
+    // Check for inappropriate content FIRST, before any processing
+    if (containsInappropriate(rawMessage)) {
+      session.totalWarnings++;
+      console.warn(`🚨 Inappropriate content in session ${sessionId.slice(-6)}: "${rawMessage}"`);
       
-      if (cleanUser === cleanExpected) {
+      // Clear any pending flashcard state
+      session.lastQuestion = null;
+      session.expectedAnswer = null;
+      
+      return res.json({
+        response: `Let's use kind words when we're learning together, ${session.studentName}! What would you like to explore?`,
+        suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
+        status: 'redirected',
+        flashcardMode: false
+      });
+    }
+
+    // Handle flashcard/expected answer logic
+    if (session.expectedAnswer) {
+      const isCorrect = checkAnswer(rawMessage, session.expectedAnswer, session.lastQuestion);
+      
+      if (isCorrect) {
         session.lastQuestion = null;
         session.expectedAnswer = null;
         session.learningStreak++;
+        
         const encouragement = session.learningStreak > 3 ? 
           `Amazing! You're on a roll, ${session.studentName}! ` : 
           `That's correct! Great job, ${session.studentName}! `;
@@ -436,32 +539,26 @@ app.post('/api/chat', async (req, res) => {
         return res.json({
           response: encouragement + `You're really getting the hang of this!`,
           status: 'success',
-          learningStreak: session.learningStreak
+          learningStreak: session.learningStreak,
+          flashcardMode: false
         });
       } else {
-        const explain = (session.lastQuestion && /^\d/.test(session.lastQuestion))
-          ? `Remember, ${session.lastQuestion} equals ${session.expectedAnswer}. Let's try another!`
-          : `The correct answer is ${session.expectedAnswer}. Don't worry, ${session.studentName}, learning takes practice!`;
-        session.lastQuestion = null;
-        session.expectedAnswer = null;
-        session.learningStreak = 0;
+        // Give them another chance if it's close
+        const hint = generateHint(session.lastQuestion, session.expectedAnswer, session.grade);
         return res.json({
-          response: `That's not quite right, but great try! ${explain}`,
-          status: 'corrected'
+          response: hint,
+          status: 'hint',
+          flashcardMode: true,
+          flashcard: {
+            front: session.lastQuestion,
+            back: session.expectedAnswer
+          }
         });
       }
     }
 
-    // Process message
-    let cleanedMessage = message.trim();
-    try {
-      cleanedMessage = fuzzyCorrect(cleanedMessage);
-    } catch (error) {
-      console.warn('⚠️ Fuzzy correction failed, using original message:', error.message);
-    }
-
     // Handle special cases
-    if (/^can you hear me\??$/i.test(cleanedMessage)) {
+    if (/^can you hear me\??$/i.test(rawMessage)) {
       return res.json({
         response: `Yes! I can hear you loud and clear, ${session.studentName}! What would you like to learn about today?`,
         suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
@@ -469,7 +566,8 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
+    // Handle very short/unclear messages
+    if (rawMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(rawMessage)) {
       return res.json({
         response: `Take your time, ${session.studentName}! I'm here when you're ready to explore something exciting!`,
         suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
@@ -477,42 +575,33 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // Check for inappropriate content
-    if (containsInappropriate(message)) {
-      session.totalWarnings++;
-      console.warn(`🚨 Inappropriate content in session ${sessionId.slice(-6)}`);
-      return res.json({
-        response: `I'm here to help you learn amazing things, ${session.studentName}! What exciting topic would you like to explore today?`,
-        suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
-        status: 'redirected'
-      });
+    // Apply minimal fuzzy correction ONLY to educational terms
+    let processedMessage = rawMessage;
+    try {
+      // Only apply fuzzy correction to individual words, not the whole message
+      processedMessage = smartFuzzyCorrect(rawMessage);
+    } catch (error) {
+      console.warn('⚠️ Fuzzy correction failed, using original message:', error.message);
+      processedMessage = rawMessage;
     }
 
-    // Update system prompt with current context if significant topics have been discussed
-    if (session.topicsDiscussed.size > 0 && session.messages.length > 5) {
-      const updatedSystemPrompt = getTutorSystemPrompt(
-        session.grade, 
-        session.studentName, 
-        {
-          topicsDiscussed: Array.from(session.topicsDiscussed),
-          sessionDuration: Date.now() - session.startTime.getTime()
-        }
-      );
-      session.messages[0].content = updatedSystemPrompt;
-    }
+    // Create a focused system prompt
+    const systemPrompt = createFocusedSystemPrompt(session);
+    
+    // Build conversation context
+    const conversationMessages = [
+      { role: 'system', content: systemPrompt },
+      ...session.messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: processedMessage }
+    ];
 
-    // Add user message
-    session.messages.push({ role: 'user', content: cleanedMessage, timestamp: new Date() });
-
-    // Keep conversation manageable
-    if (session.messages.length > 10) {
-      session.messages = [session.messages[0], ...session.messages.slice(-9)];
-    }
+    // Add user message to session
+    session.messages.push({ role: 'user', content: processedMessage, timestamp: new Date() });
 
     // Generate AI response
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
-      messages: session.messages.map(m => ({ role: m.role, content: m.content })),
+      messages: conversationMessages,
       max_tokens: getMaxTokens(session.grade),
       temperature: config.GPT_TEMPERATURE,
       stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
@@ -530,17 +619,12 @@ app.post('/api/chat', async (req, res) => {
     session.messages.push({ role: 'assistant', content: aiResponse, timestamp: new Date() });
 
     // Track topics
-    const subject = classifySubject(message);
+    const subject = classifySubject(rawMessage);
     if (subject) session.topicsDiscussed.add(subject);
 
-    // Update conversation context
-    session.conversationContext.push(
-      { role: 'user', message: cleanedMessage, topic: subject, timestamp: Date.now() },
-      { role: 'assistant', message: aiResponse, topic: subject, timestamp: Date.now() }
-    );
-
-    if (session.conversationContext.length > 8) {
-      session.conversationContext = session.conversationContext.slice(-8);
+    // Keep conversation manageable
+    if (session.messages.length > 12) {
+      session.messages = session.messages.slice(-10);
     }
 
     // Prepare response
@@ -556,19 +640,15 @@ app.post('/api/chat', async (req, res) => {
       }
     };
 
-    // Handle flashcard generation
+    // Handle flashcard generation more intelligently
     const flashcardData = extractFlashcardData(aiResponse);
-    const mathPattern = /(what\s+is\s+\d+\s*[\+\-\*\/]\s*\d+)|(calculate|solve)/i;
-    const spellingPattern = /(how\s+do\s+you\s+spell|spell\s+|sound\s+out)/i;
-
-    if (flashcardData && (mathPattern.test(aiResponse) || spellingPattern.test(aiResponse))) {
+    if (flashcardData && shouldCreateFlashcard(rawMessage, aiResponse)) {
       responseData.flashcard = flashcardData;
       responseData.flashcardMode = true;
       session.lastQuestion = flashcardData.front;
       session.expectedAnswer = flashcardData.back;
     } else {
-      session.lastQuestion = null;
-      session.expectedAnswer = null;
+      responseData.flashcardMode = false;
     }
 
     // Check for reading word (early grades only)
@@ -587,6 +667,8 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 });
+
+
 
 
 app.get('/api/session/:sessionId/summary', (req, res) => {

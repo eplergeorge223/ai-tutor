@@ -741,16 +741,52 @@ function flipCard() {
             hideElement('flashcard-container');
         }
         
-// Streamlined user input handling
+// Enhanced user input handling with better context awareness
 async function handleUserInput(input) {
     if (state.processing || !state.sessionStarted) return;
 
+    // Filter inappropriate language
+    const inappropriateWords = ['bitch', 'damn', 'shit', 'fuck', 'ass', 'hell'];
+    const hasInappropriateLanguage = inappropriateWords.some(word => 
+        input.toLowerCase().includes(word)
+    );
+    
+    if (hasInappropriateLanguage) {
+        await speak("Let's use kind words when we're learning together. What would you like to explore today?");
+        addToHistory('tutor', "Let's use kind words when we're learning together. What would you like to explore today?");
+        state.processing = false;
+        updateStatus("Ready for your next question!");
+        return;
+    }
+
     // Check if we're expecting an answer to a specific question
     if (state.expectedAnswer !== null) {
-        const normalizedUser = input.trim().toLowerCase();
-        const normalizedAnswer = state.expectedAnswer.toString().trim().toLowerCase();
+        const normalizedUser = input.trim().toLowerCase().replace(/\s+/g, '');
+        const normalizedAnswer = state.expectedAnswer.toString().trim().toLowerCase().replace(/\s+/g, '');
         
-        // Check for correct answer
+        // For spelling questions, check if they spelled it out letter by letter
+        if (state.lastQuestion && state.lastQuestion.includes('spell')) {
+            const letterSpelling = input.toLowerCase().replace(/\s+/g, '');
+            const correctSpelling = state.expectedAnswer.toLowerCase().replace(/[-\s]/g, '');
+            
+            if (letterSpelling === correctSpelling || 
+                letterSpelling.replace(/[^a-z]/g, '') === correctSpelling) {
+                
+                await speak("Perfect! You spelled it correctly!");
+                addToHistory('tutor', "Perfect! You spelled it correctly!");
+                
+                // Clear the expected answer and hide flashcard
+                state.expectedAnswer = null;
+                state.lastQuestion = null;
+                hideFlashcard();
+                
+                updateStatus("What would you like to try next?");
+                startListening();
+                return;
+            }
+        }
+        
+        // Check for correct answer (regular matching)
         if (normalizedUser === normalizedAnswer || 
             (normalizedAnswer.includes(normalizedUser) && normalizedUser.length > 1)) {
             
@@ -792,7 +828,11 @@ async function handleUserInput(input) {
             body: JSON.stringify({
                 sessionId: state.sessionId,
                 message: input,
-                context: {}
+                context: {
+                    currentFlashcard: state.currentFlashcard,
+                    lastQuestion: state.lastQuestion,
+                    expectedAnswer: state.expectedAnswer
+                }
             })
         });
         
