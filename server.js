@@ -511,29 +511,39 @@ app.post('/api/chat', async (req, res) => {
       session.conversationContext = session.conversationContext.slice(-6);
     }
 
-    // 3. Check for flashcard opportunity
+    // 3. Prepare responseData
+    const responseData = {
+      response: aiResponse,
+      subject,
+      suggestions: generateResponse('suggestions', null, session.grade),
+      encouragement: generateResponse('encourage', session.studentName),
+      status: 'success',
+      sessionStats: {
+        totalWarnings: session.totalWarnings,
+        topicsDiscussed: Array.from(session.topicsDiscussed)
+      }
+    };
+
+    // Only auto-trigger flashcard for explicit math/spelling/phonics patterns
     const flashcardData = extractFlashcardData(aiResponse);
+    const mathPattern = /(what\s+is\s+\d+\s*[\+\-\*\/]\s*\d+)|(calculate|solve)/i;
+    const spellingPattern = /(how\s+do\s+you\s+spell|spell\s+|sound\s+out)/i;
 
-  // Only auto-trigger flashcard for explicit math or spelling/phonics patterns
-const mathPattern = /(what\s+is\s+\d+\s*[\+\-\*\/]\s*\d+)|(calculate|solve)/i;
-const spellingPattern = /(how\s+do\s+you\s+spell|spell\s+|sound\s+out)/i;
+    const shouldShowFlashcard =
+      (flashcardData && (
+        mathPattern.test(aiResponse)
+        || spellingPattern.test(aiResponse)
+      ));
 
-const shouldShowFlashcard =
-  (flashcardData && (
-      mathPattern.test(aiResponse)
-      || spellingPattern.test(aiResponse)
-   )
-  );
-
-if (shouldShowFlashcard) {
-  responseData.flashcard = flashcardData;
-  responseData.flashcardMode = true;
-  session.lastQuestion = flashcardData.front;
-  session.expectedAnswer = flashcardData.back;
-} else {
-  session.lastQuestion = null;
-  session.expectedAnswer = null;
-}
+    if (shouldShowFlashcard) {
+      responseData.flashcard = flashcardData;
+      responseData.flashcardMode = true;
+      session.lastQuestion = flashcardData.front;
+      session.expectedAnswer = flashcardData.back;
+    } else {
+      session.lastQuestion = null;
+      session.expectedAnswer = null;
+    }
 
     // Check for reading word (early grades only)
     const readingWord = extractReadingWord(aiResponse, session.grade);
