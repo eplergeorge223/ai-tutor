@@ -362,6 +362,8 @@
     <canvas id="whiteboard" width="400" height="250" style="background:white; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></canvas>
 </div>
 
+<button class="btn btn-warning" onclick="clearWhiteboard()">Clear Whiteboard</button>
+
 
         <!-- Session Summary -->
         <div id="session-summary" class="glass-panel hidden">
@@ -1013,6 +1015,13 @@ async function handleUserInput(input) {
             updateStatus("Ready to start a new session!");
         }
         
+        function clearWhiteboard() {
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+
         // History management
         function showHistory() {
             $('full-chat-history').innerHTML = state.chatHistory.map(msg =>
@@ -1027,45 +1036,36 @@ async function handleUserInput(input) {
             hideElement('chat-history-modal');
         }
         
-        // Initialize on load
-        window.onload = async function() {
-            console.log('🚀 AI Tutor loading...');
-            await initSpeech();
-            
-            // Initialize default suggestions
-            updateSuggestions('', 'Welcome');
-            
-            console.log('✅ AI Tutor ready!');
-        };
 
-        window.onload = async function() {
+window.onload = async function () {
     console.log('🚀 AI Tutor loading...');
     await initSpeech();
     updateSuggestions('', 'Welcome');
     console.log('✅ AI Tutor ready!');
+
+    // Initialize whiteboard drawing logic AFTER DOM is ready
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => drawing = false);
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#764ba2';
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
 };
 
-// 🎨 Whiteboard drawing logic (below onload so DOM is ready)
-const canvas = document.getElementById('whiteboard');
-const ctx = canvas.getContext('2d');
-let drawing = false;
-
-canvas.addEventListener('mousedown', () => drawing = true);
-canvas.addEventListener('mouseup', () => drawing = false);
-canvas.addEventListener('mouseleave', () => drawing = false);
-canvas.addEventListener('mousemove', draw);
-
-function draw(e) {
-    if (!drawing) return;
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#764ba2';
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-}
 
 
         // Auto-pause listening when window loses focus
