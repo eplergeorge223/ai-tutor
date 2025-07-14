@@ -503,108 +503,95 @@
             });
         }
         
-        // Enhanced caption system
-        function showCaption(text, type = 'bot') {
-            const caption = $('live-captions');
-            caption.textContent = text;
-            caption.className = `live-captions ${type}-caption`;
-            showElement('live-captions');
-            if (type === 'user') {
-                setTimeout(() => hideElement('live-captions'), 2000);
+function showCaption(text, type = 'bot') {
+    const caption = $('live-captions');
+    caption.textContent = text;
+    caption.className = `live-captions ${type}-caption`;
+    showElement('live-captions');
+}
+
+        
+// Streamlined speech recognition with better flow and no interruption-cancelling
+function initRecognition() {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
+        return false;
+    }
+    
+    state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    Object.assign(state.recognition, {
+        continuous: true,
+        interimResults: true,
+        lang: 'en-US',
+        maxAlternatives: 1
+    });
+    
+    state.recognition.onstart = () => {
+        state.listening = true;
+        showSpeechIndicator('listening');
+        updateStatus("I'm listening! Go ahead and speak.");
+    };
+    
+    state.recognition.onend = () => {
+        state.listening = false;
+        hideSpeechIndicator();
+        // Auto-restart if we should still be listening
+        if (state.sessionStarted && !state.processing && !state.speaking) {
+            setTimeout(() => startListening(), 1000);
+        }
+    };
+
+    state.recognition.onresult = (event) => {
+        const result = event.results[event.resultIndex][0];
+        const transcript = result.transcript.trim();
+        const confidence = result.confidence;
+
+        // Show live caption as user speaks
+        showCaption(transcript, 'user');
+
+        // Only process once user finishes speaking (final result)
+        if (event.results[event.resultIndex].isFinal && !state.processing) {
+            const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
+            const isValidInput = transcript.length >= 3 && !isNoise;
+
+            if (!isValidInput) {
+                updateStatus("I didn't catch that. Try speaking a little louder!");
+                hideElement('live-captions');
+            } else {
+                // Just process, no speech cancel/interruption logic!
+                if (state.listening) {
+                    state.recognition.stop();
+                }
+                handleUserInput(transcript);
+                hideElement('live-captions');
             }
         }
+    };
+
+    state.recognition.onerror = event => {
+        state.processing = false;
+        state.listening = false;
+        hideSpeechIndicator();
         
-        // Streamlined speech recognition with better flow
-        function initRecognition() {
-            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                updateStatus("Speech recognition not supported. Please use Chrome or Edge!");
-                return false;
-            }
-            
-            state.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            Object.assign(state.recognition, {
-                continuous: true,
-                interimResults: true,
-                lang: 'en-US',
-                maxAlternatives: 1
-            });
-            
-            state.recognition.onstart = () => {
-                state.listening = true;
-                showSpeechIndicator('listening');
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
-            
-            state.recognition.onend = () => {
-                state.listening = false;
-                hideSpeechIndicator();
-                
-                // Auto-restart if we should still be listening
-                if (state.sessionStarted && !state.processing && !state.speaking) {
-                    setTimeout(() => startListening(), 1000);
-                }
-            };
-            
- 
-            state.recognition.onresult = (event) => {
-                const result = event.results[event.resultIndex][0];
-                const transcript = result.transcript.trim();
-                const confidence = result.confidence;
-
-                // Show live caption
-                showCaption(transcript, 'user');
-
-                // Process final results
-                if (event.results[event.resultIndex].isFinal && !state.processing) {
-                    const isNoise = confidence < 0.7 || transcript.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(transcript);
-                    
-// Much more flexible - allow most conversational input
-const isValidInput = transcript.length >= 3 && !isNoise;
-
-if (!isValidInput) {
-    updateStatus("I didn't catch that. Try speaking a little louder!");
-    setTimeout(() => hideElement('live-captions'), 2000);
-                    } else {
-                        // Stop current speech if user interrupts
-                        if (state.speaking) {
-                            state.synthesis.cancel();
-                            state.speaking = false;
-                        }
-                        
-                        // Stop listening during processing
-                        if (state.listening) {
-                            state.recognition.stop();
-                        }
-                        
-                        handleUserInput(transcript);
-                    }
-                }
-            };
-            
-            state.recognition.onerror = event => {
-                state.processing = false;
-                state.listening = false;
-                hideSpeechIndicator();
-                
-                const errorMsg = {
-                    'no-speech': "I didn't hear anything. Please try again.",
-                    'audio-capture': "Couldn't access microphone. Check permissions.",
-                    'not-allowed': "Microphone access denied. Please enable it.",
-                    'network': "Network error. Check your connection.",
-                    'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
-                }[event.error] || "Please try speaking again!";
-                
-                updateStatus(errorMsg);
-                
-                // Restart listening after error
-                if (state.sessionStarted && !state.processing && !state.speaking) {
-                    setTimeout(() => startListening(), 2000);
-                }
-            };
-            
-            return true;
+        const errorMsg = {
+            'no-speech': "I didn't hear anything. Please try again.",
+            'audio-capture': "Couldn't access microphone. Check permissions.",
+            'not-allowed': "Microphone access denied. Please enable it.",
+            'network': "Network error. Check your connection.",
+            'service-not-allowed': "Browser doesn't support speech recognition. Try Chrome."
+        }[event.error] || "Please try speaking again!";
+        
+        updateStatus(errorMsg);
+        
+        // Restart listening after error
+        if (state.sessionStarted && !state.processing && !state.speaking) {
+            setTimeout(() => startListening(), 2000);
         }
-        
+    };
+    
+    return true;
+}
+
         function startListening() {
             if (state.recognition && !state.listening && !state.processing && !state.speaking) {
                 try { 
