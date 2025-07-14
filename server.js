@@ -4,7 +4,6 @@ const OpenAI = require('openai');
 require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-const sqlite3 = require('sqlite3').verbose(); // For database
 
 // --- Configuration Constants ---
 const config = {
@@ -32,40 +31,8 @@ if (!process.env.OPENAI_API_KEY) {
 
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-// sessions Map will now be a cache, with database as source of truth
-const sessionsCache = new Map();
-
-// --- Database Setup ---
-const db = new sqlite3.Database('./tutor_sessions.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
-  if (err) {
-    console.error('❌ Database connection error:', err.message);
-  } else {
-    console.log('✅ Connected to the SQLite database.');
-    db.run(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        id TEXT PRIMARY KEY,
-        studentName TEXT,
-        grade TEXT,
-        subjects TEXT, -- JSON string
-        startTime INTEGER,
-        lastActivity INTEGER,
-        messages TEXT, -- JSON string
-        totalWarnings INTEGER,
-        topicsDiscussed TEXT, -- JSON string
-        currentTopic TEXT,
-        topicBreakdown TEXT, -- JSON string
-        conversationContext TEXT, -- JSON string
-        achievements TEXT, -- JSON string
-        strugglingAreas TEXT, -- JSON string
-        preferredLearningStyle TEXT,
-        difficultyLevel REAL -- New field for adaptive difficulty
-      )
-    `, (err) => {
-      if (err) console.error('❌ Error creating sessions table:', err.message);
-      else console.log('✅ Sessions table checked/created.');
-    });
-  }
-});
+// Sessions will now be stored purely in memory
+const sessions = new Map();
 
 // --- Middleware ---
 app.use(cors());
@@ -80,97 +47,16 @@ app.use(rateLimit({
 }));
 app.use(express.static('public'));
 
-// --- Session Management & Cleanup ---
-// Modified to clean up from cache and database
-setInterval(async () => {
+// --- Session Management & Cleanup (In-memory) ---
+setInterval(() => {
   const now = Date.now();
-  for (const [id, sess] of sessionsCache) {
+  for (const [id, sess] of sessions) {
     if (now - sess.lastActivity > config.SESSION_TTL) {
-      console.log(`🧹 Cleaning up expired session ${id.slice(-6)} from cache. Inactivity: ${((now - sess.lastActivity) / 1000 / 60).toFixed(1)} minutes.`);
-      sessionsCache.delete(id);
-      // Optionally, mark as inactive in DB or delete after longer period
-      // For now, let's keep in DB for summary retrieval
+      console.log(`🧹 Cleaning up expired session ${id.slice(-6)}. Inactivity: ${((now - sess.lastActivity) / 1000 / 60).toFixed(1)} minutes.`);
+      sessions.delete(id);
     }
   }
-
-  // Future: Add a database cleanup for truly old/inactive sessions
 }, config.CLEANUP_INTERVAL);
-
-// Helper to load session from DB or cache
-async function getSession(sessionId) {
-  if (sessionsCache.has(sessionId)) {
-    const session = sessionsCache.get(sessionId);
-    session.lastActivity = Date.now(); // Update activity on access
-    return session;
-  }
-
-  return new Promise((resolve, reject) => {
-    db.get('SELECT * FROM sessions WHERE id = ?', [sessionId], (err, row) => {
-      if (err) return reject(err);
-      if (!row) return resolve(null);
-
-      try {
-        const session = {
-          ...row,
-          subjects: JSON.parse(row.subjects || '[]'),
-          messages: JSON.parse(row.messages || '[]'),
-          topicsDiscussed: new Set(JSON.parse(row.topicsDiscussed || '[]')),
-          topicBreakdown: JSON.parse(row.topicBreakdown || '{}'),
-          conversationContext: JSON.parse(row.conversationContext || '[]'),
-          achievements: JSON.parse(row.achievements || '[]'),
-          strugglingAreas: JSON.parse(row.strugglingAreas || '[]'),
-          // Ensure default for new fields
-          difficultyLevel: row.difficultyLevel !== undefined ? row.difficultyLevel : 0.5,
-          lastActivity: Date.now() // Update activity on load
-        };
-        sessionsCache.set(sessionId, session); // Add to cache
-        return resolve(session);
-      } catch (parseErr) {
-        reject(parseErr);
-      }
-    });
-  });
-}
-
-// Helper to save session to DB
-async function saveSession(session) {
-  return new Promise((resolve, reject) => {
-    const serializedSession = {
-      ...session,
-      subjects: JSON.stringify(Array.from(session.subjects)),
-      messages: JSON.stringify(session.messages),
-      topicsDiscussed: JSON.stringify(Array.from(session.topicsDiscussed)),
-      topicBreakdown: JSON.stringify(session.topicBreakdown),
-      conversationContext: JSON.stringify(session.conversationContext),
-      achievements: JSON.stringify(session.achievements),
-      strugglingAreas: JSON.stringify(session.strugglingAreas),
-      // Ensure existing fields are correctly handled
-      difficultyLevel: session.difficultyLevel !== undefined ? session.difficultyLevel : 0.5
-    };
-
-    const query = `
-      INSERT OR REPLACE INTO sessions (
-        id, studentName, grade, subjects, startTime, lastActivity, messages,
-        totalWarnings, topicsDiscussed, currentTopic, topicBreakdown,
-        conversationContext, achievements, strugglingAreas, preferredLearningStyle, difficultyLevel
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const params = [
-      serializedSession.id, serializedSession.studentName, serializedSession.grade,
-      serializedSession.subjects, serializedSession.startTime, serializedSession.lastActivity,
-      serializedSession.messages, serializedSession.totalWarnings,
-      serializedSession.topicsDiscussed, serializedSession.currentTopic,
-      serializedSession.topicBreakdown, serializedSession.conversationContext,
-      serializedSession.achievements, serializedSession.strugglingAreas,
-      serializedSession.preferredLearningStyle, serializedSession.difficultyLevel
-    ];
-
-    db.run(query, params, function(err) {
-      if (err) return reject(err);
-      resolve(this.lastID);
-    });
-  });
-}
 
 
 // --- Helper Functions ---
@@ -273,7 +159,7 @@ const createSessionObject = (sessionId, studentName, grade, subjects) => ({
   lastActivity: Date.now(),
   messages: [{ role: 'system', content: getTutorSystemPrompt(grade, studentName), timestamp: Date.now() }],
   totalWarnings: 0,
-  topicsDiscussed: new Set(),
+  topicsDiscussed: new Set(), // Stored as a Set
   currentTopic: null,
   topicBreakdown: {},
   conversationContext: [],
@@ -466,7 +352,7 @@ function generateNextSteps(session) {
 }
 
 async function generateAIResponse(sessionId, userMessage) {
-  const session = await getSession(sessionId); // Load from DB or cache
+  const session = sessions.get(sessionId); // Get directly from in-memory Map
   if (!session) throw new Error('Session not found');
 
   session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
@@ -501,11 +387,12 @@ async function generateAIResponse(sessionId, userMessage) {
 
     // Check for "I don't know" or similar from user to trigger specific helpful suggestions
     const lowerUserMessage = userMessage.toLowerCase();
-    if (["i don't know", "i dunno", "tell me", "what is the answer"].some(phrase => lowerUserMessage.includes(phrase))) {
+    if (["i don't know", "i dunno", "tell me", "what is the answer", "what are you talking about", "break what down"].some(phrase => lowerUserMessage.includes(phrase))) {
         // AI should have been prompted to give specific options, if not, layer them on here
         const options = generateSafeSuggestions(session.grade).map(s => s.toLowerCase());
-        if (!options.some(opt => aiText.toLowerCase().includes(opt))) { // Only add if AI didn't already
-             aiText += `\n\nWould you like to explore: ${options.map(o => `**${capitalize(o.replace('let\'s explore ', '').replace('want to learn about ', ''))}**`).join(', or ')}?`;
+        // Only add if AI didn't already explicitly suggest options
+        if (!options.some(opt => aiText.toLowerCase().includes(opt)) && !aiText.includes("math") && !aiText.includes("reading") && !aiText.includes("science")) {
+             aiText += `\n\nNo worries, ${session.studentName}! How about we pick from **math**, **reading**, or **science**?`;
         }
     }
 
@@ -519,15 +406,15 @@ async function generateAIResponse(sessionId, userMessage) {
     // A more advanced system would analyze user engagement, correctness of subsequent answers, etc.
     // For now, let's assume if the user keeps asking for help or "I don't know", difficulty decreases.
     // If user is moving forward, difficulty increases.
-    const lastUserMessage = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
-    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down"].some(phrase => lastUserMessage.includes(phrase))) {
+    const lastUserMessageContent = session.messages.filter(m => m.role === 'user').slice(-1)[0]?.content.toLowerCase();
+    if (["i don't know", "i dunno", "tell me", "what is the answer", "break what down", "what are you talking about"].some(phrase => lastUserMessageContent.includes(phrase))) {
         session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1); // Decrease difficulty
     } else if (aiText.length > 50 && !aiText.includes("wrong") && !aiText.includes("mistake")) { // Heuristic for progress
         session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05); // Increase difficulty slightly
     }
 
 
-    await saveSession(session); // Save updated session state
+    // No saveSession() call here as we are now purely in-memory
 
     return { text: aiText, subject, subtopic, encouragement };
   } catch (error) {
@@ -535,7 +422,7 @@ async function generateAIResponse(sessionId, userMessage) {
     const fallbackResponse = generateContextualFallback(userMessage, session);
 
     session.messages.push({ role: 'assistant', content: fallbackResponse, timestamp: Date.now() });
-    await saveSession(session); // Save fallback response
+    // No saveSession() call here
 
     return {
       text: fallbackResponse,
@@ -724,9 +611,7 @@ app.post('/api/session/start', async (req, res) => {
 
     const sessionId = generateSessionId();
     const session = createSessionObject(sessionId, validatedName, validatedGrade, studentSubjects);
-
-    await saveSession(session); // Save to DB
-    sessionsCache.set(sessionId, session); // Add to cache
+    sessions.set(sessionId, session); // Store in-memory
 
     console.log(`🚀 Session started: ID ending in ${sessionId.slice(-6)}, Student: ${validatedName}, Grade: ${validatedGrade}`);
 
@@ -751,8 +636,7 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
 
-    // Use getSession to load from cache or DB
-    const session = await getSession(sessionId);
+    const session = sessions.get(sessionId); // Get directly from in-memory Map
     if (!session) {
       return res.status(400).json({ error: 'Invalid or expired session. Please start a new session.' });
     }
@@ -760,14 +644,13 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message cannot be empty.' });
     }
 
-    session.lastActivity = Date.now(); // Update activity for both cache and DB save
+    session.lastActivity = Date.now();
 
     // Check for inappropriate content in user's message
     const contentCheckUser = containsInappropriateContent(message);
     if (contentCheckUser.inappropriate) {
       session.totalWarnings = (session.totalWarnings || 0) + 1;
       console.warn(`🚨 SECURITY ALERT: Inappropriate content detected in session ${sessionId.slice(-6)}: "${contentCheckUser.word}" (Category: ${contentCheckUser.category}).`);
-      await saveSession(session); // Save updated warnings
       return res.json(getInappropriateResponse(contentCheckUser.category, session));
     }
 
@@ -781,7 +664,6 @@ app.post('/api/chat', async (req, res) => {
     if (contentCheckAI.inappropriate) {
       session.totalWarnings = (session.totalWarnings || 0) + 1;
       console.warn(`🚨 LLM OUTPUT ALERT: Inappropriate content in response for session ${sessionId.slice(-6)}: "${contentCheckAI.word}" (Category: ${contentCheckAI.category}).`);
-      await saveSession(session); // Save updated warnings
       return res.json(getInappropriateResponse(contentCheckAI.category, session));
     }
 
@@ -818,8 +700,6 @@ app.post('/api/chat', async (req, res) => {
       }
     } catch (e) { /* Not JSON; keep as regular text */ }
 
-    await saveSession(session); // Save session state after all updates
-
     res.json({
       response: messageText,
       readingWord: readingWord,
@@ -835,9 +715,8 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error(`❌ Error processing chat for session: ${req.body.sessionId ? req.body.sessionId.slice(-6) : 'N/A'}:`, error.message);
-    // Attempt to load session for contextual fallback even in error state
-    let sessionForFallback;
-    try { sessionForFallback = await getSession(req.body.sessionId); } catch (e) { /* ignore */ }
+    // Attempt to get session for contextual fallback even in error state
+    const sessionForFallback = sessions.get(req.body.sessionId);
 
     res.status(500).json({
       error: 'Failed to process message due to an internal error. Please try again.',
@@ -847,10 +726,10 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Get session summary with enhanced details
-app.get('/api/session/:sessionId/summary', async (req, res) => {
+app.get('/api/session/:sessionId/summary', (req, res) => {
   try {
     const { sessionId } = req.params;
-    const session = await getSession(sessionId); // Load from DB or cache
+    const session = sessions.get(sessionId); // Get directly from in-memory Map
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found.' });
@@ -890,21 +769,13 @@ app.get('/api/session/:sessionId/summary', async (req, res) => {
   }
 });
 
-app.post('/api/session/:sessionId/end', async (req, res) => {
+app.post('/api/session/:sessionId/end', (req, res) => {
   try {
     const { sessionId } = req.params;
-    sessionsCache.delete(sessionId); // Remove from cache
-
-    // Optionally delete from DB, or mark as 'inactive' for historical purposes
-    await new Promise((resolve, reject) => {
-      db.run('DELETE FROM sessions WHERE id = ?', [sessionId], function(err) {
-        if (err) return reject(err);
-        if (this.changes === 0) return resolve(false); // No rows deleted
-        resolve(true); // Successfully deleted
-      });
-    });
-
-    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user (and deleted from DB).`);
+    if (!sessions.delete(sessionId)) { // Delete from in-memory Map
+      return res.status(404).json({ error: 'Session not found or already ended.' });
+    }
+    console.log(`🛑 Session ${sessionId.slice(-6)} ended manually by user.`);
     res.json({ status: 'ended', message: 'Session successfully closed.' });
   } catch (error) {
     console.error('❌ Error ending session:', error.message);
@@ -913,9 +784,9 @@ app.post('/api/session/:sessionId/end', async (req, res) => {
 });
 
 // Session management endpoints (status)
-app.get('/api/session/:sessionId/status', async (req, res) => {
+app.get('/api/session/:sessionId/status', (req, res) => {
   const { sessionId } = req.params;
-  const session = await getSession(sessionId); // Load from DB or cache
+  const session = sessions.get(sessionId); // Get directly from in-memory Map
 
   if (!session) {
     return res.status(404).json({ error: 'Session not found.' });
@@ -934,7 +805,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date(),
-    activeSessionsInCache: sessionsCache.size,
+    activeSessionsInCache: sessions.size, // Updated to reflect in-memory sessions
     uptime: process.uptime()
   });
 });
@@ -945,7 +816,7 @@ const server = app.listen(config.PORT, () => {
   console.log(`📊 Health check: http://localhost:${config.PORT}/api/health`);
   console.log(`🚀 Ready to help students learn safely!`);
   console.log(`🛡️ Content filtering active for child safety`);
-  console.log(`💾 Sessions persistent via SQLite: ./tutor_sessions.db`);
+  console.log(`⚠️ Sessions are in-memory and will be lost if the server restarts or expires.`); // Explicit warning
 });
 
 // Graceful shutdown (SIGTERM and Ctrl+C)
@@ -954,11 +825,7 @@ const server = app.listen(config.PORT, () => {
     console.log(`Received ${signal}, shutting down gracefully...`);
     server.close(() => {
       console.log('Server closed.');
-      db.close((err) => {
-        if (err) console.error('❌ Error closing database:', err.message);
-        else console.log('✅ Database connection closed.');
-        process.exit(0);
-      });
+      process.exit(0);
     });
   });
 });
