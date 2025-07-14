@@ -468,6 +468,98 @@ function generateNextSteps(session) {
   return ['Keep exploring and practicing what interests you most! Every question makes you smarter!'];
 }
 
+// Dummy function for topic classification - you'd likely expand this
+function classifySubject(text) {
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('math') || lowerText.includes('add') || lowerText.includes('subtract') || lowerText.includes('number') || lowerText.includes('count')) {
+        let subtopic = null;
+        if (lowerText.includes('add') || lowerText.includes('plus')) subtopic = 'addition';
+        if (lowerText.includes('subtract') || lowerText.includes('minus')) subtopic = 'subtraction';
+        if (lowerText.includes('multiply') || lowerText.includes('times')) subtopic = 'multiplication';
+        if (lowerText.includes('divide')) subtopic = 'division';
+        if (lowerText.includes('count')) subtopic = 'counting';
+        return { subject: 'math', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('read') || lowerText.includes('story') || lowerText.includes('book') || lowerText.includes('word') || lowerText.includes('letter')) {
+        let subtopic = null;
+        if (lowerText.includes('word') || lowerText.includes('vocabulary')) subtopic = 'vocabulary';
+        if (lowerText.includes('story') || lowerText.includes('comprehension')) subtopic = 'comprehension';
+        return { subject: 'reading', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('science') || lowerText.includes('animal') || lowerText.includes('space') || lowerText.includes('experiment')) {
+        let subtopic = null;
+        if (lowerText.includes('animal')) subtopic = 'animals';
+        if (lowerText.includes('space') || lowerText.includes('planet') || lowerText.includes('star')) subtopic = 'space';
+        return { subject: 'science', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('music') || lowerText.includes('song') || lowerText.includes('instrument')) {
+        let subtopic = null;
+        if (lowerText.includes('instrument')) subtopic = 'instruments';
+        if (lowerText.includes('rhythm') || lowerText.includes('beat')) subtopic = 'rhythm';
+        return { subject: 'music', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('history') || lowerText.includes('social studies') || lowerText.includes('country')) {
+        let subtopic = null;
+        if (lowerText.includes('history') || lowerText.includes('past')) subtopic = 'history';
+        if (lowerText.includes('geography') || lowerText.includes('map') || lowerText.includes('country')) subtopic = 'geography';
+        return { subject: 'socialStudies', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('sport') || lowerText.includes('exercise') || lowerText.includes('fitness')) {
+      let subtopic = null;
+      if (lowerText.includes('sport')) subtopic = 'sports';
+      if (lowerText.includes('exercise') || lowerText.includes('fitness')) subtopic = 'fitness';
+      return { subject: 'pe', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('code') || lowerText.includes('computer') || lowerText.includes('robot')) {
+      let subtopic = null;
+      if (lowerText.includes('code') || lowerText.includes('program')) subtopic = 'coding';
+      if (lowerText.includes('robot')) subtopic = 'robotics';
+      return { subject: 'technology', subtopic: subtopic || 'general' };
+    }
+    if (lowerText.includes('language') || lowerText.includes('speak') || lowerText.includes('word in spanish') || lowerText.includes('word in french')) {
+      let subtopic = null;
+      if (lowerText.includes('vocabulary') || lowerText.includes('word')) subtopic = 'vocabulary';
+      if (lowerText.includes('grammar') || lowerText.includes('sentence')) subtopic = 'grammar';
+      return { subject: 'language', subtopic: subtopic || 'general' };
+    }
+    return { subject: null, subtopic: null };
+}
+
+// Placeholder for generating a more dynamic encouragement
+function generateEncouragement(session) {
+    const defaultEncouragements = [
+        "Keep up the great work!",
+        "You're doing wonderfully!",
+        "That's fantastic thinking!",
+        "Awesome effort!",
+        "You're making great progress!"
+    ];
+    return defaultEncouragements[Math.floor(Math.random() * defaultEncouragements.length)];
+}
+
+// Placeholder for generating contextual fallback response
+function generateContextualFallback(userMessage, session) {
+    const studentName = session.studentName || 'Student';
+    return `Oops! My brain had a little hiccup. No worries, ${studentName}! Can you tell me again what you're curious about or if you'd like to try a different math problem?`;
+}
+
+
+// Function to determine max tokens based on grade
+function getMaxTokensForGrade(grade) {
+  switch (grade) {
+    case 'PreK': case 'K': case '1': case '2':
+      return 80;
+    case '3': case '4': case '5':
+      return 100;
+    case '6': case '7': case '8':
+      return 120;
+    case '9': case '10': case '11': case '12':
+      return 150;
+    default:
+      return 100; // Default for undefined grades
+  }
+}
+
 // --- NEW: Foundational Skill Check Function ---
 function checkFoundationalSkills(userMessage, session) {
   const lowerMessage = userMessage.toLowerCase();
@@ -486,25 +578,32 @@ function checkFoundationalSkills(userMessage, session) {
     
     // If user's message matches a counting error pattern OR their numerical answer is wildly off for a simple sum
     if (countingErrors.some(error => lowerMessage.includes(error))) {
-      session.currentProblem = session.messages.slice(-2, -1)[0]?.content; // Store the problem AI just asked
+      // Ensure we capture the problem the AI asked right before this error
+      session.currentProblem = session.messages.slice(-2, -1)[0]?.content;
       return { skill: 'counting', originalProblem: session.currentProblem };
     }
 
     // Heuristic for wildly incorrect answers to simple math problems (e.g., 7+3=97)
     const mathProblemRegex = /(\d+)\s*(plus|\+|\-|\*|\/|times|divided by)\s*(\d+)/;
-    const match = currentProblem.match(mathProblemRegex);
+    const completionMessages = session.messages.filter(m => m.role === 'assistant');
+    const lastAIProblem = completionMessages.length > 0 ? completionMessages[completionMessages.length -1].content : '';
+
+    const match = lastAIProblem.match(mathProblemRegex); // Check AI's last message for a math problem
+    
     if (match) {
         const num1 = parseFloat(match[1]);
         const num2 = parseFloat(match[3]);
         const operator = match[2];
         let expectedAnswer = null;
         if (operator === '+' || operator === 'plus') expectedAnswer = num1 + num2;
+        // Add other operators if needed
 
         if (expectedAnswer !== null) {
             const userNumericAnswer = parseFloat(lowerMessage.replace(/[^0-9.]/g, '')); // Extract number from user response
             // If user's numerical answer is present and wildly off for a simple sum
-            if (!isNaN(userNumericAnswer) && Math.abs(userNumericAnswer - expectedAnswer) > Math.max(5, expectedAnswer * 0.5)) { // e.g., off by more than 5 or 50%
-                session.currentProblem = session.messages.slice(-2, -1)[0]?.content;
+            // Define 'wildly off' as being off by more than 5 or 50% of the expected answer for simple sums
+            if (!isNaN(userNumericAnswer) && Math.abs(userNumericAnswer - expectedAnswer) > Math.max(5, expectedAnswer * 0.5)) {
+                session.currentProblem = lastAIProblem; // Store the actual problem the AI posed
                 return { skill: 'counting', originalProblem: session.currentProblem }; // Assume counting is often the root cause for early math errors
             }
         }
@@ -513,13 +612,21 @@ function checkFoundationalSkills(userMessage, session) {
   return null; // No foundational skill issue detected
 }
 
-async function generateAIResponse(sessionId, userMessage) {
+// --- CORE AI RESPONSE GENERATION LOGIC ---
+async function generateAIResponse(sessionId, userMessage, res) { // Pass 'res' here
   const session = sessions.get(sessionId);
-  if (!session) throw new Error('Session not found');
+  if (!session) {
+      // This case should ideally be caught by the route handler if session doesn't exist
+      return res.status(404).json({ error: 'Session not found.' });
+  }
 
   session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
+  session.lastActivity = Date.now(); // Update last activity on every message
+
   // Keep only last few messages (including system prompt) for brevity and context
-  session.messages = session.messages.slice(-6); // Maintain a rolling window of recent conversation
+  // Adjust slice to ensure system prompt is always included and a few user/assistant turns
+  // The system message is dynamically generated per call, so it's best to always re-add it first
+  const recentMessagesForAI = session.messages.filter(m => m.role !== 'system').slice(-5); // Get last 5 actual chat turns
 
   // --- Foundational Skill Check BEFORE AI call ---
   let detectedFoundationalIssue = checkFoundationalSkills(userMessage, session);
@@ -528,24 +635,31 @@ async function generateAIResponse(sessionId, userMessage) {
       const lowerMessage = userMessage.toLowerCase();
       // Heuristic for counting mastery: user counts sequentially up to at least 5-10
       const countingMasteryRegex = /(one two three four five six seven eight nine ten)/;
+      
+      // Also check if they provided a sequence of numbers that is mostly correct and long enough
+      const numbersInResponse = lowerMessage.match(/\b\d+\b/g);
+      let seemsCountingMastered = false;
       if (countingMasteryRegex.test(lowerMessage)) {
-          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered. Returning to original problem.`);
-          session.needsFoundationalReview = null; // Clear the flag
-          // Now the prompt will guide the AI to return to the original problem.
-      } else if (lowerMessage.match(/\b\d+\b/g) && lowerMessage.match(/\b\d+\b/g).length > 2) {
-        // If they provided numbers, check for rough sequence
-        const numbers = lowerMessage.match(/\b\d+\b/g).map(Number);
-        let inSequence = true;
-        for (let i = 0; i < numbers.length - 1; i++) {
-          if (numbers[i+1] !== numbers[i] + 1) {
-            inSequence = false;
+        seemsCountingMastered = true;
+      } else if (numbersInResponse && numbersInResponse.length >= 5) {
+        let consecutiveCount = 0;
+        for (let i = 0; i < numbersInResponse.length - 1; i++) {
+          if (parseInt(numbersInResponse[i+1]) === parseInt(numbersInResponse[i]) + 1) {
+            consecutiveCount++;
+          } else {
+            consecutiveCount = 0; // Reset if sequence breaks
+          }
+          if (consecutiveCount >= 4) { // At least 5 consecutive numbers (e.g., 1,2,3,4,5)
+            seemsCountingMastered = true;
             break;
           }
         }
-        if (inSequence && numbers.length >=5) { // If they counted at least 5 numbers in sequence
-          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered (sequential). Returning to original problem.`);
+      }
+
+      if (seemsCountingMastered) {
+          console.log(`✅ Session ${sessionId.slice(-6)}: Counting skill seems mastered. Returning to original problem.`);
           session.needsFoundationalReview = null; // Clear the flag
-        }
+          // The next AI prompt will guide it back to the original problem.
       }
   } else if (detectedFoundationalIssue) {
       // If a new foundational issue is detected, set the flag
@@ -555,7 +669,7 @@ async function generateAIResponse(sessionId, userMessage) {
 
   const messagesToSendToAI = [
     { role: 'system', content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview) },
-    ...session.messages.filter(m => m.role !== 'system').slice(-4).map(msg => ({ role: msg.role, content: msg.content }))
+    ...recentMessagesForAI // Add the recent actual chat turns
   ];
 
   try {
@@ -610,11 +724,13 @@ async function generateAIResponse(sessionId, userMessage) {
     }
 
     // Capture the problem AI posed, if it's the start of a new problem
-    if (aiText.includes("apples") || aiText.includes("count") || aiText.includes("problem")) { // Simple heuristic for a problem
+    // This is important for foundational skill return
+    if (aiText.includes("apples") || aiText.includes("count") || aiText.includes("problem") || aiText.includes("number")) { // Simple heuristic for a problem
         session.currentProblem = aiText;
     }
 
-    let messageText = aiResponse.text;
+
+    let messageText = aiText; // Start with the raw AI text
     let readingWord = null;
 
     try {
@@ -625,6 +741,7 @@ async function generateAIResponse(sessionId, userMessage) {
       }
     } catch (e) { /* Not JSON; keep as regular text */ }
 
+    // This is the line that was missing the 'res' object initially
     res.json({
       response: messageText,
       readingWord: readingWord,
@@ -642,12 +759,66 @@ async function generateAIResponse(sessionId, userMessage) {
     console.error(`❌ Error processing chat for session: ${sessionId.slice(-6)}:`, error.message);
     const sessionForFallback = sessions.get(sessionId);
 
+    // This is also where 'res' was undefined previously
     res.status(500).json({
       error: 'Failed to process message due to an internal error. Please try again.',
       fallback: generateContextualFallback(userMessage || '', sessionForFallback || { studentName: 'learner', messages: [] })
     });
   }
+}
+
+// --- API ROUTES ---
+
+// Route to initialize a new session
+app.post('/api/session/start', (req, res) => {
+    const { studentName, grade } = req.body;
+
+    if (!studentName || !config.VALID_GRADES.includes(grade)) {
+        return res.status(400).json({ error: 'Student name and valid grade (PreK-12) are required.' });
+    }
+
+    const sessionId = generateSessionId();
+    const newSession = createSessionObject(sessionId, studentName, grade);
+    sessions.set(sessionId, newSession);
+
+    console.log(`✨ New session started: ${sessionId.slice(-6)} for ${studentName} (Grade ${grade})`);
+
+    const welcomeMessage = generateWelcomeMessage(studentName, grade);
+
+    res.status(201).json({
+        sessionId: sessionId,
+        welcomeMessage: welcomeMessage,
+        suggestions: generateSafeSuggestions(grade),
+        studentName: studentName,
+        grade: grade
+    });
 });
+
+// Route to handle chat messages
+app.post('/api/chat', async (req, res) => {
+  const { sessionId, userMessage } = req.body;
+
+  if (!sessionId || !userMessage) {
+    return res.status(400).json({ error: 'Session ID and user message are required.' });
+  }
+
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found. Please start a new session.' });
+  }
+
+  // Content moderation check
+  const inappropriate = containsInappropriateContent(userMessage);
+  if (inappropriate.inappropriate) {
+    session.totalWarnings = (session.totalWarnings || 0) + 1;
+    const response = getInappropriateResponse(inappropriate.category, session);
+    return res.json(response);
+  }
+
+  // Call the core AI response generation logic
+  await generateAIResponse(sessionId, userMessage, res); // Now correctly passing 'res'
+});
+
 
 app.get('/api/session/:sessionId/summary', (req, res) => {
   try {
@@ -663,14 +834,15 @@ app.get('/api/session/:sessionId/summary', (req, res) => {
       if (!c.topic) return;
       topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
     });
-    const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]);
-    const totalTopicMentions = sortedTopics.reduce((acc, curr) => acc + curr[1], 0);
+    const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1])[0]; // Get the top one only
+    // Correctly calculating total mentions:
+    const totalTopicMentions = Object.values(topicCounts).reduce((acc, curr) => acc + curr, 0);
 
-    const highlights = sortedTopics.length > 0
-      ? `${session.studentName} showed interest in: ` + sortedTopics
-          .map(([topic, count]) => `**${capitalize(topic)}** (${Math.round((count / totalTopicMentions) * 100)}%)`)
-          .join(', ')
+
+    const highlights = sortedTopics
+      ? `${session.studentName} showed strongest interest in: **${capitalize(sortedTopics[0])}** (${Math.round((sortedTopics[1] / totalTopicMentions) * 100)}% of their questions in this area).`
       : 'Showed curiosity and asked thoughtful questions throughout the session.';
+
 
     const duration = Math.floor((Date.now() - session.startTime) / 60000);
 
