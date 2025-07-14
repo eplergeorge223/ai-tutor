@@ -358,6 +358,11 @@
             <button class="btn btn-danger" onclick="endSession()">End Session</button>
         </div>
 
+        <div id="whiteboard-container" class="flashcard-container">
+    <canvas id="whiteboard" width="400" height="250" style="background:white; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></canvas>
+</div>
+
+
         <!-- Session Summary -->
         <div id="session-summary" class="glass-panel hidden">
             <h2>Session Complete! 🎉</h2>
@@ -549,8 +554,12 @@ function initRecognition() {
     };
 
     state.recognition.onresult = (event) => {
-        const result = event.results[event.resultIndex][0];
-        const transcript = result.transcript.trim();
+const result = event.results[event.resultIndex];
+const transcript = Array.from(result)
+  .map(r => r.transcript)
+  .join('')
+  .trim();
+
         const confidence = result.confidence;
 
         // Show live caption for user input
@@ -632,6 +641,7 @@ function flipCard() {
     if (state.flashcardFlipped) {
         setTimeout(() => {
             hideFlashcard();
+            showElement('whiteboard-container');  // Restore whiteboard
             // Clear the expected answer since they've seen the answer
             state.expectedAnswer = null;
             state.lastQuestion = null;
@@ -1027,6 +1037,54 @@ async function handleUserInput(input) {
             
             console.log('✅ AI Tutor ready!');
         };
+
+        window.onload = async function() {
+    console.log('🚀 AI Tutor loading...');
+    await initSpeech();
+    updateSuggestions('', 'Welcome');
+    console.log('✅ AI Tutor ready!');
+};
+
+// 🎨 Whiteboard drawing logic (below onload so DOM is ready)
+const canvas = document.getElementById('whiteboard');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+canvas.addEventListener('mousedown', () => drawing = true);
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mouseleave', () => drawing = false);
+canvas.addEventListener('mousemove', draw);
+
+function draw(e) {
+    if (!drawing) return;
+    const rect = canvas.getBoundingClientRect();
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#764ba2';
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+}
+
+
+        // Auto-pause listening when window loses focus
+window.addEventListener('blur', () => {
+    if (state.recognition && state.listening) {
+        console.log("🔇 Pausing speech on blur");
+        state.recognition.stop();
+        updateStatus("Paused listening (come back to resume)");
+    }
+});
+
+window.addEventListener('focus', () => {
+    if (state.sessionStarted && !state.processing && !state.speaking) {
+        console.log("🎙️ Resuming speech on focus");
+        updateStatus("I'm listening again...");
+        startListening();
+    }
+});
+
     </script>
 </body>
 </html>
