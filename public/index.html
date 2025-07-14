@@ -358,11 +358,12 @@
             <button class="btn btn-danger" onclick="endSession()">End Session</button>
         </div>
 
-        <div id="whiteboard-container" class="flashcard-container">
-    <canvas id="whiteboard" width="400" height="250" style="background:white; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></canvas>
-</div>
-
-<button class="btn btn-warning" onclick="clearWhiteboard()">Clear Whiteboard</button>
+<div id="whiteboard-container" class="flashcard-container hidden">
+                <canvas id="whiteboard" width="400" height="250" style="background:white; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></canvas>
+                <div class="flashcard-instruction">Draw and write here to help with your learning!</div>
+            </div>
+            
+            <button id="clear-whiteboard-btn" class="btn btn-warning hidden" onclick="clearWhiteboard()">Clear Whiteboard</button>
 
 
         <!-- Session Summary -->
@@ -405,7 +406,8 @@
             lastQuestion: null,      // stores last question asked
             expectedAnswer: null,    // stores expected answer for correction logic
             flashcardFlipped: false,
-            speechQueue: []
+            speechQueue: [],
+             whiteboardImageData: null
         };
 
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
@@ -614,8 +616,13 @@ const transcript = Array.from(result)
             }
         }
         
- function showFlashcard(data) {
+function showFlashcard(data) {
     const { prompt, front, back } = data;
+
+    // Save current whiteboard content before hiding it
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    state.whiteboardImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
     $('flashcard-prompt').textContent = prompt || 'Question:';
     $('flashcard-front-content').textContent = front;
@@ -629,6 +636,9 @@ const transcript = Array.from(result)
     state.flashcardFlipped = false;
     state.currentFlashcard = data;
 
+    // Hide whiteboard and show flashcard
+    hideElement('whiteboard-container');
+    hideElement('clear-whiteboard-btn');
     showElement('flashcard-container');
     hideElement('reading-word-container');
 }
@@ -640,10 +650,10 @@ function flipCard() {
     state.flashcardFlipped = !state.flashcardFlipped;
     
     // After flipping to see the answer, automatically continue after a delay
-    if (state.flashcardFlipped) {
-        setTimeout(() => {
+setTimeout(() => {
             hideFlashcard();
-            showElement('whiteboard-container');  // Restore whiteboard
+            restoreWhiteboard();
+            
             // Clear the expected answer since they've seen the answer
             state.expectedAnswer = null;
             state.lastQuestion = null;
@@ -654,9 +664,8 @@ function flipCard() {
             }
         }, 3000); // Give 3 seconds to read the answer
     }
-}
 
-   function hideFlashcard() {
+function hideFlashcard() {
     hideElement('flashcard-container');
     state.currentFlashcard = null;
     state.flashcardFlipped = false;
@@ -665,6 +674,18 @@ function flipCard() {
     state.lastQuestion = null;
 }
 
+function restoreWhiteboard() {
+    // Show whiteboard and restore its content
+    showElement('whiteboard-container');
+    showElement('clear-whiteboard-btn');
+    
+    // Restore the saved whiteboard content
+    if (state.whiteboardImageData) {
+        const canvas = document.getElementById('whiteboard');
+        const ctx = canvas.getContext('2d');
+        ctx.putImageData(state.whiteboardImageData, 0, 0);
+    }
+}
         // Enhanced function to detect if AI response contains a question that should show a flashcard
         function shouldShowFlashcard(response) {
             const questionPatterns = [
@@ -787,14 +808,15 @@ async function handleUserInput(input) {
                 await speak("Perfect! You spelled it correctly!");
                 addToHistory('tutor', "Perfect! You spelled it correctly!");
                 
-                // Clear the expected answer and hide flashcard
-                state.expectedAnswer = null;
-                state.lastQuestion = null;
-                hideFlashcard();
-                
-                updateStatus("What would you like to try next?");
-                startListening();
-                return;
+// Clear the expected answer and hide flashcard, restore whiteboard
+            state.expectedAnswer = null;
+            state.lastQuestion = null;
+            hideFlashcard();
+            restoreWhiteboard();
+            
+            updateStatus("What would you like to try next?");
+            startListening();
+            return;
             }
         }
         
@@ -862,10 +884,12 @@ async function handleUserInput(input) {
             showReadingWord(data.response, data.readingWord);
             await speak(data.response);
             addToHistory('tutor', data.response + ' (See word above)');
-        } else {
-            // Regular conversation - hide any flashcards/reading displays
+ } else {
+            // Regular conversation - hide any flashcards/reading displays, show whiteboard
             hideElement('reading-word-container');
             hideFlashcard();
+            showElement('whiteboard-container');
+            showElement('clear-whiteboard-btn');
             await speak(data.response);
             addToHistory('tutor', data.response);
         }
@@ -939,8 +963,12 @@ async function handleUserInput(input) {
                 state.sessionId = data.sessionId;
                 state.sessionStarted = true;
                 
-                hideElement('welcome-screen');
+hideElement('welcome-screen');
                 showElement('tutor-interface');
+                
+                // Show whiteboard for the session
+                showElement('whiteboard-container');
+                showElement('clear-whiteboard-btn');
                 
                 const welcome = data.welcomeMessage || `Hi ${name}! I'm excited to learn with you today. What shall we explore?`;
                 await speak(welcome);
