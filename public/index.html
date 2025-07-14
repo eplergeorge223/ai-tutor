@@ -734,12 +734,15 @@ function initRecognition() {
             hideElement('flashcard-container');
         }
         
-        // Streamlined user input handling
-        async function handleUserInput(input) {
-            if (state.processing || !state.sessionStarted) return;
+ // Streamlined user input handling with proper flashcard hiding
+async function handleUserInput(input) {
+    if (state.processing || !state.sessionStarted) return;
 
-                // NEW: If we're expecting an answer, check it here
+    // If expecting an answer, check here
     if (state.expectedAnswer !== null) {
+        // Always hide any visible flashcard after an answer (right or wrong)
+        hideFlashcard();
+
         const normalizedUser = input.trim().toLowerCase();
         const normalizedAnswer = state.expectedAnswer.toString().trim().toLowerCase();
         if (normalizedUser === normalizedAnswer) {
@@ -760,58 +763,58 @@ function initRecognition() {
             return;
         }
     }
-            
-            state.processing = true;
-            updateStatus("Processing your request...");
-            addToHistory('user', input);
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        sessionId: state.sessionId,
-                        message: input,
-                        context: {}
-                    })
-                });
-                
-                if (!response.ok) throw new Error('API request failed');
-                
-                const data = await response.json();
-                
-                // Check if we should show a flashcard based on the AI's response
-                const flashcardData = data.flashcard || extractFlashcardData(data.response);
-                
-// Handle different response types
-if (flashcardData && data.flashcardMode === true) {
-    showFlashcard(flashcardData);
-    await speak(data.response);
-    addToHistory('tutor', data.response + ' (See flashcard above)');
-} else if (data.readingWord) {
-    showReadingWord(data.response, data.readingWord);
-    await speak(data.response);
-    addToHistory('tutor', data.response + ' (See word above)');
-} else {
-    hideElement('reading-word-container');
-    hideElement('flashcard-container');
-    await speak(data.response);
-    addToHistory('tutor', data.response);
-}
+        
+    state.processing = true;
+    updateStatus("Processing your request...");
+    addToHistory('user', input);
 
-                
-                if (data.subject) state.currentSubject = data.subject;
-                
-            } catch (error) {
-                console.error('Error:', error);
-                const fallback = generateFallback(input);
-                addToHistory('tutor', fallback);
-                await speak(fallback);
-            } finally {
-                state.processing = false;
-                updateStatus("Ready for your next question!");
+    try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                sessionId: state.sessionId,
+                message: input,
+                context: {}
+            })
+        });
+        
+        if (!response.ok) throw new Error('API request failed');
+        
+        const data = await response.json();
+
+        // Always hide flashcard unless this is a new flashcard response
+        if (data.flashcard && data.flashcardMode === true) {
+            showFlashcard(data.flashcard);
+            await speak(data.response);
+            addToHistory('tutor', data.response + ' (See flashcard above)');
+        } else {
+            hideFlashcard(); // <<=== THIS LINE fixes stuck flashcards for *any* non-flashcard response
+
+            if (data.readingWord) {
+                showReadingWord(data.response, data.readingWord);
+                await speak(data.response);
+                addToHistory('tutor', data.response + ' (See word above)');
+            } else {
+                hideElement('reading-word-container');
+                await speak(data.response);
+                addToHistory('tutor', data.response);
             }
         }
+        
+        if (data.subject) state.currentSubject = data.subject;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        const fallback = generateFallback(input);
+        addToHistory('tutor', fallback);
+        await speak(fallback);
+    } finally {
+        state.processing = false;
+        updateStatus("Ready for your next question!");
+    }
+}
+
         
  function generateFallback(input) {
     const lower = input.toLowerCase();

@@ -5,7 +5,7 @@ require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
-// --- Unified Configuration ---
+// --- Configuration ---
 const config = {
   PORT: process.env.PORT || 3000,
   SESSION_TTL: 45 * 60 * 1000,
@@ -27,8 +27,7 @@ const config = {
 // Build vocabulary from subjects
 const VOCABULARY = [
   ...Object.values(config.SUBJECTS).flat(),
-  'painting', 'reading', 'algebra', 'geometry', 'fraction',
-  'biology', 'physics', 'history', 'government', 'capital',
+  'painting', 'reading', 'algebra', 'geometry', 'fraction', 'biology', 'physics', 'history', 'government', 'capital',
   'what', 'how', 'when', 'where', 'why', 'who', 'tell', 'explain', 'teach', 'learn'
 ];
 
@@ -45,6 +44,132 @@ const sessions = new Map();
 app.use(cors(), express.json({ limit: '4kb' }), helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({ windowMs: 60_000, max: 50, message: { error: 'Too many requests' } }));
 app.use(express.static('public'));
+
+// Enhanced System Prompt Function (improved version)
+function getTutorSystemPrompt(grade, studentName, sessionContext = {}) {
+    const basePrompt = `
+You are an exceptionally patient, encouraging, and kind AI Tutor for ${studentName}, designed to help students think critically and understand concepts deeply.
+Your primary goal is to foster a love for learning and build confidence.
+Keep replies short, simple, and step-by-step, always appropriate for a ${grade} grade student.
+
+**Core Principles for Every Interaction:**
+-   **Guide, Don't Give Answers:** Never directly provide the answer to a question. Instead, ask guiding questions, offer hints, or break down the problem into smaller, manageable steps.
+-   **Prioritize Context & Infer Intent:** Pay close attention to the flow of the conversation and the established learning topic. If a word or phrase seems out of place, try your best to understand what ${studentName} *means* based on what we've been discussing. For example, if we're talking about art and ${studentName} says something that sounds like "Payton" but "painting" makes sense in context, assume "painting."
+-   **Clarify Gently if Unsure:** If you genuinely cannot understand what ${studentName} means after considering the context, politely ask for clarification. For example: "Could you tell me more about that, ${studentName}?" or "I want to make sure I understand! Can you say that another way?"
+-   **Personalize & Encourage:** Use ${studentName}'s name naturally in responses. Celebrate effort and progress, no matter how small. "You're doing great, ${studentName}!" or "That's excellent thinking!"
+-   **Simplify Language:** Always use words and concepts a child of their grade level will easily understand. Avoid jargon.
+-   **Positive & Patient Tone:** Maintain an upbeat, supportive, and understanding tone. If the student is struggling or gives an incorrect answer, be gentle, rephrase the question, or offer a new approach.
+-   **Redirect Gently:** If the student asks something off-topic or inappropriate, gently but firmly redirect them back to an educational topic using positive language. Never engage with non-educational or personal matters.
+-   **Build on Previous Learning:** Reference what ${studentName} has already learned or discussed to create connections and reinforce understanding.
+
+**How to Respond When a Student Struggles or Says "I Don't Know":**
+-   **Rephrase:** Try asking the question in a different way.
+-   **Break It Down:** Divide a complex problem into simpler parts. "Let's try a smaller piece of that first."
+-   **Offer a Hint:** "Think about what happens when..." or "Remember when we talked about..."
+-   **Provide an Analogy:** Use a simple, relatable example from their everyday life.
+-   **Encourage Effort:** "It's okay to not know right away, ${studentName}! Learning is all about trying. What's your best guess?" or "That's a tricky one! Let's think it through together."
+-   **Use Visual Learning:** Suggest drawing, counting with fingers, or using objects to help understand.
+
+**Response Length Limits (Strict):**
+-   PreK–2: 1–2 very simple sentences. Focus on single concepts.
+-   3–5: 2–3 concise sentences.
+-   6–8: 3–4 sentences.
+-   9–12: 4–5 sentences.
+
+**Learning Engagement Strategies:**
+-   Ask "What do you think?" or "What's your guess?" to encourage participation
+-   Use real-world connections: "Have you ever seen this happen at home?"
+-   Encourage curiosity: "That's a great question! What made you think of that?"
+-   Validate attempts: "I can see you're really thinking about this!"
+-   Create excitement: "Let's discover something amazing together!"
+
+`.trim();
+
+    const readingDisplayInstruction = `
+**Special Instruction for Reading Activities (PreK–2):**
+When teaching reading for these grades, you may sometimes present words for reading practice.
+For reading activities, you can ask questions like:
+- "Can you sound out this word, ${studentName}?"
+- "What sounds do you hear in this word?"
+- "Let's read this word together!"
+Choose age-appropriate words that match their reading level.
+Remember to break down words into sounds and celebrate their efforts!
+`.trim();
+
+    const examples = `
+**Examples of Guiding Questions and Encouragement:**
+-   Math: "Let's count 5 plus 5 on your fingers, ${studentName}. What do you get when you put them all together?" (Instead of "The answer is 10.")
+-   Reading: "Sound out the first part of this word: 's-u-n'. What word do you hear?" (If they get 'su', "Great start! Now what about 'n'?")
+-   Science: "What do you think happens to ice when it gets warm from the sun, ${studentName}? Where does it go?" (Instead of "It melts into water.")
+-   Social Studies: "If you were an explorer, what would you need to take on a long journey?" (Instead of listing supplies)
+-   Art: "What colors do you think we could mix to make purple?" (Instead of "Red and blue make purple")
+-   If struggling: "It looks like you're thinking hard! Let's try drawing a picture to help us with this problem."
+-   If incorrect: "Good try, ${studentName}! That's close. Remember when we talked about how addition works? If you have 3 apples and then add 2 more, how many do you have now?"
+-   Building confidence: "I love how you're asking questions! That shows you're really thinking like a scientist/mathematician/reader!"
+
+**Subject-Specific Guidance:**
+-   Math: Always encourage mental math, finger counting, or drawing for visualization
+-   Reading: Focus on phonics, sound blending, and comprehension questions
+-   Science: Promote observation, prediction, and simple experiments
+-   Social Studies: Connect to their community and family experiences
+-   Art/Music: Encourage creativity and self-expression
+
+Stay positive, focused, and always teach the process of thinking, ${studentName}!
+    `.trim();
+
+    const gradeGuidelines = {
+        'PreK': 'Use very simple words and concepts. Focus on 1-2 sentence replies. Be extra patient and encouraging. Use lots of praise and excitement.',
+        'K': 'Simple words, basic ideas. 1–2 sentences. Break down concepts into the smallest steps. Encourage trying and celebrating small wins.',
+        '1': 'Easy words, encourage trying different approaches. 1–2 sentences. Rephrase often if needed. Focus on building confidence.',
+        '2': 'Build confidence, simple steps. 2 sentences. Guide them to discover the answer. Start introducing "why" questions.',
+        '3': 'A bit more detail, still brief. 2–3 sentences. Encourage explaining their thought process. Introduce problem-solving strategies.',
+        '4': 'Explain clearly, don\'t ramble. 2–3 sentences. Prompt for reasoning. Help them make connections between ideas.',
+        '5': 'Good explanations, stay on topic. 3 sentences. Encourage independent problem-solving. Introduce more complex thinking.',
+        '6': 'A little more complex, still short. 3-4 sentences. Ask them to think of examples. Encourage deeper analysis.',
+        '7': 'Focused and clear. 3-4 sentences. Challenge them slightly with guiding questions. Promote critical thinking.',
+        '8': 'Explain in detail, don\'t overwhelm. 3-4 sentences. Prompt for deeper understanding. Encourage research and exploration.',
+        '9': 'Cover fully, be efficient. 4-5 sentences. Encourage asking clarifying questions. Promote independent learning.',
+        '10': 'Thorough, but keep it moving. 4-5 sentences. Ask for their prior knowledge. Encourage connecting concepts.',
+        '11': 'Go in-depth, stay focused. 4-5 sentences. Help them connect new concepts to old ones. Promote analytical thinking.',
+        '12': 'Complete answers, efficient. 4-5 sentences. Encourage real-world application. Prepare for advanced learning.'
+    };
+
+    // Add session context for continuity
+    let contextualGuidance = '';
+    if (sessionContext.topicsDiscussed && sessionContext.topicsDiscussed.length > 0) {
+        contextualGuidance = `
+**Session Context:**
+${studentName} has been exploring: ${sessionContext.topicsDiscussed.join(', ')}
+Build on these previous discussions and help make connections between topics.
+        `.trim();
+    }
+
+    // Only inject reading instruction for early grades
+    if (['PreK', 'K', '1', '2'].includes(grade)) {
+        return `
+${basePrompt}
+
+${readingDisplayInstruction}
+
+${examples}
+
+${gradeGuidelines[grade]}
+
+${contextualGuidance}
+        `.trim();
+    }
+
+    // All other grades
+    return `
+${basePrompt}
+
+${examples}
+
+${gradeGuidelines[grade] || gradeGuidelines['K']}
+
+${contextualGuidance}
+    `.trim();
+}
 
 // Cleanup expired sessions
 setInterval(() => {
@@ -75,273 +200,143 @@ const classifySubject = (input) => {
 
 const getMaxTokens = (grade) => {
   const level = parseInt(grade) || 0;
-  return level <= 2 ? 40
-       : level <= 5 ? 60
-       : level <= 8 ? 80
-       : 100;
+  return level <= 2 ? 50 : level <= 5 ? 80 : level <= 8 ? 100 : 120;
 };
 
-/**
- * Simple Levenshtein distance implementation
- */
 function levenshteinDistance(a, b) {
   const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
   
-  // Create matrix
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-  
-  // Fill matrix
   for (let i = 1; i <= b.length; i++) {
     for (let j = 1; j <= a.length; j++) {
       if (b.charAt(i - 1) === a.charAt(j - 1)) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
         matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
         );
       }
     }
   }
-  
   return matrix[b.length][a.length];
 }
 
-/**
- * Fuzzy correction using Levenshtein distance
- */
 function fuzzyCorrect(text) {
-  return text
-    .split(/\s+/)
-    .map(word => {
-      // Skip very short words or words that are already in vocabulary
-      if (word.length <= 2) return word;
-      
-      const lowerWord = word.toLowerCase();
-      
-      // Check if word is already correct
-      if (VOCABULARY.some(v => v.toLowerCase() === lowerWord)) {
-        return word;
+  return text.split(/\s+/).map(word => {
+    if (word.length <= 2) return word;
+    
+    const lowerWord = word.toLowerCase();
+    if (VOCABULARY.some(v => v.toLowerCase() === lowerWord)) return word;
+    
+    let bestMatch = { word: word, distance: Infinity };
+    
+    for (const candidate of VOCABULARY) {
+      const distance = levenshteinDistance(lowerWord, candidate.toLowerCase());
+      if (distance < bestMatch.distance) {
+        bestMatch = { word: candidate, distance: distance };
       }
-      
-      let bestMatch = { word: word, distance: Infinity };
-      
-      // Find the best match in vocabulary
-      for (const candidate of VOCABULARY) {
-        const distance = levenshteinDistance(lowerWord, candidate.toLowerCase());
-        if (distance < bestMatch.distance) {
-          bestMatch = { word: candidate, distance: distance };
-        }
-      }
-      
-      // Only correct if the distance is reasonable (1-2 characters different)
-      // and the word lengths are similar
-      if (bestMatch.distance <= 2 && 
-          Math.abs(word.length - bestMatch.word.length) <= 2) {
-        return bestMatch.word;
-      }
-      
-      return word;
-    })
-    .join(' ');
+    }
+    
+    if (bestMatch.distance <= 2 && Math.abs(word.length - bestMatch.word.length) <= 2) {
+      return bestMatch.word;
+    }
+    
+    return word;
+  }).join(' ');
 }
 
-/**
- * Detect if response should generate a flashcard
- */
-function shouldCreateFlashcard(response, grade) {
-  const mathPatterns = [
-    /what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+)/i,
-    /calculate\s+(\d+\s*[\+\-\*\/]\s*\d+)/i,
-    /solve\s+(\d+\s*[\+\-\*\/]\s*\d+)/i
-  ];
-  
-  const spellingPatterns = [
-    /spell\s+.*["""]?(\w+)["""]?/i,
-    /how\s+do\s+you\s+spell\s+(\w+)/i
-  ];
-  
-  const letterPatterns = [
-    /what\s+letter\s+comes\s+after\s+(\w)/i,
-    /what\s+comes\s+next\s+after\s+(\w)/i
-  ];
-  
-  const capitalPatterns = [
-    /what\s+is\s+the\s+capital\s+of\s+(\w+)/i,
-    /capital\s+of\s+(\w+)/i
-  ];
-  
-  return mathPatterns.some(p => p.test(response)) ||
-         spellingPatterns.some(p => p.test(response)) ||
-         letterPatterns.some(p => p.test(response)) ||
-         capitalPatterns.some(p => p.test(response));
-}
-
-/**
- * Extract flashcard data from AI response
- */
 function extractFlashcardData(response) {
-  // Math problems
-  const mathMatch = response.match(/what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+(?:\s*[\+\-\*\/]\s*\d+)*)/i);
-  if (mathMatch) {
-    const problem = mathMatch[1];
-    try {
-      const answer = eval(problem.replace(/\s/g, ''));
-      return {
-        prompt: "What is...",
-        front: problem,
-        back: answer.toString()
-      };
-    } catch (e) {
-      return null;
+  const patterns = [
+    {
+      regex: /what\s+is\s+(\d+\s*[\+\-\*\/]\s*\d+(?:\s*[\+\-\*\/]\s*\d+)*)/i,
+      handler: (match) => {
+        const problem = match[1];
+        try {
+          const answer = eval(problem.replace(/\s/g, ''));
+          return { prompt: "What is...", front: problem, back: answer.toString() };
+        } catch (e) { return null; }
+      }
+    },
+    {
+      regex: /(?:spell|how\s+do\s+you\s+spell)\s+.*["""]?(\w+)["""]?/i,
+      handler: (match) => {
+        const word = match[1].toLowerCase();
+        const spelled = word.split('').join('-');
+        return { prompt: "Spell the word:", front: word, back: spelled.toUpperCase() };
+      }
+    },
+    {
+      regex: /what\s+letter\s+comes\s+after\s+(\w)/i,
+      handler: (match) => {
+        const letter = match[1].toUpperCase();
+        const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+        return { prompt: "What letter comes after:", front: letter, back: nextLetter };
+      }
+    },
+    {
+      regex: /what\s+is\s+the\s+capital\s+of\s+(\w+)/i,
+      handler: (match) => {
+        const state = match[1];
+        const capitals = {
+          'california': 'Sacramento', 'texas': 'Austin', 'florida': 'Tallahassee',
+          'newyork': 'Albany', 'illinois': 'Springfield'
+        };
+        const capital = capitals[state.toLowerCase()];
+        return capital ? { prompt: "What is the capital of:", front: state, back: capital } : null;
+      }
+    }
+  ];
+  
+  for (const pattern of patterns) {
+    const match = response.match(pattern.regex);
+    if (match) {
+      const result = pattern.handler(match);
+      if (result) return result;
     }
   }
-  
-  // Spelling
-  const spellMatch = response.match(/(?:spell|how\s+do\s+you\s+spell)\s+.*["""]?(\w+)["""]?/i);
-  if (spellMatch) {
-    const word = spellMatch[1].toLowerCase();
-    const spelled = word.split('').join('-');
-    return {
-      prompt: "Spell the word:",
-      front: word,
-      back: spelled.toUpperCase()
-    };
-  }
-  
-  // Letter sequence
-  const letterMatch = response.match(/what\s+letter\s+comes\s+after\s+(\w)/i);
-  if (letterMatch) {
-    const letter = letterMatch[1].toUpperCase();
-    const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
-    return {
-      prompt: "What letter comes after:",
-      front: letter,
-      back: nextLetter
-    };
-  }
-  
-  // Capital cities
-  const capitalMatch = response.match(/what\s+is\s+the\s+capital\s+of\s+(\w+)/i);
-  if (capitalMatch) {
-    const state = capitalMatch[1];
-    const capitals = {
-      'california': 'Sacramento',
-      'texas': 'Austin',
-      'florida': 'Tallahassee',
-      'newyork': 'Albany',
-      'illinois': 'Springfield'
-    };
-    const capital = capitals[state.toLowerCase()];
-    if (capital) {
-      return {
-        prompt: "What is the capital of:",
-        front: state,
-        back: capital
-      };
-    }
-  }
-  
   return null;
 }
 
-/**
- * Check if we should show a reading word (for early grades)
- */
 function extractReadingWord(response, grade) {
   if (!['PreK', 'K', '1', '2'].includes(grade)) return null;
   
-  const readingPatterns = [
+  const patterns = [
     /can\s+you\s+read\s+.*word\s+["""]?(\w+)["""]?/i,
     /sound\s+out\s+.*word\s+["""]?(\w+)["""]?/i,
     /try\s+reading\s+["""]?(\w+)["""]?/i
   ];
   
-  for (const pattern of readingPatterns) {
+  for (const pattern of patterns) {
     const match = response.match(pattern);
     if (match) return match[1].toLowerCase();
   }
-  
   return null;
 }
 
-const getTutorPrompt = (grade, name) => {
-  const responseLength = {
-    'PreK': '1 sentence max',
-    'K':   '1 sentence max',
-    '1':   '1 sentence max',
-    '2':   '1 sentence max',
-    '3':   '1-2 sentences',
-    '4':   '1-2 sentences',
-    '5':   '2 sentences max',
-    '6':   '2 sentences max',
-    '7':   '2 sentences max',
-    '8':   '2 sentences max',
-    '9':   '2-3 sentences',
-    '10':  '2-3 sentences',
-    '11':  '2-3 sentences',
-    '12':  '2-3 sentences'
-  };
-
-  const mathInstruction = `For math problems, phrase as questions like "What is 5 + 3?" or "Can you solve 12 ÷ 4?"`;
-  const spellingInstruction = `For spelling, ask "How do you spell 'cat'?" or "Can you spell 'dog'?"`;
-  const readingInstruction = ['PreK', 'K', '1', '2'].includes(grade) ? 
-    `For reading, ask "Can you read this word: 'sun'?" or "Try reading 'cat'"` : '';
-
-  return `You are an AI Tutor for ${name} (Grade ${grade}). Teach students to THINK, not memorize!
-- Keep responses ${responseLength[grade] || '2-3 sentences'}
-- Use age-appropriate language for grade ${grade}
-- Be encouraging and patient
-- If wrong answer, gently correct and explain why
-- Avoid inappropriate topics - redirect to learning
-- Show step-by-step thinking
-- ${mathInstruction}
-- ${spellingInstruction}
-- ${readingInstruction}
-- Ask engaging questions to keep them learning`;
-};
-
-const generateResponse = (type, name, grade) => {
-  const responses = {
-    welcome: {
-      'PreK': `Hi ${name}! Let's learn and play!`, 
-      'K': `Hello ${name}! What's fun to learn today?`,
-      '1': `Hi ${name}! Ready to explore?`, 
-      '2': `Hey ${name}! What should we discover?`,
-      '3': `Hi ${name}! What interests you today?`, 
-      '4': `Hello ${name}! What's on your curious mind?`,
-      '5': `Hi ${name}! What would you like to learn about?`, 
-      '6': `Hey ${name}! What topic interests you?`,
-      '7': `Hi ${name}! What can we explore together?`, 
-      '8': `Hello ${name}! What should we discover?`,
-      '9': `Hi ${name}! What can I help you learn?`, 
-      '10': `Hey ${name}! What's your focus today?`,
-      '11': `Hello ${name}! What topic would you like to explore?`, 
-      '12': `Hi ${name}! What can we dive into today?`
-    },
-    redirect: `I'm here to help you learn amazing things, ${name}! What would you like to explore today?`,
-    encourage: [`Great job, ${name}!`, `You're doing amazing!`, `Keep thinking!`, `I love your curiosity!`, `Excellent work!`, `You're so smart!`],
-    suggestions: {
-      early: ['Let\'s count to 10!', 'What about animal sounds?', 'Can you name colors?', 'Let\'s read simple words!'],
-      middle: ['Try some math problems!', 'Let\'s read a story!', 'Explore cool science!', 'Learn about animals!'],
-      high: ['Solve challenging problems!', 'Discover something new!', 'Dive deeper into topics!', 'Practice advanced skills!']
-    }
-  };
+const getSuggestions = (grade, topicsDiscussed = []) => {
+  const level = parseInt(grade) || 0;
+  let baseSuggestions = [];
   
-  if (type === 'welcome') return responses.welcome[grade] || responses.welcome['K'];
-  if (type === 'redirect') return responses.redirect;
-  if (type === 'encourage') return responses.encourage[Math.floor(Math.random() * responses.encourage.length)];
-  if (type === 'suggestions') {
-    const level = parseInt(grade) <= 2 ? 'early' : parseInt(grade) <= 5 ? 'middle' : 'high';
-    return responses.suggestions[level];
+  if (level <= 2) {
+    baseSuggestions = ['counting', 'colors', 'simple words', 'animal sounds', 'shapes', 'letters'];
+  } else if (level <= 5) {
+    baseSuggestions = ['math problems', 'reading stories', 'science experiments', 'animals', 'geography', 'art projects'];
+  } else {
+    baseSuggestions = ['challenging problems', 'new topics', 'advanced skills', 'deeper exploration', 'research projects', 'critical thinking'];
   }
+  
+  // Add topic-specific suggestions based on what they've discussed
+  if (topicsDiscussed.includes('math')) {
+    baseSuggestions.push(level <= 5 ? 'more math puzzles' : 'advanced math concepts');
+  }
+  if (topicsDiscussed.includes('science')) {
+    baseSuggestions.push(level <= 5 ? 'fun experiments' : 'scientific research');
+  }
+  
+  return baseSuggestions.slice(0, 4); // Keep it manageable
 };
 
 const createSession = (id, name, grade, subjects) => ({
@@ -352,12 +347,30 @@ const createSession = (id, name, grade, subjects) => ({
   startTime: new Date(), 
   lastActivity: Date.now(), 
   totalWarnings: 0,
-  messages: [{ role: 'system', content: getTutorPrompt(grade, name), timestamp: new Date() }],
+  messages: [],
   topicsDiscussed: new Set(), 
   conversationContext: [],
-  lastQuestion: null,         // <--- ADD
-  expectedAnswer: null        // <--- ADD
+  lastQuestion: null,
+  expectedAnswer: null,
+  learningStreak: 0,
+  encouragementLevel: 0
 });
+
+// Initialize session with enhanced system prompt
+const initializeSession = (session) => {
+  const systemPrompt = getTutorSystemPrompt(
+    session.grade, 
+    session.studentName, 
+    {
+      topicsDiscussed: Array.from(session.topicsDiscussed),
+      sessionDuration: Date.now() - session.startTime.getTime()
+    }
+  );
+  
+  session.messages = [
+    { role: 'system', content: systemPrompt, timestamp: new Date() }
+  ];
+};
 
 // Routes
 app.post('/api/session/start', (req, res) => {
@@ -369,18 +382,19 @@ app.post('/api/session/start', (req, res) => {
     const validatedName = studentName?.trim() || 'Student';
     
     const session = createSession(sessionId, validatedName, validatedGrade, subjects);
+    initializeSession(session);
     sessions.set(sessionId, session);
     
     console.log(`🚀 Session started: ${sessionId.slice(-6)}, ${validatedName}, Grade: ${validatedGrade}`);
     
     res.json({
       sessionId,
-      welcomeMessage: generateResponse('welcome', validatedName, validatedGrade),
       status: 'success',
       sessionInfo: { 
         studentName: validatedName, 
         grade: validatedGrade, 
-        startTime: session.startTime 
+        startTime: session.startTime,
+        welcomeMessage: `Hi ${validatedName}! I'm so excited to learn with you today! What would you like to explore?`
       }
     });
   } catch (error) {
@@ -388,6 +402,7 @@ app.post('/api/session/start', (req, res) => {
     res.status(500).json({ error: 'Failed to start session' });
   }
 });
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
@@ -403,57 +418,61 @@ app.post('/api/chat', async (req, res) => {
     const session = sessions.get(sessionId);
     session.lastActivity = Date.now();
 
-    // 1. Check if user is answering a pending flashcard/question
+    // Check if user is answering a pending flashcard/question
     if (session.expectedAnswer) {
       const userInput = message.trim().toLowerCase();
       const expected = session.expectedAnswer.toString().trim().toLowerCase();
       const cleanUser = userInput.replace(/[\s\-]/g, '');
       const cleanExpected = expected.replace(/[\s\-]/g, '');
+      
       if (cleanUser === cleanExpected) {
         session.lastQuestion = null;
         session.expectedAnswer = null;
+        session.learningStreak++;
+        const encouragement = session.learningStreak > 3 ? 
+          `Amazing! You're on a roll, ${session.studentName}! ` : 
+          `That's correct! Great job, ${session.studentName}! `;
+        
         return res.json({
-          response: `That's correct! Great job!`,
-          encouragement: generateResponse('encourage', session.studentName),
-          status: 'success'
+          response: encouragement + `You're really getting the hang of this!`,
+          status: 'success',
+          learningStreak: session.learningStreak
         });
       } else {
         const explain = (session.lastQuestion && /^\d/.test(session.lastQuestion))
-          ? `Remember, ${session.lastQuestion} equals ${session.expectedAnswer}.`
-          : `The correct answer is ${session.expectedAnswer}. Let's try another!`;
+          ? `Remember, ${session.lastQuestion} equals ${session.expectedAnswer}. Let's try another!`
+          : `The correct answer is ${session.expectedAnswer}. Don't worry, ${session.studentName}, learning takes practice!`;
         session.lastQuestion = null;
         session.expectedAnswer = null;
+        session.learningStreak = 0;
         return res.json({
-          response: `That's not quite right. ${explain}`,
-          encouragement: generateResponse('encourage', session.studentName),
+          response: `That's not quite right, but great try! ${explain}`,
           status: 'corrected'
         });
       }
     }
 
-    // 2. Proceed as usual
+    // Process message
     let cleanedMessage = message.trim();
     try {
       cleanedMessage = fuzzyCorrect(cleanedMessage);
     } catch (error) {
       console.warn('⚠️ Fuzzy correction failed, using original message:', error.message);
-      cleanedMessage = message.trim();
     }
 
-    // Special case "can you hear me"
+    // Handle special cases
     if (/^can you hear me\??$/i.test(cleanedMessage)) {
       return res.json({
-        response: 'Yes! I can hear you loud and clear. What would you like to learn about?',
-        suggestions: generateResponse('suggestions', null, session.grade),
+        response: `Yes! I can hear you loud and clear, ${session.studentName}! What would you like to learn about today?`,
+        suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
         status: 'success'
       });
     }
 
-    // Handle thinking pauses
     if (cleanedMessage.length < 3 || /^(um+|uh+|er+|hmm+)$/i.test(cleanedMessage)) {
       return res.json({
-        response: `Take your time, ${session.studentName}! I'm here when you're ready.`,
-        suggestions: ["What's on your mind?", "Ask me anything!", "I'm listening!"],
+        response: `Take your time, ${session.studentName}! I'm here when you're ready to explore something exciting!`,
+        suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
         status: 'listening'
       });
     }
@@ -463,18 +482,31 @@ app.post('/api/chat', async (req, res) => {
       session.totalWarnings++;
       console.warn(`🚨 Inappropriate content in session ${sessionId.slice(-6)}`);
       return res.json({
-        response: generateResponse('redirect', session.studentName),
-        suggestions: generateResponse('suggestions', null, session.grade),
+        response: `I'm here to help you learn amazing things, ${session.studentName}! What exciting topic would you like to explore today?`,
+        suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
         status: 'redirected'
       });
+    }
+
+    // Update system prompt with current context if significant topics have been discussed
+    if (session.topicsDiscussed.size > 0 && session.messages.length > 5) {
+      const updatedSystemPrompt = getTutorSystemPrompt(
+        session.grade, 
+        session.studentName, 
+        {
+          topicsDiscussed: Array.from(session.topicsDiscussed),
+          sessionDuration: Date.now() - session.startTime.getTime()
+        }
+      );
+      session.messages[0].content = updatedSystemPrompt;
     }
 
     // Add user message
     session.messages.push({ role: 'user', content: cleanedMessage, timestamp: new Date() });
 
     // Keep conversation manageable
-    if (session.messages.length > 8) {
-      session.messages = [session.messages[0], ...session.messages.slice(-7)];
+    if (session.messages.length > 10) {
+      session.messages = [session.messages[0], ...session.messages.slice(-9)];
     }
 
     // Generate AI response
@@ -483,7 +515,7 @@ app.post('/api/chat', async (req, res) => {
       messages: session.messages.map(m => ({ role: m.role, content: m.content })),
       max_tokens: getMaxTokens(session.grade),
       temperature: config.GPT_TEMPERATURE,
-      stop: ["\n\n", "Additionally,", "Furthermore,"]
+      stop: ["\n\n", "Additionally,", "Furthermore,", "Moreover,"]
     });
 
     let aiResponse = completion.choices[0].message.content.trim();
@@ -491,7 +523,7 @@ app.post('/api/chat', async (req, res) => {
     // Check AI response for inappropriate content
     if (containsInappropriate(aiResponse)) {
       session.totalWarnings++;
-      aiResponse = generateResponse('redirect', session.studentName);
+      aiResponse = `I'm here to help you learn amazing things, ${session.studentName}! What exciting topic would you like to explore today?`;
     }
 
     // Add AI response to session
@@ -507,35 +539,29 @@ app.post('/api/chat', async (req, res) => {
       { role: 'assistant', message: aiResponse, topic: subject, timestamp: Date.now() }
     );
 
-    if (session.conversationContext.length > 6) {
-      session.conversationContext = session.conversationContext.slice(-6);
+    if (session.conversationContext.length > 8) {
+      session.conversationContext = session.conversationContext.slice(-8);
     }
 
-    // 3. Prepare responseData
+    // Prepare response
     const responseData = {
       response: aiResponse,
       subject,
-      suggestions: generateResponse('suggestions', null, session.grade),
-      encouragement: generateResponse('encourage', session.studentName),
+      suggestions: getSuggestions(session.grade, Array.from(session.topicsDiscussed)),
       status: 'success',
       sessionStats: {
         totalWarnings: session.totalWarnings,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
+        topicsDiscussed: Array.from(session.topicsDiscussed),
+        learningStreak: session.learningStreak
       }
     };
 
-    // Only auto-trigger flashcard for explicit math/spelling/phonics patterns
+    // Handle flashcard generation
     const flashcardData = extractFlashcardData(aiResponse);
     const mathPattern = /(what\s+is\s+\d+\s*[\+\-\*\/]\s*\d+)|(calculate|solve)/i;
     const spellingPattern = /(how\s+do\s+you\s+spell|spell\s+|sound\s+out)/i;
 
-    const shouldShowFlashcard =
-      (flashcardData && (
-        mathPattern.test(aiResponse)
-        || spellingPattern.test(aiResponse)
-      ));
-
-    if (shouldShowFlashcard) {
+    if (flashcardData && (mathPattern.test(aiResponse) || spellingPattern.test(aiResponse))) {
       responseData.flashcard = flashcardData;
       responseData.flashcardMode = true;
       session.lastQuestion = flashcardData.front;
@@ -557,7 +583,7 @@ app.post('/api/chat', async (req, res) => {
     console.error('❌ Chat error:', error.message);
     res.status(500).json({
       error: 'Failed to process message',
-      fallback: `I'm having trouble right now, but I'm here to help you learn!`
+      fallback: `I'm having trouble right now, but I'm here to help you learn amazing things!`
     });
   }
 });
