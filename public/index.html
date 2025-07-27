@@ -337,16 +337,47 @@
             margin-left: 0.5rem;
         }
 
- /* Brush‑size slider fits on mobile */
-.brush-size input {
-  width: 80%;
-  max-width: 120px;
+.brush-size {
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    min-width: 60px;
 }
+
+.brush-size input {
+    width: 60px;
+    max-width: 80px;
+}
+
+@media (max-width: 768px) {
+    .notes-tools {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .brush-size {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .brush-size input {
+        width: 120px;
+        max-width: 200px;
+    }
+}
+
 @media (max-width: 480px) {
-  .brush-size input {
-    width: 100%;
-    max-width: none;
-  }
+    .notes-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .brush-size input {
+        width: 150px;
+    }
 }
 /* Flag bad words in chat */
 .bad-word {
@@ -675,65 +706,83 @@
             });
         }
 
-        // Speech Recognition Setup
-        function initializeSpeechRecognition() {
+function initializeSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
                 updateStatus("Speech recognition not supported. Try Chrome or Edge!");
                 return false;
             }
 
-            state.recognition = new SpeechRecognition();
-            Object.assign(state.recognition, {
-                continuous: false,
-                interimResults: true,
-                lang: 'en-US',
-                maxAlternatives: 1
-            });
+            try {
+                state.recognition = new SpeechRecognition();
+                Object.assign(state.recognition, {
+                    continuous: false,
+                    interimResults: true,
+                    lang: 'en-US',
+                    maxAlternatives: 1
+                });
 
-            state.recognition.onstart = () => {
-                state.isListening = true;
-                updateMicButton();
-                updateStatus("I'm listening! Go ahead and speak.");
-            };
-
-            state.recognition.onend = () => {
-                state.isListening = false;
-                updateMicButton();
-                if (!state.isProcessing) updateStatus("Press the microphone to continue!");
-            };
-
-            state.recognition.onresult = event => {
-                const transcript = Array.from(event.results)
-                    .map(result => result[0].transcript)
-                    .join('');
-                
-                showLiveCaption(transcript, 'user');
-
-                if (event.results[event.results.length - 1].isFinal) {
-                    if (transcript.trim() && !state.isProcessing) handleUserInput(transcript.trim());
-                    else if (!state.isProcessing) updateStatus("I didn't catch that clearly. Please try again!");
-                    
-                    setTimeout(() => $('live-captions').classList.add('hidden'), 600);
+                // Add permission check for desktop
+                if (!window.DeviceMotionEvent && navigator.permissions) {
+                    navigator.permissions.query({name: 'microphone'}).then(result => {
+                        if (result.state === 'denied') {
+                            updateStatus("Microphone access denied. Please enable in browser settings.");
+                        }
+                    }).catch(() => {
+                        console.log('Permission query not supported');
+                    });
                 }
-            };
 
-            state.recognition.onerror = event => {
-                state.isListening = false;
-                state.isProcessing = false;
-                updateMicButton();
-                
-                const errorMessages = {
-                    'no-speech': "I didn't hear anything. Please try speaking closer.",
-                    'audio-capture': "Couldn't access microphone. Check permissions.",
-                    'not-allowed': "Microphone access denied. Enable in browser settings.",
-                    'network': "Network error. Check internet connection."
+                state.recognition.onstart = () => {
+                    state.isListening = true;
+                    updateMicButton();
+                    updateStatus("I'm listening! Go ahead and speak.");
                 };
-                
-                updateStatus(errorMessages[event.error] || "Please try speaking again!");
-            };
 
-            return true;
+                state.recognition.onend = () => {
+                    state.isListening = false;
+                    updateMicButton();
+                    if (!state.isProcessing) updateStatus("Press the microphone to continue!");
+                };
+
+                state.recognition.onresult = event => {
+                    const transcript = Array.from(event.results)
+                        .map(result => result[0].transcript)
+                        .join('');
+                    
+                    showLiveCaption(transcript, 'user');
+
+                    if (event.results[event.results.length - 1].isFinal) {
+                        if (transcript.trim() && !state.isProcessing) handleUserInput(transcript.trim());
+                        else if (!state.isProcessing) updateStatus("I didn't catch that clearly. Please try again!");
+                        
+                        setTimeout(() => $('live-captions').classList.add('hidden'), 600);
+                    }
+                };
+
+                state.recognition.onerror = event => {
+                    state.isListening = false;
+                    state.isProcessing = false;
+                    updateMicButton();
+                    
+                    const errorMessages = {
+                        'no-speech': "I didn't hear anything. Please try speaking closer.",
+                        'audio-capture': "Couldn't access microphone. Check permissions.",
+                        'not-allowed': "Microphone access denied. Enable in browser settings and refresh the page.",
+                        'network': "Network error. Check internet connection.",
+                        'service-not-allowed': "Speech service not allowed. Try refreshing the page."
+                    };
+                    
+                    updateStatus(errorMessages[event.error] || `Speech error: ${event.error}. Please try again!`);
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize speech recognition:', error);
+                updateStatus("Failed to initialize microphone. Please refresh and try again.");
+                return false;
+            }
         }
 
         // Reading Word Display
@@ -802,7 +851,7 @@
             }
         }
 
-        async function handleUserInput(input) {
+async function handleUserInput(input) {
             if (state.isProcessing || !state.sessionStarted) return;
 
             state.isProcessing = true;
@@ -812,20 +861,37 @@
             state.conversationContext.push({ role: 'user', content: input });
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                 const response = await fetch(`${API_BASE_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         sessionId: state.currentSessionId,
                         message: input,
-                        context: {}
-                    })
+                        context: {
+                            conversationHistory: state.conversationContext.slice(-6),
+                            currentSubject: state.currentSubject
+                        }
+                    }),
+                    signal: controller.signal
                 });
 
-                if (!response.ok) throw new Error('Failed to get response');
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', response.status, errorText);
+                    throw new Error(`API Error: ${response.status} - ${errorText}`);
+                }
 
                 const data = await response.json();
                 const tutorResponse = data.response;
+
+                if (!tutorResponse || tutorResponse.trim() === '') {
+                    throw new Error('Empty response from API');
+                }
 
                 // Handle reading word display
                 if (!data.readingWord) {
@@ -847,9 +913,15 @@
 
             } catch (error) {
                 console.error('Error getting response:', error);
-                const fallbackResponse = generateFallbackResponse(input);
-                addToConversation('tutor', fallbackResponse);
-                await speakWithPromise(fallbackResponse);
+                
+                if (error.name === 'AbortError') {
+                    updateStatus("Request timed out. Please try again.");
+                    await speakWithPromise("Sorry, that took too long. Please try asking again.");
+                } else {
+                    const fallbackResponse = generateEnhancedFallbackResponse(input);
+                    addToConversation('tutor', fallbackResponse);
+                    await speakWithPromise(fallbackResponse);
+                }
             } finally {
                 state.isProcessing = false;
                 updateStatus("Press the microphone to continue our conversation!");
@@ -970,7 +1042,7 @@
             }
         }
 
-        function generateFallbackResponse(input) {
+function generateFallbackResponse(input) {
             const responses = {
                 math: "I love math! Let's work on this together. What would you like to practice?",
                 read: "Reading is so much fun! What kind of stories do you enjoy?",
@@ -981,8 +1053,52 @@
             return responses[key] || "That sounds interesting! Can you tell me more about what you're thinking?";
         }
 
-        // UI Controls
-        function toggleListening() {
+        function generateEnhancedFallbackResponse(input) {
+            const inputLower = input.toLowerCase();
+            
+            const subjectResponses = {
+                math: [
+                    "Math is exciting! What type of math problem would you like to work on?",
+                    "I love helping with math! Are you working on addition, subtraction, or something else?",
+                    "Numbers are fun! What math topic interests you most?"
+                ],
+                read: [
+                    "Reading opens up amazing worlds! What kind of books do you enjoy?",
+                    "I love talking about reading! Do you have a favorite story?",
+                    "Books are wonderful! What would you like to read about?"
+                ],
+                science: [
+                    "Science is all around us! What scientific topic are you curious about?",
+                    "I love exploring science! Are you interested in animals, space, or experiments?",
+                    "Science is amazing! What would you like to discover today?"
+                ],
+                history: [
+                    "History tells incredible stories! What time period interests you?",
+                    "The past is full of fascinating people and events! What would you like to learn about?",
+                    "History is like a treasure hunt for knowledge! What historical topic excites you?"
+                ]
+            };
+            
+            const matchedSubject = Object.keys(subjectResponses).find(subject => 
+                inputLower.includes(subject)
+            );
+            
+            if (matchedSubject) {
+                const responses = subjectResponses[matchedSubject];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+            
+            const generalResponses = [
+                "That's a great question! I'm having trouble connecting right now, but I'd love to explore that topic with you. Can you tell me more?",
+                "I'm excited to learn about that with you! While I sort out a technical issue, could you share what interests you most about this?",
+                "Your curiosity is wonderful! I'm experiencing some connection issues, but let's keep the conversation going. What would you like to discover?",
+                "I love your enthusiasm for learning! There seems to be a small technical hiccup, but I'm still here to help. What else can you tell me about this topic?"
+            ];
+            
+            return generalResponses[Math.floor(Math.random() * generalResponses.length)];
+        }
+
+function toggleListening() {
             if (!state.recognition) {
                 updateStatus("Speech recognition not available!");
                 return;
@@ -994,10 +1110,21 @@
             }
             
             if (state.isListening) {
-                state.recognition.stop();
+                try {
+                    state.recognition.stop();
+                } catch (error) {
+                    console.error('Error stopping recognition:', error);
+                }
             } else {
-                try { state.recognition.start(); }
-                catch (error) { updateStatus("Error starting microphone. Please try again."); }
+                try { 
+                    setTimeout(() => {
+                        state.recognition.start();
+                    }, 100);
+                }
+                catch (error) { 
+                    console.error('Error starting microphone:', error);
+                    updateStatus("Error starting microphone. Please check permissions and try again."); 
+                }
             }
         }
 
