@@ -41,8 +41,10 @@
         body::before {
             content: '';
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: 
                 radial-gradient(circle at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%),
@@ -71,25 +73,24 @@
             font-weight: 700;
         }
 
-        h1 { font-size: 2.8rem; }
+        h1 { font-size: 2.5rem; }
         h2 { font-size: 2rem; }
 
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius);
             box-shadow: var(--shadow-soft);
             transition: var(--transition);
-            padding: 2rem;
+              padding: 2rem;
+  border-radius: var(--radius-lg);
         }
 
-        .glass-panel:hover { 
-            transform: translateY(-2px); 
-            box-shadow: var(--shadow-strong); 
-        }
+        .glass-panel:hover { transform: translateY(-2px); box-shadow: var(--shadow-strong); }
 
         .student-info {
+            padding: 2rem;
             margin: 2rem 0;
             display: flex;
             flex-direction: column;
@@ -139,19 +140,21 @@
             font-family: inherit;
             position: relative;
             overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .btn::before {
             content: '';
             position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.5s;
         }
 
         .btn:hover::before { left: 100%; }
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-strong); }
 
         .btn-primary {
             background: var(--accent-green);
@@ -162,17 +165,14 @@
             margin: 1rem 0;
         }
 
-        .btn-secondary {
-            background: var(--accent-red);
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: white;
-            margin: 0.5rem;
-        }
+        
+
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: var(--shadow-strong); }
 
         .voice-button {
             background: var(--accent-blue);
-            width: 120px; height: 120px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             font-size: 2rem;
             color: white;
@@ -209,14 +209,25 @@
             font-weight: 500;
         }
 
-        .voice-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
+        .btn-secondary {
+            background: var(--accent-red);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: white;
+            margin: 0.5rem;
+        }
+
+        .btn-accent {
+            background: var(--accent-yellow);
+            color: #333;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            margin: 1rem auto;
+            display: block;
         }
 
         .notes-section {
+            padding: 1.5rem;
             margin: 2rem 0;
             max-width: 100%;
         }
@@ -227,7 +238,7 @@
             justify-content: space-between;
             margin-bottom: 1rem;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 0.5rem;
         }
 
         .notes-title {
@@ -240,21 +251,21 @@
 
         .notes-tools {
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .tool-btn {
             background: var(--glass-bg);
             border: 2px solid var(--glass-border);
             border-radius: 8px;
-            padding: 0.75rem;
+            padding: 0.5rem;
             color: white;
             cursor: pointer;
             transition: var(--transition);
-            font-size: 1.2rem;
-            width: 45px; height: 45px;
+            font-size: 1.1rem;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -296,25 +307,21 @@
 
         .notes-canvas {
             position: absolute;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             cursor: crosshair;
             touch-action: none;
-        }
-
-        .drawing-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
         }
 
         .color-picker {
             display: flex;
             gap: 0.3rem;
+            margin-left: 0.5rem;
         }
 
         .color-option {
-            width: 24px; height: 24px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid transparent;
@@ -327,17 +334,31 @@
         }
 
         .brush-size {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            margin-left: 0.5rem;
         }
 
-        .brush-size input {
-            width: 80px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 5px;
-            outline: none;
+ /* Brush‑size slider fits on mobile */
+.brush-size input {
+  width: 80%;
+  max-width: 120px;
+}
+@media (max-width: 480px) {
+  .brush-size input {
+    width: 100%;
+    max-width: none;
+  }
+}
+/* Flag bad words in chat */
+.bad-word {
+  color: red;
+  font-weight: bold;
+}
+
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
 
         .live-captions {
@@ -352,7 +373,7 @@
             font-size: 1.3rem;
             font-weight: 500;
             padding: 1.2rem 2.5rem;
-            border-radius: var(--radius);
+            border-radius: var(--radius-lg);
             text-align: center;
             z-index: 1000;
             backdrop-filter: blur(10px);
@@ -371,45 +392,12 @@
             border: 2px solid #2196F3;
         }
 
-        .reading-prompt {
-            margin: 2rem 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .reading-word {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            background: linear-gradient(45deg, #fff, #f0f0f0);
-            color: #764ba2;
-            padding: 1.5rem 3rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-soft);
-            border: 3px solid rgba(255,255,255,0.8);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .session-summary {
-            text-align: left;
-        }
-
-        .summary-item {
-            margin: 1.5rem 0;
-            padding: 1rem;
-            background: var(--glass-bg);
-            border-radius: var(--radius-sm);
-            border-left: 4px solid rgba(255,255,255,0.5);
-        }
-
-        .summary-item strong { color: rgba(255,255,255,0.9); }
-
         .modal {
             position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0,0,0,0.6);
             z-index: 9999;
             display: flex;
@@ -433,7 +421,8 @@
 
         .close-btn {
             position: absolute;
-            top: 1rem; right: 1.5rem;
+            top: 1rem;
+            right: 1.5rem;
             background: none;
             border: none;
             font-size: 2rem;
@@ -464,39 +453,62 @@
             border-left: 3px solid #2196F3;
         }
 
-        .error-status {
-            background: rgba(244, 67, 54, 0.2);
-            border: 1px solid rgba(244, 67, 54, 0.3);
+        .session-summary {
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
         }
 
-        .processing-status {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.3);
+        .summary-item {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border-radius: var(--radius-sm);
+            border-left: 4px solid rgba(255,255,255,0.5);
+        }
+
+        .summary-item strong { color: rgba(255,255,255,0.9); }
+
+        .reading-prompt {
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .reading-word {
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            color: #764ba2;
+            padding: 1.5rem 3rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-soft);
+            border: 3px solid rgba(255,255,255,0.8);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .hidden { display: none !important; }
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            .suggestion-grid { grid-template-columns: 1fr; }
             .voice-controls { flex-direction: row; justify-content: center; }
             .container { padding: 0.5rem; }
-            h1 { font-size: 2.2rem; }
-            h2 { font-size: 1.8rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.6rem; }
             .voice-button { width: 100px; height: 100px; font-size: 1.5rem; }
             .btn-primary { padding: 1rem 2rem; font-size: 1.2rem; }
             .student-info { padding: 1.5rem; }
             .reading-word { font-size: 2.8rem; padding: 1rem 2rem; }
-            .notes-header { flex-direction: column; align-items: stretch; }
-            .notes-tools { justify-content: center; }
         }
 
         @media (max-width: 480px) {
-            body { padding: 1rem; }
             .mascot { font-size: 3rem; }
             .status { font-size: 1rem; padding: 1rem; }
             .live-captions { font-size: 1.1rem; padding: 1rem 2rem; }
-            .brush-size input { width: 60px; }
-            .drawing-controls { gap: 0.5rem; }
         }
     </style>
 </head>
@@ -554,22 +566,19 @@
                 <div class="notes-header">
                     <div class="notes-title">📝 My Learning Notes</div>
                     <div class="notes-tools">
-                        <button class="tool-btn" id="text-tool" onclick="switchToText()" title="Text Mode">📖</button>
-                        <button class="tool-btn active" id="draw-tool" onclick="switchToDraw()" title="Draw Mode">🖌️</button>
+                        <button class="tool-btn" id="text-tool" onclick="switchToText()" title="Text Mode"> 📖 </button>
+                        <button class="tool-btn active" id="draw-tool" onclick="switchToDraw()" title="Draw Mode"> 🖌️ </button>
                         <button class="tool-btn" onclick="clearNotes()" title="Clear All">🗑️</button>
-                        
-                        <div class="drawing-controls">
-                            <div class="color-picker">
-                                <div class="color-option active" style="background: #000" onclick="setColor('#000')" data-color="#000"></div>
-                                <div class="color-option" style="background: #e74c3c" onclick="setColor('#e74c3c')" data-color="#e74c3c"></div>
-                                <div class="color-option" style="background: #3498db" onclick="setColor('#3498db')" data-color="#3498db"></div>
-                                <div class="color-option" style="background: #2ecc71" onclick="setColor('#2ecc71')" data-color="#2ecc71"></div>
-                                <div class="color-option" style="background: #f39c12" onclick="setColor('#f39c12')" data-color="#f39c12"></div>
-                                <div class="color-option" style="background: #9b59b6" onclick="setColor('#9b59b6')" data-color="#9b59b6"></div>
-                            </div>
-                            <div class="brush-size">
-                                <input type="range" id="brush-size" min="1" max="10" value="3" onchange="setBrushSize(this.value)">
-                            </div>
+                        <div class="color-picker">
+                            <div class="color-option active" style="background: #000" onclick="setColor('#000')" data-color="#000"></div>
+                            <div class="color-option" style="background: #e74c3c" onclick="setColor('#e74c3c')" data-color="#e74c3c"></div>
+                            <div class="color-option" style="background: #3498db" onclick="setColor('#3498db')" data-color="#3498db"></div>
+                            <div class="color-option" style="background: #2ecc71" onclick="setColor('#2ecc71')" data-color="#2ecc71"></div>
+                            <div class="color-option" style="background: #f39c12" onclick="setColor('#f39c12')" data-color="#f39c12"></div>
+                            <div class="color-option" style="background: #9b59b6" onclick="setColor('#9b59b6')" data-color="#9b59b6"></div>
+                        </div>
+                        <div class="brush-size">
+                            <input type="range" id="brush-size" min="1" max="10" value="3" onchange="setBrushSize(this.value)">
                         </div>
                     </div>
                 </div>
@@ -578,6 +587,7 @@
                     <canvas class="notes-canvas" id="notes-canvas"></canvas>
                 </div>
             </div>
+
         </div>
 
         <!-- Session Summary -->
@@ -601,714 +611,512 @@
     </div>
 
     <script>
-        // Enhanced AI Tutor Application
-        const app = {
-            // Core state
-            state: {
-                isListening: false,
-                recognition: null,
-                speechSynthesis: window.speechSynthesis,
-                currentSessionId: null,
-                isProcessing: false,
-                sessionStarted: false,
-                selectedVoice: null,
-                conversationContext: [],
-                chatHistory: [],
-                currentSubject: null,
-                lastCaptionTime: 0,
-                connectionRetries: 0,
-                maxRetries: 3
-            },
+        // Global State
+        const state = {
+            isListening: false,
+            recognition: null,
+            speechSynthesis: window.speechSynthesis,
+            currentSessionId: null,
+            isProcessing: false,
+            sessionStarted: false,
+            selectedVoice: null,
+            conversationContext: [],
+            chatHistory: [],
+            currentSubject: null
+        };
+        
+        const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
-            // Configuration
-            config: {
-                API_BASE_URL: 'https://ai-tutor-ww9f.onrender.com/api',
-                SPEECH_SETTINGS: {
-                    rate: 0.8,
-                    pitch: 1.0,
-                    volume: 1.0
-                },
-                RECOGNITION_SETTINGS: {
-                    continuous: false,
-                    interimResults: true,
-                    lang: 'en-US',
-                    maxAlternatives: 1
+        // Utility Functions
+        const $ = id => document.getElementById(id);
+        const updateStatus = msg => $('status').textContent = msg;
+        const addToConversation = (sender, message) => state.chatHistory.push({ sender, message });
+        const toggleClass = (element, className, condition) => element.classList.toggle(className, condition);
+
+        // Speech Synthesis Setup
+        async function initializeSpeechSynthesis() {
+            return new Promise(resolve => {
+                const selectVoice = () => {
+                    const voices = state.speechSynthesis.getVoices();
+                    const preferred = ['Samantha', 'Karen', 'Susan', 'Victoria', 'Google UK English Female', 'Microsoft Zira'];
+                    
+                    state.selectedVoice = preferred.map(name => 
+                        voices.find(voice => voice.name.includes(name))
+                    ).find(Boolean) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+                    
+                    resolve();
+                };
+
+                if (state.speechSynthesis.getVoices().length > 0) selectVoice();
+                else {
+                    state.speechSynthesis.onvoiceschanged = selectVoice;
+                    setTimeout(selectVoice, 1000);
                 }
-            },
+            });
+        }
 
-            // Utility functions
-            utils: {
-                $: id => document.getElementById(id),
+        function speakWithPromise(text) {
+            return new Promise(resolve => {
+                if (state.speechSynthesis.speaking) state.speechSynthesis.cancel();
+
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    Object.assign(utterance, {
+                        rate: 0.8, pitch: 1.0, volume: 1.0,
+                        voice: state.selectedVoice,
+                        onstart: () => showLiveCaption(text, 'bot'),
+                        onend: () => { $('live-captions').classList.add('hidden'); resolve(); },
+                        onerror: resolve
+                    });
+
+                    try { state.speechSynthesis.speak(utterance); }
+                    catch (error) { console.error('Speech error:', error); resolve(); }
+                }, 100);
+            });
+        }
+
+        // Speech Recognition Setup
+        function initializeSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                updateStatus("Speech recognition not supported. Try Chrome or Edge!");
+                return false;
+            }
+
+            state.recognition = new SpeechRecognition();
+            Object.assign(state.recognition, {
+                continuous: false,
+                interimResults: true,
+                lang: 'en-US',
+                maxAlternatives: 1
+            });
+
+            state.recognition.onstart = () => {
+                state.isListening = true;
+                updateMicButton();
+                updateStatus("I'm listening! Go ahead and speak.");
+            };
+
+            state.recognition.onend = () => {
+                state.isListening = false;
+                updateMicButton();
+                if (!state.isProcessing) updateStatus("Press the microphone to continue!");
+            };
+
+            state.recognition.onresult = event => {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join('');
                 
-                updateStatus: (msg, type = 'normal') => {
-                    const status = app.utils.$('status');
-                    status.textContent = msg;
-                    status.className = `status glass-panel ${type === 'error' ? 'error-status' : type === 'processing' ? 'processing-status' : ''}`;
-                },
+                showLiveCaption(transcript, 'user');
 
-                addToConversation: (sender, message) => app.state.chatHistory.push({ sender, message }),
-
-                toggleClass: (element, className, condition) => element.classList.toggle(className, condition),
-
-                debounce: (func, wait) => {
-                    let timeout;
-                    return function executedFunction(...args) {
-                        const later = () => {
-                            clearTimeout(timeout);
-                            func(...args);
-                        };
-                        clearTimeout(timeout);
-                        timeout = setTimeout(later, wait);
-                    };
-                },
-
-                showError: (message) => {
-                    app.utils.updateStatus(message, 'error');
-                    console.error(message);
+                if (event.results[event.results.length - 1].isFinal) {
+                    if (transcript.trim() && !state.isProcessing) handleUserInput(transcript.trim());
+                    else if (!state.isProcessing) updateStatus("I didn't catch that clearly. Please try again!");
+                    
+                    setTimeout(() => $('live-captions').classList.add('hidden'), 600);
                 }
-            },
+            };
 
-            // Speech synthesis management
-            speech: {
-                async init() {
-                    return new Promise(resolve => {
-                        const selectVoice = () => {
-                            const voices = app.state.speechSynthesis.getVoices();
-                            const preferred = ['Samantha', 'Karen', 'Susan', 'Victoria', 'Google UK English Female', 'Microsoft Zira'];
-                            
-                            app.state.selectedVoice = preferred.map(name => 
-                                voices.find(voice => voice.name.includes(name))
-                            ).find(Boolean) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
-                            
-                            resolve();
-                        };
+            state.recognition.onerror = event => {
+                state.isListening = false;
+                state.isProcessing = false;
+                updateMicButton();
+                
+                const errorMessages = {
+                    'no-speech': "I didn't hear anything. Please try speaking closer.",
+                    'audio-capture': "Couldn't access microphone. Check permissions.",
+                    'not-allowed': "Microphone access denied. Enable in browser settings.",
+                    'network': "Network error. Check internet connection."
+                };
+                
+                updateStatus(errorMessages[event.error] || "Please try speaking again!");
+            };
 
-                        if (app.state.speechSynthesis.getVoices().length > 0) {
-                            selectVoice();
-                        } else {
-                            app.state.speechSynthesis.onvoiceschanged = selectVoice;
-                            setTimeout(selectVoice, 1000);
-                        }
-                    });
-                },
+            return true;
+        }
 
-                speak(text) {
-                    return new Promise(resolve => {
-                        if (app.state.speechSynthesis.speaking) {
-                            app.state.speechSynthesis.cancel();
-                        }
+        // Reading Word Display
+        function showReadingWordPrompt(prompt, word) {
+            const existing = $('reading-word-prompt');
+            if (existing) existing.remove();
 
-                        setTimeout(() => {
-                            const utterance = new SpeechSynthesisUtterance(text);
-                            Object.assign(utterance, {
-                                ...app.config.SPEECH_SETTINGS,
-                                voice: app.state.selectedVoice,
-                                onstart: () => app.ui.showLiveCaption(text, 'bot'),
-                                onend: () => { 
-                                    app.utils.$('live-captions').classList.add('hidden'); 
-                                    resolve(); 
-                                },
-                                onerror: () => resolve()
-                            });
+            const container = document.createElement('div');
+            container.id = 'reading-word-prompt';
+            container.className = 'reading-prompt';
+            container.innerHTML = `
+                <div style="font-size: 1.4rem; font-weight: 600;">${prompt}</div>
+                <div class="reading-word">${word}</div>
+            `;
 
-                            try {
-                                app.state.speechSynthesis.speak(utterance);
-                            } catch (error) {
-                                console.error('Speech error:', error);
-                                resolve();
-                            }
-                        }, 100);
-                    });
-                }
-            },
+            $('tutor-interface').insertBefore(container, $('tutor-interface').children[2]);
+        }
 
-            // Speech recognition management
-            recognition: {
-                init() {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    if (!SpeechRecognition) {
-                        app.utils.showError("Speech recognition not supported. Please use Chrome, Edge, or Safari!");
-                        return false;
-                    }
+        // Session Management
+        async function startTutoring() {
+            await initializeSpeechSynthesis();
+            
+            if (!initializeSpeechRecognition()) {
+                alert('Speech recognition not supported. Use Chrome or Edge for best experience.');
+                return;
+            }
 
-                    app.state.recognition = new SpeechRecognition();
-                    Object.assign(app.state.recognition, app.config.RECOGNITION_SETTINGS);
+            const studentName = $('student-name').value.trim();
+            const studentGrade = $('student-grade').value;
 
-                    app.state.recognition.onstart = () => {
-                        app.state.isListening = true;
-                        app.ui.updateMicButton();
-                        app.utils.updateStatus("I'm listening! Go ahead and speak.");
-                    };
-
-                    app.state.recognition.onend = () => {
-                        app.state.isListening = false;
-                        app.ui.updateMicButton();
-                        if (!app.state.isProcessing) {
-                            app.utils.updateStatus("Press the microphone to continue!");
-                        }
-                    };
-
-                    app.state.recognition.onresult = event => {
-                        const transcript = Array.from(event.results)
-                            .map(result => result[0].transcript)
-                            .join('');
-                        
-                        app.ui.showLiveCaption(transcript, 'user');
-
-                        if (event.results[event.results.length - 1].isFinal) {
-                            const cleanTranscript = transcript.trim();
-                            if (cleanTranscript && !app.state.isProcessing) {
-                                app.handleUserInput(cleanTranscript);
-                            } else if (!app.state.isProcessing) {
-                                app.utils.updateStatus("I didn't catch that clearly. Please try again!");
-                            }
-                            
-                            setTimeout(() => app.utils.$('live-captions').classList.add('hidden'), 800);
-                        }
-                    };
-
-                    app.state.recognition.onerror = event => {
-                        app.state.isListening = false;
-                        app.state.isProcessing = false;
-                        app.ui.updateMicButton();
-                        
-                        const errorMessages = {
-                            'no-speech': "I didn't hear anything. Please try speaking closer to the microphone.",
-                            'audio-capture': "Couldn't access microphone. Please check your device permissions.",
-                            'not-allowed': "Microphone access denied. Please enable microphone in your browser settings.",
-                            'network': "Network error. Please check your internet connection.",
-                            'service-not-allowed': "Speech service not available. Please try again later.",
-                            'bad-grammar': "Please try speaking more clearly.",
-                            'language-not-supported': "Language not supported. Please use English."
-                        };
-                        
-                        const message = errorMessages[event.error] || `Recognition error: ${event.error}. Please try again!`;
-                        app.utils.showError(message);
-                    };
-
-                    return true;
-                },
-
-                start() {
-                    if (!app.state.recognition) {
-                        app.utils.showError("Speech recognition not available!");
-                        return;
-                    }
-                    
-                    if (app.state.isProcessing) {
-                        app.utils.updateStatus("Please wait, I'm still processing your message...", 'processing');
-                        return;
-                    }
-                    
-                    try {
-                        app.state.recognition.start();
-                    } catch (error) {
-                        console.error('Recognition start error:', error);
-                        app.utils.showError("Error starting microphone. Please try again.");
-                    }
-                },
-
-                stop() {
-                    if (app.state.recognition && app.state.isListening) {
-                        app.state.recognition.stop();
-                    }
-                }
-            },
-
-            // UI management
-            ui: {
-                updateMicButton() {
-                    const micBtn = app.utils.$('mic-btn');
-                    micBtn.classList.toggle('listening', app.state.isListening);
-                    micBtn.innerHTML = app.state.isListening ? '🔴' : '🎤';
-                },
-
-                showLiveCaption: app.utils.debounce((text, type = 'bot') => {
-                    const captionsDiv = app.utils.$('live-captions');
-                    captionsDiv.textContent = text;
-                    captionsDiv.className = `live-captions ${type}-caption`;
-                    captionsDiv.classList.remove('hidden');
-                }, 100),
-
-                showReadingWordPrompt(prompt, word) {
-                    const existing = app.utils.$('reading-word-prompt');
-                    if (existing) existing.remove();
-
-                    const container = document.createElement('div');
-                    container.id = 'reading-word-prompt';
-                    container.className = 'reading-prompt';
-                    container.innerHTML = `
-                        <div style="font-size: 1.4rem; font-weight: 600;">${prompt}</div>
-                        <div class="reading-word">${word}</div>
-                    `;
-
-                    app.utils.$('tutor-interface').insertBefore(container, app.utils.$('tutor-interface').children[2]);
-                },
-
-                removeReadingPrompt() {
-                    const existing = app.utils.$('reading-word-prompt');
-                    if (existing) existing.remove();
-                }
-            },
-
-            // API communication with improved error handling
-            api: {
-                async request(endpoint, options = {}) {
-                    const url = `${app.config.API_BASE_URL}${endpoint}`;
-                    const defaultOptions = {
-                        headers: { 'Content-Type': 'application/json' },
-                        timeout: 15000
-                    };
-
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), options.timeout || defaultOptions.timeout);
-
-                        const response = await fetch(url, {
-                            ...defaultOptions,
-                            ...options,
-                            signal: controller.signal
-                        });
-
-                        clearTimeout(timeoutId);
-
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-
-                        return await response.json();
-                    } catch (error) {
-                        if (error.name === 'AbortError') {
-                            throw new Error('Request timeout - please check your connection');
-                        }
-                        throw error;
-                    }
-                },
-
-                async startSession(studentData) {
-                    return await this.request('/session/start', {
-                        method: 'POST',
-                        body: JSON.stringify(studentData)
-                    });
-                },
-
-                async sendMessage(sessionId, message) {
-                    return await this.request('/chat', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            sessionId,
-                            message,
-                            context: {}
-                        })
-                    });
-                },
-
-                async endSession(sessionId) {
-                    try {
-                        const [summaryResponse] = await Promise.allSettled([
-                            this.request(`/session/${sessionId}/summary`),
-                            this.request(`/session/${sessionId}/end`, { method: 'POST' })
-                        ]);
-
-                        return summaryResponse.status === 'fulfilled' ? summaryResponse.value : null;
-                    } catch (error) {
-                        console.error('Session end error:', error);
-                        return null;
-                    }
-                }
-            },
-
-            // Notes functionality
-            notes: {
-                state: {
-                    isDrawing: false,
-                    isTextMode: false,
-                    currentColor: '#000',
-                    brushSize: 3,
-                    canvas: null,
-                    ctx: null
-                },
-
-                init() {
-                    const canvas = app.utils.$('notes-canvas');
-                    const container = canvas.parentElement;
-                    
-                    // Set canvas size
-                    const rect = container.getBoundingClientRect();
-                    canvas.width = rect.width;
-                    canvas.height = Math.max(300, rect.height);
-                    
-                    this.state.canvas = canvas;
-                    this.state.ctx = canvas.getContext('2d');
-                    
-                    // Mouse events
-                    canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-                    canvas.addEventListener('mousemove', this.draw.bind(this));
-                    canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-                    canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
-                    
-                    // Touch events
-                    canvas.addEventListener('touchstart', this.handleTouch.bind(this));
-                    canvas.addEventListener('touchmove', this.handleTouch.bind(this));
-                    canvas.addEventListener('touchend', this.stopDrawing.bind(this));
-                    
-                    // Prevent scrolling when drawing
-                    canvas.addEventListener('touchstart', e => e.preventDefault());
-                    canvas.addEventListener('touchmove', e => e.preventDefault());
-                },
-
-                getEventPos(e) {
-                    const rect = this.state.canvas.getBoundingClientRect();
-                    const scaleX = this.state.canvas.width / rect.width;
-                    const scaleY = this.state.canvas.height / rect.height;
-                    
-                    return {
-                        x: (e.clientX - rect.left) * scaleX,
-                        y: (e.clientY - rect.top) * scaleY
-                    };
-                },
-
-                startDrawing(e) {
-                    if (this.state.isTextMode) return;
-                    
-                    this.state.isDrawing = true;
-                    const pos = this.getEventPos(e);
-                    
-                    this.state.ctx.beginPath();
-                    this.state.ctx.moveTo(pos.x, pos.y);
-                },
-
-                draw(e) {
-                    if (!this.state.isDrawing || this.state.isTextMode) return;
-                    
-                    const pos = this.getEventPos(e);
-                    
-                    this.state.ctx.lineWidth = this.state.brushSize;
-                    this.state.ctx.lineCap = 'round';
-                    this.state.ctx.strokeStyle = this.state.currentColor;
-                    
-                    this.state.ctx.lineTo(pos.x, pos.y);
-                    this.state.ctx.stroke();
-                    this.state.ctx.beginPath();
-                    this.state.ctx.moveTo(pos.x, pos.y);
-                },
-
-                stopDrawing() {
-                    this.state.isDrawing = false;
-                    this.state.ctx.beginPath();
-                },
-
-                handleTouch(e) {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    if (!touch) return;
-                    
-                    const mouseEvent = new MouseEvent(
-                        e.type === 'touchstart' ? 'mousedown' : 
-                        e.type === 'touchmove' ? 'mousemove' : 'mouseup', 
-                        {
-                            clientX: touch.clientX,
-                            clientY: touch.clientY
-                        }
-                    );
-                    this.state.canvas.dispatchEvent(mouseEvent);
-                },
-
-                switchToText() {
-                    this.state.isTextMode = true;
-                    app.utils.$('text-tool').classList.add('active');
-                    app.utils.$('draw-tool').classList.remove('active');
-                    app.utils.$('notes-text').style.display = 'block';
-                    app.utils.$('notes-canvas').style.display = 'none';
-                },
-
-                switchToDraw() {
-                    this.state.isTextMode = false;
-                    app.utils.$('draw-tool').classList.add('active');
-                    app.utils.$('text-tool').classList.remove('active');
-                    app.utils.$('notes-text').style.display = 'none';
-                    app.utils.$('notes-canvas').style.display = 'block';
-                    
-                    if (!this.state.canvas) {
-                        setTimeout(() => this.init(), 100);
-                    }
-                },
-
-                setColor(color) {
-                    this.state.currentColor = color;
-                    document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
-                    document.querySelector(`[data-color="${color}"]`).classList.add('active');
-                },
-
-                setBrushSize(size) {
-                    this.state.brushSize = parseInt(size);
-                },
-
-                clear() {
-                    if (this.state.isTextMode) {
-                        app.utils.$('notes-text').value = '';
-                    } else if (this.state.ctx) {
-                        this.state.ctx.clearRect(0, 0, this.state.canvas.width, this.state.canvas.height);
-                    }
-                }
-            },
-
-            // Main application methods
-            async startTutoring() {
-                try {
-                    app.utils.updateStatus("Initializing...", 'processing');
-                    
-                    await app.speech.init();
-                    
-                    if (!app.recognition.init()) {
-                        app.utils.showError('Speech recognition not supported. Please use a compatible browser.');
-                        return;
-                    }
-
-                    const studentName = app.utils.$('student-name').value.trim();
-                    const studentGrade = app.utils.$('student-grade').value;
-
-                    app.utils.updateStatus("Starting your session...", 'processing');
-                    
-                    const data = await app.api.startSession({
+            try {
+                updateStatus("Starting your session...");
+                
+                const response = await fetch(`${API_BASE_URL}/session/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         studentName: studentName || 'Student',
                         grade: studentGrade || 'K',
                         subjects: []
-                    });
-
-                    app.state.currentSessionId = data.sessionId;
-                    app.state.sessionStarted = true;
-                    app.state.connectionRetries = 0;
-                    
-                    app.utils.$('welcome-screen').classList.add('hidden');
-                    app.utils.$('tutor-interface').classList.remove('hidden');
-                    
-                    // Initialize canvas after interface is shown
-                    setTimeout(() => app.notes.init(), 100);
-                    
-                    const welcomeMessage = data.welcomeMessage || 
-                        `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                    
-                    await app.speech.speak(welcomeMessage);
-                    app.utils.addToConversation('tutor', welcomeMessage);
-                    app.utils.updateStatus("Press the microphone to start talking!");
-
-                } catch (error) {
-                    console.error('Error starting session:', error);
-                    app.utils.showError(`Failed to start session: ${error.message}`);
-                }
-            },
-
-            async handleUserInput(input) {
-                if (app.state.isProcessing || !app.state.sessionStarted) return;
-
-                app.state.isProcessing = true;
-                app.utils.updateStatus("Processing your request...", 'processing');
-
-                app.utils.addToConversation('user', input);
-                app.state.conversationContext.push({ role: 'user', content: input });
-
-                try {
-                    const data = await app.api.sendMessage(app.state.currentSessionId, input);
-                    const tutorResponse = data.response;
-
-                    // Handle reading word display
-                    if (!data.readingWord) {
-                        app.ui.removeReadingPrompt();
-                    }
-
-                    if (data.readingWord) {
-                        app.ui.showReadingWordPrompt(tutorResponse, data.readingWord);
-                        await app.speech.speak(tutorResponse);
-                        app.utils.addToConversation('tutor', tutorResponse + ' (See word above)');
-                    } else {
-                        await app.speech.speak(tutorResponse);
-                        app.utils.addToConversation('tutor', tutorResponse);
-                    }
-
-                    app.state.conversationContext.push({ role: 'assistant', content: tutorResponse });
-                    if (data.subject) app.state.currentSubject = data.subject;
-                    
-                    app.state.connectionRetries = 0; // Reset on success
-
-                } catch (error) {
-                    console.error('Error getting response:', error);
-                    
-                    // Retry logic for connection issues
-                    if (app.state.connectionRetries < app.config.maxRetries && 
-                        (error.message.includes('timeout') || error.message.includes('network'))) {
-                        
-                        app.state.connectionRetries++;
-                        app.utils.updateStatus(`Connection issue. Retrying... (${app.state.connectionRetries}/${app.config.maxRetries})`, 'processing');
-                        
-                        setTimeout(() => app.handleUserInput(input), 2000);
-                        return;
-                    }
-                    
-                    // Fallback response
-                    const fallbackResponse = app.generateFallbackResponse(input);
-                    app.utils.addToConversation('tutor', fallbackResponse);
-                    await app.speech.speak(fallbackResponse);
-                    
-                } finally {
-                    app.state.isProcessing = false;
-                    app.utils.updateStatus("Press the microphone to continue our conversation!");
-                }
-            },
-
-            generateFallbackResponse(input) {
-                const responses = {
-                    math: "I love math! Let's work on this together. What specific math topic would you like to practice?",
-                    read: "Reading is so much fun! What kind of stories or books do you enjoy?",
-                    science: "Science is amazing! There's so much to discover. What interests you most?",
-                    animal: "Animals are fascinating! Do you have a favorite animal you'd like to learn about?",
-                    color: "Colors are everywhere! What's your favorite color and why?",
-                    number: "Numbers are really useful! Let's explore some fun number games.",
-                    story: "I love stories! Would you like to hear one or create one together?",
-                    game: "Learning games are the best! What kind of educational game sounds fun to you?"
-                };
-                
-                const key = Object.keys(responses).find(k => input.toLowerCase().includes(k));
-                return responses[key] || "That sounds really interesting! Can you tell me more about what you're thinking? I'm here to help you learn!";
-            },
-
-            toggleListening() {
-                if (app.state.isListening) {
-                    app.recognition.stop();
-                } else {
-                    app.recognition.start();
-                }
-            },
-
-            showHistory() {
-                app.utils.$('full-chat-history').innerHTML = app.state.chatHistory.map(msg =>
-                    `<div class="chat-message ${msg.sender}-message">
-                        <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
-                    </div>`
-                ).join('');
-                app.utils.$('chat-history-modal').classList.remove('hidden');
-            },
-
-            closeHistory() {
-                app.utils.$('chat-history-modal').classList.add('hidden');
-            },
-
-            async endSession() {
-                app.state.speechSynthesis.cancel();
-                app.recognition.stop();
-                
-                try {
-                    const summary = await app.api.endSession(app.state.currentSessionId);
-                    app.showSessionSummary(summary);
-                } catch (error) {
-                    console.error('Error ending session:', error);
-                    app.showSessionSummary(null);
-                }
-            },
-
-            async showSessionSummary(summary) {
-                app.utils.$('tutor-interface').classList.add('hidden');
-                app.utils.$('session-summary').classList.remove('hidden');
-                
-                const summaryContent = app.utils.$('summary-content');
-                
-                if (summary) {
-                    const allSuggestions = [
-                        ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
-                        ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
-                    ].filter(Boolean);
-
-                    summaryContent.innerHTML = `
-                        <div class="summary-item"><strong>Duration:</strong> ${summary.duration || 'Great session!'}</div>
-                        <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored || 'Various interesting topics!'}</div>
-                        <div class="summary-item"><strong>Learning Highlights:</strong><br>${(summary.highlights || ['Great participation!']).join('<br>')}</div>
-                        <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
-                    `;
-                } else {
-                    summaryContent.innerHTML = `
-                        <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-                        <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-                    `;
-                }
-                
-                await app.speech.speak("You had a wonderful learning session today! Keep being curious and asking great questions.");
-            },
-
-            startNewSession() {
-                app.state.speechSynthesis.cancel();
-                
-                // Reset state
-                Object.assign(app.state, {
-                    currentSessionId: null,
-                    isProcessing: false,
-                    sessionStarted: false,
-                    isListening: false,
-                    conversationContext: [],
-                    chatHistory: [],
-                    currentSubject: null,
-                    connectionRetries: 0
+                    })
                 });
+
+                if (!response.ok) throw new Error('Failed to start session');
+
+                const data = await response.json();
+                state.currentSessionId = data.sessionId;
+                state.sessionStarted = true;
                 
-                // Reset UI
-                app.utils.$('session-summary').classList.add('hidden');
-                app.utils.$('welcome-screen').classList.remove('hidden');
-                app.utils.$('student-name').value = '';
-                app.utils.$('student-grade').value = '';
-                app.ui.removeReadingPrompt();
+                $('welcome-screen').classList.add('hidden');
+                $('tutor-interface').classList.remove('hidden');
                 
-                app.ui.updateMicButton();
-                app.utils.updateStatus("Ready to start a new session!");
+                // Initialize canvas after interface is shown
+                setTimeout(() => initializeCanvas(), 100);
+                
+                const welcomeMessage = data.welcomeMessage || 
+                    `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+                
+                await speakWithPromise(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
+
+            } catch (error) {
+                console.error('Error starting session:', error);
+                alert("Failed to start session. Please try again later.");
             }
+        }
+
+        async function handleUserInput(input) {
+            if (state.isProcessing || !state.sessionStarted) return;
+
+            state.isProcessing = true;
+            updateStatus("Processing your request...");
+
+            addToConversation('user', input);
+            state.conversationContext.push({ role: 'user', content: input });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: state.currentSessionId,
+                        message: input,
+                        context: {}
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to get response');
+
+                const data = await response.json();
+                const tutorResponse = data.response;
+
+                // Handle reading word display
+                if (!data.readingWord) {
+                    const existing = $('reading-word-prompt');
+                    if (existing) existing.remove();
+                }
+
+                if (data.readingWord) {
+                    showReadingWordPrompt(tutorResponse, data.readingWord);
+                    await speakWithPromise(tutorResponse);
+                    addToConversation('tutor', tutorResponse + ' (See word above)');
+                } else {
+                    await speakWithPromise(tutorResponse);
+                    addToConversation('tutor', tutorResponse);
+                }
+
+                state.conversationContext.push({ role: 'assistant', content: tutorResponse });
+                if (data.subject) state.currentSubject = data.subject;
+
+            } catch (error) {
+                console.error('Error getting response:', error);
+                const fallbackResponse = generateFallbackResponse(input);
+                addToConversation('tutor', fallbackResponse);
+                await speakWithPromise(fallbackResponse);
+            } finally {
+                state.isProcessing = false;
+                updateStatus("Press the microphone to continue our conversation!");
+            }
+        }
+
+        // Notes functionality
+        let notesState = {
+            isDrawing: false,
+            isTextMode: false,
+            currentColor: '#000',
+            brushSize: 3,
+            canvas: null,
+            ctx: null
         };
 
-        // Event listeners for window focus/blur
-        window.addEventListener('blur', () => {
-            if (app.state.isListening) app.recognition.stop();
-        });
+        function initializeCanvas() {
+            const canvas = $('notes-canvas');
+            const container = canvas.parentElement;
+            
+            canvas.width = container.clientWidth;
+            canvas.height = Math.max(300, container.clientHeight);
+            
+            notesState.canvas = canvas;
+            notesState.ctx = canvas.getContext('2d');
+            
+            // Set up drawing events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
 
-        window.addEventListener('focus', () => {
-            if (app.state.sessionStarted && !app.state.isProcessing) {
-                app.utils.updateStatus("Press the microphone to continue our conversation!");
+        function startDrawing(e) {
+            if (notesState.isTextMode) return;
+            
+            notesState.isDrawing = true;
+            const rect = notesState.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            notesState.ctx.beginPath();
+            notesState.ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!notesState.isDrawing || notesState.isTextMode) return;
+            
+            const rect = notesState.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            notesState.ctx.lineWidth = notesState.brushSize;
+            notesState.ctx.lineCap = 'round';
+            notesState.ctx.strokeStyle = notesState.currentColor;
+            
+            notesState.ctx.lineTo(x, y);
+            notesState.ctx.stroke();
+            notesState.ctx.beginPath();
+            notesState.ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            notesState.isDrawing = false;
+            notesState.ctx.beginPath();
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                            e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            notesState.canvas.dispatchEvent(mouseEvent);
+        }
+
+        function switchToText() {
+            notesState.isTextMode = true;
+            $('text-tool').classList.add('active');
+            $('draw-tool').classList.remove('active');
+            $('notes-text').style.display = 'block';
+            $('notes-canvas').style.display = 'none';
+        }
+
+        function switchToDraw() {
+            notesState.isTextMode = false;
+            $('draw-tool').classList.add('active');
+            $('text-tool').classList.remove('active');
+            $('notes-text').style.display = 'none';
+            $('notes-canvas').style.display = 'block';
+            if (!notesState.canvas) initializeCanvas();
+        }
+
+        function setColor(color) {
+            notesState.currentColor = color;
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-color="${color}"]`).classList.add('active');
+        }
+
+        function setBrushSize(size) {
+            notesState.brushSize = parseInt(size);
+        }
+
+        function clearNotes() {
+            if (notesState.isTextMode) {
+                $('notes-text').value = '';
+            } else {
+                if (notesState.ctx) {
+                    notesState.ctx.clearRect(0, 0, notesState.canvas.width, notesState.canvas.height);
+                }
             }
-        });
+        }
 
-        // Responsive canvas resize
-        window.addEventListener('resize', app.utils.debounce(() => {
-            if (app.notes.state.canvas) {
-                app.notes.init();
+        function generateFallbackResponse(input) {
+            const responses = {
+                math: "I love math! Let's work on this together. What would you like to practice?",
+                read: "Reading is so much fun! What kind of stories do you enjoy?",
+                animal: "Animals are amazing! Do you have a favorite animal?"
+            };
+            
+            const key = Object.keys(responses).find(k => input.toLowerCase().includes(k));
+            return responses[key] || "That sounds interesting! Can you tell me more about what you're thinking?";
+        }
+
+        // UI Controls
+        function toggleListening() {
+            if (!state.recognition) {
+                updateStatus("Speech recognition not available!");
+                return;
             }
-        }, 250));
+            
+            if (state.isProcessing) {
+                updateStatus("Please wait, processing your message...");
+                return;
+            }
+            
+            if (state.isListening) {
+                state.recognition.stop();
+            } else {
+                try { state.recognition.start(); }
+                catch (error) { updateStatus("Error starting microphone. Please try again."); }
+            }
+        }
 
-        // Initialize app when page loads
-        window.addEventListener('load', async () => {
-            console.log('🚀 AI Tutor loading...');
+        function updateMicButton() {
+            const micBtn = $('mic-btn');
+            micBtn.classList.toggle('listening', state.isListening);
+            micBtn.innerHTML = state.isListening ? '🔴' : '🎤';
+        }
+
+let lastCaptionTime = 0;
+function showLiveCaption(text, type = 'bot') {
+  const now = Date.now();
+  if (now - lastCaptionTime < 200) return; 
+  lastCaptionTime = now;
+  const captionsDiv = $('live-captions');
+  captionsDiv.textContent = text;
+  captionsDiv.className = `live-captions ${type}-caption`;
+  captionsDiv.classList.remove('hidden');
+}
+
+
+        async function speakSuggestion(suggestion) {
+            if (!state.isProcessing && !state.isListening) handleUserInput(suggestion);
+        }
+
+        // History and Session Management
+        function showHistory() {
+            $('full-chat-history').innerHTML = state.chatHistory.map(msg =>
+                `<div class="chat-message ${msg.sender}-message">
+                    <strong>${msg.sender === 'tutor' ? 'Tutor' : 'You'}:</strong> ${msg.message}
+                </div>`
+            ).join('');
+            $('chat-history-modal').classList.remove('hidden');
+        }
+
+        function closeHistory() {
+            $('chat-history-modal').classList.add('hidden');
+        }
+
+        async function endSession() {
+            state.speechSynthesis.cancel();
+            if (state.isListening) state.recognition.stop();
+            
             try {
-                await app.speech.init();
-                console.log('✅ App loaded successfully');
+                const response = await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/summary`);
+                await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: 'POST' });
+                const summary = response.ok ? await response.json() : null;
+                showSessionSummary(summary);
             } catch (error) {
-                console.error('❌ App initialization error:', error);
+                console.error('Error getting summary:', error);
+                showSessionSummary(null);
             }
-        });
+        }
 
-        // Prevent accidental page refresh during sessions
-        window.addEventListener('beforeunload', (e) => {
-            if (app.state.sessionStarted) {
-                e.preventDefault();
-                e.returnValue = 'You have an active learning session. Are you sure you want to leave?';
+        async function showSessionSummary(summary) {
+            $('tutor-interface').classList.add('hidden');
+            $('session-summary').classList.remove('hidden');
+            
+            const summaryContent = $('summary-content');
+            
+            if (summary) {
+                const allSuggestions = [
+                    ...(Array.isArray(summary.suggestions) ? summary.suggestions : [summary.suggestions]),
+                    ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
+                ].filter(Boolean);
+
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Duration:</strong> ${summary.duration}</div>
+                    <div class="summary-item"><strong>Off-topic Requests:</strong> ${summary.totalWarnings}</div>
+                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+                    <div class="summary-item"><strong>Learning Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
+                    <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
+                `;
+            } else {
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+                `;
             }
-        });
+            
+            await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
+        }
 
-        // Global function wrappers for onclick handlers
-        function startTutoring() { return app.startTutoring(); }
-        function toggleListening() { return app.toggleListening(); }
-        function endSession() { return app.endSession(); }
-        function startNewSession() { return app.startNewSession(); }
-        function closeHistory() { return app.closeHistory(); }
-        function switchToText() { return app.notes.switchToText(); }
-        function switchToDraw() { return app.notes.switchToDraw(); }
-        function clearNotes() { return app.notes.clear(); }
-        function setColor(color) { return app.notes.setColor(color); }
-        function setBrushSize(size) { return app.notes.setBrushSize(size); }
+        function startNewSession() {
+            state.speechSynthesis.cancel();
+            Object.assign(state, {
+                currentSessionId: null,
+                isProcessing: false,
+                sessionStarted: false,
+                isListening: false,
+                conversationContext: [],
+                chatHistory: [],
+                currentSubject: null
+            });
+            
+            $('session-summary').classList.add('hidden');
+            $('welcome-screen').classList.remove('hidden');
+            $('student-name').value = '';
+            $('student-grade').value = '';
+            
+            updateMicButton();
+            updateStatus("Ready to start a new session!");
+        }
+
+        // Initialize App
+        window.onload = async function() {
+            console.log('🚀 AI Tutor loading...');
+            await initializeSpeechSynthesis();
+            console.log('✅ App loaded successfully');
+        };
+        // Pause mic when tab/window loses focus
+window.addEventListener('blur', () => {
+  if (state.isListening) state.recognition.stop();
+});
+// Optionally restart recognition when they return
+window.addEventListener('focus', () => {
+  updateStatus("Press the microphone to continue our conversation!");
+});
+
     </script>
 </body>
 </html>
