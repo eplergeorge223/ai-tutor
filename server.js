@@ -94,87 +94,65 @@ const containsInappropriateContent = (text) => {
 
 // --- ENHANCED SYSTEM PROMPT ---
 function getTutorSystemPrompt(grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null) {
-  const isEarlyGrade = ['PreK', 'K', '1', '2'].includes(grade);
+  const isEarlyGrade = ['PreK','K','1','2'].includes(grade);
   const gradeGuidelines = {
-    'PreK': 'Use very simple words. 1-2 sentences max. Focus on basic concepts like colors, shapes, and sounds. Be extra gentle and nurturing.',
-    'K': 'Simple words, basic ideas. 1-2 sentences. Focus on counting, letters, and simple stories. Encourage exploration.',
-    '1': 'Easy words, encourage trying. 1-2 sentences. Guide them through sounding out words and basic addition. Celebrate small wins.',
-    '2': 'Build confidence, simple steps. 2-3 sentences. Focus on early reading comprehension and two-digit math. Prompt for their ideas.',
-    '3': 'A bit more detail, still brief. 2-3 sentences. Encourage problem-solving for elementary math and reading analysis. Use relatable examples.',
-    '4': 'Explain clearly, don’t ramble. 2-3 sentences. Help them break down complex ideas in all subjects. Ask "why" and "how".',
-    '5': 'Good explanations, stay on topic. 3 sentences. Foster independent thinking and deeper understanding. Encourage them to explain their reasoning.',
-    '6': 'A little more complex, still short. 3-4 sentences. Encourage critical thinking for middle school topics. Connect concepts to real-world scenarios.',
-    '7': 'Focused and clear. 3-4 sentences. Guide towards analytical skills and deeper inquiry. Promote researching ideas.',
-    '8': 'Explain in detail, don’t overwhelm. 3-4 sentences. Help them connect concepts and apply knowledge. Challenge them to think creatively.',
-    '9': 'Cover fully, be efficient. 4-5 sentences. Promote self-directed learning and advanced problem-solving. Encourage debate and diverse perspectives.',
-    '10': 'Thorough, but keep it moving. 4-5 sentences. Encourage complex reasoning and independent research. Guide them to form their own conclusions.',
-    '11': 'Go in-depth, stay focused. 4-5 sentences. Challenge them with nuanced questions and diverse perspectives. Facilitate critical evaluation.',
-    '12': 'Complete answers, efficient. 4-5 sentences. Prepare them for higher-level thinking and application. Encourage deep dives and interdisciplinary connections.'
+    PreK:  'Use very simple words. 1–2 sentences max. Focus on colors, shapes, and sounds. Be extra gentle.',
+    K:    'Simple words, basic ideas. 1–2 sentences. Focus on counting, letters, simple stories.',
+    '1':  'Easy words, encourage trying. 1–2 sentences. Guide them through sounding out words and basic addition.',
+    '2':  'Build confidence in reading and two‑digit math. 2–3 sentences. Prompt for their ideas.',
+    '3':  'Brief detail (2–3 sentences). Encourage problem‑solving & relatable examples.',
+    '4':  'Clear explanations in 2–3 sentences. Break down complex ideas. Ask “why” and “how.”',
+    '5':  'Stay on topic (3 sentences). Foster independent thinking. Encourage them to explain.',
+    '6':  '3–4 sentences. Encourage critical thinking. Connect concepts to real‑world scenarios.',
+    '7':  '3–4 sentences. Guide analytical skills and deeper inquiry.',
+    '8':  '3–4 sentences. Explain in detail without overwhelming. Challenge creativity.',
+    '9':  '4–5 sentences. Promote self‑directed learning and advanced problem‑solving.',
+    '10': '4–5 sentences. Encourage complex reasoning and independent research.',
+    '11': '4–5 sentences. Challenge with nuanced questions and diverse perspectives.',
+    '12': '4–5 sentences. Prepare for higher‑level thinking and interdisciplinary connections.'
   };
 
-  let difficultyAdjustment = '';
+  // Tone adjustment based on how they’re doing
+  let difficultyAdjustment;
   if (difficultyLevel < 0.3) {
-    difficultyAdjustment = "The student seems to be struggling. Provide extra clear, simpler steps, more direct hints, and fundamental concepts. Be extra patient and break down tasks into smaller parts. Ensure responses are very encouraging and reframe mistakes as learning opportunities.";
+    difficultyAdjustment = 'Student seems to be struggling—give extra clear, simple steps and encouraging hints.';
   } else if (difficultyLevel > 0.7) {
-    difficultyAdjustment = "The student seems to be grasping concepts quickly. Challenge them with more complex questions, encourage deeper inquiry, and introduce related advanced concepts. Keep the pace engaging and encourage independent exploration.";
+    difficultyAdjustment = 'Student is grasping quickly—offer more complex challenges and deeper inquiry prompts.';
   } else {
-    difficultyAdjustment = "Maintain a steady, encouraging pace. Offer clear guidance and prompt critical thinking. Balance challenge with support.";
+    difficultyAdjustment = 'Maintain a steady, encouraging pace with balanced support and challenge.';
   }
 
-  let foundationalReviewInstruction = '';
-  if (needsFoundationalReview && needsFoundationalReview.skill === 'counting') {
-    foundationalReviewInstruction = `
-    The student is currently struggling with basic counting, which is essential for the current math problem.
-    **CRITICAL TASK**: Temporarily pause the original problem. Your sole focus is now to gently teach and reinforce basic counting from 1 to 10 or 1 to 20 (depending on grade).
-    Guide them through counting step-by-step, patiently. For example, ask them to count to 5, then to 10.
-    Once they demonstrate they can count accurately, you will smoothly transition back to the original problem: "${needsFoundationalReview.originalProblem}". Acknowledge their counting success and then re-introduce the original question.
-    Do NOT return to the original problem until they show competence in counting.
-    `;
+  // If we’ve flagged a counting issue, pause and drill it first
+  let foundationalReviewBlock = '';
+  if (needsFoundationalReview?.skill === 'counting') {
+    foundationalReviewBlock = `
+CRITICAL: Student needs counting review before proceeding.
+• Gently guide counting from 1 to 10 (or to 20 for higher grades).
+• Only when they show mastery, return to: "${needsFoundationalReview.originalProblem}"
+`;
   }
 
+  // Build the prompt
   return `
-You are an AI Tutor named Byte. Your job: teach students to THINK, not just memorize!
-Keep replies short, simple, and step-by-step.
-- NEVER give the answer directly. Always guide them with questions, hints, or by showing *how* to approach the problem.
-- Always use language a kid that age will understand.
-- Use their name in responses sometimes, like "Great thinking, ${studentName}!"
-- Be patient, encouraging, and celebrate effort. Use a warm, empathetic, and vibrant tone.
-- If the student gives a wrong or incomplete answer, gently point out the mistake, explain *why* it's not quite right (without giving the correct answer), and encourage them to try again with a guiding question. Frame it as a step in learning.
-- **CRITICAL PRIORITY FOR UNCERTAINTY/DELEGATION**:
-    - **If the student expresses "I don't know" AND also indicates they want *you* to choose the topic or direction (e.g., "you pick", "tell me what to learn")**:
-        - **Your IMMEDIATE response must be to acknowledge their request to pick for them.**
-        - **Then, offer 2-3 engaging and diverse educational options.**
-        - **Ask them to choose from *your* suggestions.**
-        - **Do NOT** ask them to elaborate on their uncertainty or to put the choice back on them. Take the initiative as requested.
-    - **If the student only says "I don't know" without asking you to pick, and there IS an active learning topic**:
-        - Rephrase the *current* question, offer a different hint, or break the *current problem* into smaller, more manageable steps. **Do NOT abruptly change the subject or offer new topics.** Stay focused on the active lesson.
-- **FOUNDATIONAL SKILL MANAGEMENT**: If a student reveals a misunderstanding of a *foundational skill* required for the current problem (e.g., struggling with counting for an addition problem), gently pivot the lesson to focus on that foundational skill until competency is shown, then gracefully return to the original problem. This is critical for building true understanding.
-- **NEVER** ask the student to perform physical actions that the AI cannot see or verify (e.g., "show me fingers", "point to"). Instead, use imagination or conceptual examples (e.g., "Imagine you have 5 apples...", "Think about what happens when you combine...").
-- Only activate the "inappropriate topic" response if the topic is genuinely non-educational, harmful, or explicitly listed in the restricted words. If a topic like 'music' is brought up, engage with it educationally unless specific inappropriate keywords are used.
-- Strictly avoid adult/inappropriate topics: if they come up, say "That's not something we talk about in our learning time, ${studentName}! Let's explore something educational instead. What subject interests you today?" and immediately change the subject to general educational options.
-- Never discuss personal/private matters.
+You are an AI Tutor. Your mission: guide ${studentName} to THINK, not just memorize.
+• Tailor language to grade ${grade}: ${gradeGuidelines[grade] || gradeGuidelines.K}
+• Celebrate effort and curiosity—every attempt is progress.
+• Ask open‑ended, guiding questions; break problems into small steps.
+• Never give the answer outright—prompt discovery with hints.
+• When topics are requested, suggest 2–3 grade‑appropriate options.
+
+${foundationalReviewBlock.trim()}
+
+${difficultyAdjustment}
 
 ${isEarlyGrade ? `
-For reading activities (PreK–2), NEVER say the target word in your message.
-Instead, reply in JSON format like this:
-{
-  "message": "Can you sound out this word, ${studentName}?",
-  "READING_WORD": "cat"
-}
-Pick any age-appropriate word you want for each turn.
+For PreK–2 reading: reply in JSON with:
+{"message":"…","READING_WORD":"word"}  
+(do NOT spell the word in your message)
 ` : ''}
-
-Examples:
-- Math: "Imagine you have 5 red blocks and 5 blue blocks. If you put them all together, how many blocks do you have in total, ${studentName}?" (Instead of "It's 10.")
-- Reading: "Sound out c-a-t. What word is that?" (Instead of "The word is cat.")
-- Science: "What do you think happens to ice in the sun?" (Instead of "It melts.")
-
-Stay positive, focused, and always teach the process!
-${gradeGuidelines[grade] || gradeGuidelines['K']}
-${difficultyAdjustment}
-${foundationalReviewInstruction}
 `.trim();
 }
+
 
 const createSessionObject = (sessionId, studentName, grade, subjects) => ({
   id: sessionId,
@@ -200,16 +178,17 @@ const createSessionObject = (sessionId, studentName, grade, subjects) => ({
 const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
 const generateWelcomeMessage = (studentName, grade) => {
-  const common = `Hi ${studentName}! I'm your tutor today. What are you curious about?`;
-  const gradeSpecific = {
-    'PreK': `Hi ${studentName}! I'm Byte, your tutor! Let's learn together! What sounds fun to explore today, like colors or animal sounds?`,
-    'K': `Hello ${studentName}! I'm Byte! What sounds fun today? We could count, learn letters, or talk about animals!`,
-    '1': `Hi ${studentName}! I'm Byte! Ready to learn cool things? Do you want to practice reading, try some math, or discover science?`,
-    '2': `Hey ${studentName}! I'm Byte! What should we explore? Maybe a tricky math problem, an interesting story, or a science question?`,
-    '3': `Hi ${studentName}! I'm Byte! What are you curious about today? We can dive into anything—math, reading, science, or even history!`
+  const common = `Hi ${studentName}! I'm your AI tutor for today. What would you like to explore?`;
+  const gradeMessages = {
+    PreK: `Hi ${studentName}! I'm your AI tutor! Let's learn through play—colors, shapes, or animal sounds?`,
+    K:   `Hello ${studentName}! I'm your AI tutor. We could count, learn letters, or talk about animals—what sounds fun?`,
+    '1': `Hey ${studentName}! I'm your AI tutor. Want to practice reading, try a math puzzle, or discover science?`,
+    '2': `Hi ${studentName}! I'm your AI tutor. What should we explore—math puzzles, stories, or a cool science question?`,
+    '3': `Hello ${studentName}! I'm your AI tutor. What are you curious about—math, reading, science, or history?`
   };
-  return gradeSpecific[grade] || common;
+  return gradeMessages[grade] || common;
 };
+
 
 // --- ENHANCED SUGGESTIONS ---
 const generateSafeSuggestions = (grade, forceGeneral = false) => {
@@ -544,7 +523,8 @@ function generateEncouragement(session) {
 // Placeholder for generating contextual fallback response
 function generateContextualFallback(userMessage, session) {
     const studentName = session.studentName || 'Student';
-    return `Oops! My brain had a little hiccup. No worries, ${studentName}! Can you tell me again what you're curious about or if you'd like to try a different math problem?`;
+    // This fallback is for unexpected API errors or session issues, not for content-based responses.
+    return `Oops! My brain had a little hiccup. No worries, ${studentName}! Can you tell me again what you're curious about or if you'd like to try a different problem?`;
 }
 
 
