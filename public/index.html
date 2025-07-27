@@ -535,7 +535,7 @@
                 </div>
             </div>
             
-            <button class="btn btn-primary" onclick="app.startTutoring()">Start Learning!</button>
+            <button class="btn btn-primary" onclick="startTutoring()">Start Learning!</button>
         </div>
 
         <!-- Tutor Interface -->
@@ -546,29 +546,29 @@
             <div class="status glass-panel" id="status">Press the microphone to start talking!</div>
             
             <div class="voice-controls">
-                <button class="voice-button btn" id="mic-btn" onclick="app.toggleListening()">🎤</button>
-                <button class="btn btn-secondary" onclick="app.endSession()">End Session</button>
+                <button class="voice-button btn" id="mic-btn" onclick="toggleListening()">🎤</button>
+                <button class="btn btn-secondary" onclick="endSession()">End Session</button>
             </div>
 
             <div class="notes-section glass-panel">
                 <div class="notes-header">
                     <div class="notes-title">📝 My Learning Notes</div>
                     <div class="notes-tools">
-                        <button class="tool-btn" id="text-tool" onclick="app.notes.switchToText()" title="Text Mode">📖</button>
-                        <button class="tool-btn active" id="draw-tool" onclick="app.notes.switchToDraw()" title="Draw Mode">🖌️</button>
-                        <button class="tool-btn" onclick="app.notes.clear()" title="Clear All">🗑️</button>
+                        <button class="tool-btn" id="text-tool" onclick="switchToText()" title="Text Mode">📖</button>
+                        <button class="tool-btn active" id="draw-tool" onclick="switchToDraw()" title="Draw Mode">🖌️</button>
+                        <button class="tool-btn" onclick="clearNotes()" title="Clear All">🗑️</button>
                         
                         <div class="drawing-controls">
                             <div class="color-picker">
-                                <div class="color-option active" style="background: #000" onclick="app.notes.setColor('#000')" data-color="#000"></div>
-                                <div class="color-option" style="background: #e74c3c" onclick="app.notes.setColor('#e74c3c')" data-color="#e74c3c"></div>
-                                <div class="color-option" style="background: #3498db" onclick="app.notes.setColor('#3498db')" data-color="#3498db"></div>
-                                <div class="color-option" style="background: #2ecc71" onclick="app.notes.setColor('#2ecc71')" data-color="#2ecc71"></div>
-                                <div class="color-option" style="background: #f39c12" onclick="app.notes.setColor('#f39c12')" data-color="#f39c12"></div>
-                                <div class="color-option" style="background: #9b59b6" onclick="app.notes.setColor('#9b59b6')" data-color="#9b59b6"></div>
+                                <div class="color-option active" style="background: #000" onclick="setColor('#000')" data-color="#000"></div>
+                                <div class="color-option" style="background: #e74c3c" onclick="setColor('#e74c3c')" data-color="#e74c3c"></div>
+                                <div class="color-option" style="background: #3498db" onclick="setColor('#3498db')" data-color="#3498db"></div>
+                                <div class="color-option" style="background: #2ecc71" onclick="setColor('#2ecc71')" data-color="#2ecc71"></div>
+                                <div class="color-option" style="background: #f39c12" onclick="setColor('#f39c12')" data-color="#f39c12"></div>
+                                <div class="color-option" style="background: #9b59b6" onclick="setColor('#9b59b6')" data-color="#9b59b6"></div>
                             </div>
                             <div class="brush-size">
-                                <input type="range" id="brush-size" min="1" max="10" value="3" onchange="app.notes.setBrushSize(this.value)">
+                                <input type="range" id="brush-size" min="1" max="10" value="3" onchange="setBrushSize(this.value)">
                             </div>
                         </div>
                     </div>
@@ -584,7 +584,7 @@
         <div id="session-summary" class="session-summary glass-panel hidden">
             <h2>Session Complete! 🎉</h2>
             <div id="summary-content"></div>
-            <button class="btn btn-primary" onclick="app.startNewSession()">Start New Session</button>
+            <button class="btn btn-primary" onclick="startNewSession()">Start New Session</button>
         </div>
 
         <!-- Live Captions -->
@@ -593,7 +593,7 @@
         <!-- Chat History Modal -->
         <div id="chat-history-modal" class="modal hidden">
             <div class="modal-content">
-                <button onclick="app.closeHistory()" class="close-btn">&times;</button>
+                <button onclick="closeHistory()" class="close-btn">&times;</button>
                 <h3>Chat History</h3>
                 <div id="full-chat-history"></div>
             </div>
@@ -1297,6 +1297,18 @@
                 e.returnValue = 'You have an active learning session. Are you sure you want to leave?';
             }
         });
+
+        // Global function wrappers for onclick handlers
+        function startTutoring() { return app.startTutoring(); }
+        function toggleListening() { return app.toggleListening(); }
+        function endSession() { return app.endSession(); }
+        function startNewSession() { return app.startNewSession(); }
+        function closeHistory() { return app.closeHistory(); }
+        function switchToText() { return app.notes.switchToText(); }
+        function switchToDraw() { return app.notes.switchToDraw(); }
+        function clearNotes() { return app.notes.clear(); }
+        function setColor(color) { return app.notes.setColor(color); }
+        function setBrushSize(size) { return app.notes.setBrushSize(size); }
     </script>
 </body>
 </html>
