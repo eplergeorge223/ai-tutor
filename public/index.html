@@ -1097,36 +1097,33 @@ function generateFallbackResponse(input) {
             
             return generalResponses[Math.floor(Math.random() * generalResponses.length)];
         }
-
 function toggleListening() {
-            if (!state.recognition) {
-                updateStatus("Speech recognition not available!");
-                return;
-            }
-            
-            if (state.isProcessing) {
-                updateStatus("Please wait, processing your message...");
-                return;
-            }
-            
-            if (state.isListening) {
-                try {
-                    state.recognition.stop();
-                } catch (error) {
-                    console.error('Error stopping recognition:', error);
-                }
-            } else {
-                try { 
-                    setTimeout(() => {
-                        state.recognition.start();
-                    }, 100);
-                }
-                catch (error) { 
-                    console.error('Error starting microphone:', error);
-                    updateStatus("Error starting microphone. Please check permissions and try again."); 
-                }
-            }
-        }
+  if (!state.recognition) {
+    updateStatus("Speech recognition not available!");
+    return;
+  }
+  if (state.isProcessing) {
+    updateStatus("Please wait, processing your message...");
+    return;
+  }
+
+  if (state.isListening) {
+    // stop if we’re already listening
+    try {
+      state.recognition.stop();
+    } catch (e) {
+      console.error('Error stopping recognition:', e);
+    }
+  } else {
+    // 🔥 fire it off directly—no setTimeout
+    try {
+      state.recognition.start();
+    } catch (e) {
+      console.error('Error starting microphone:', e);
+      updateStatus("Error starting microphone. Please check permissions and try again.");
+    }
+  }
+}
 
         function updateMicButton() {
             const micBtn = $('mic-btn');
