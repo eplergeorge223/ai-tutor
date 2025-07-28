@@ -62,18 +62,18 @@ setInterval(() => {
 const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1);
 const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
-// Updated grade guidelines with stricter vocabulary and concept constraints
+// Fully grade-aware guidelines
 const gradeGuidelines = {
   PreK: {
     maxSentences: 1,
     vocabulary: 'Use only very simple words like "big", "red", "happy". NO complex words.',
-    concepts: 'Only basic colors, shapes, animals, counting 1-3.',
+    concepts: 'Only basic colors, shapes, animals, counting 1–3.',
     forbidden: ['elements', 'because', 'however', 'different', 'important', 'understand']
   },
   K: {
-    maxSentences: 2,
-    vocabulary: 'Simple 1-2 syllable words. Avoid "difficult", "understand", "explain".',
-    concepts: 'Basic counting to 10, letters A-Z, simple animals and colors.',
+    maxSentences: 1,
+    vocabulary: 'Simple 1–2 syllable words. Avoid "difficult", "understand", "explain".',
+    concepts: 'Counting to 10, letters A–Z, simple animals and colors.',
     forbidden: ['elements', 'components', 'analyze', 'determine', 'characteristics']
   },
   '1': {
@@ -83,7 +83,7 @@ const gradeGuidelines = {
     forbidden: ['elements', 'analyze', 'determine', 'characteristics', 'properties']
   },
   '2': {
-    maxSentences: 3,
+    maxSentences: 2,
     vocabulary: 'Common everyday words. Say "things" not "elements", "find out" not "determine".',
     concepts: 'Basic math facts, simple stories, weather, family.',
     forbidden: ['elements', 'analyze', 'characteristics', 'properties', 'components']
@@ -95,7 +95,7 @@ const gradeGuidelines = {
     forbidden: ['analyze', 'synthesize', 'evaluate', 'complex']
   },
   '4': {
-    maxSentences: 3,
+    maxSentences: 4,
     vocabulary: 'Grade 4 level. Can use "parts" but not "elements" or "components".',
     concepts: 'Multi-step problems, longer stories, basic science concepts.',
     forbidden: ['analyze', 'synthesize', 'evaluate']
@@ -105,18 +105,73 @@ const gradeGuidelines = {
     vocabulary: 'Grade 5 level. Introduce some academic terms carefully.',
     concepts: 'Fractions, research projects, earth science.',
     forbidden: ['synthesize', 'evaluate', 'critique']
+  },
+  '6': {
+    maxSentences: 5,
+    vocabulary: 'Grade 6 level. You can use more formal terms but keep it clear.',
+    concepts: 'Negative numbers, paragraph summaries, life science.',
+    forbidden: []
+  },
+  '7': {
+    maxSentences: 6,
+    vocabulary: 'Grade 7 level. Use middle-school appropriate words.',
+    concepts: 'Algebra intro, novel analysis, basic physics.',
+    forbidden: []
+  },
+  '8': {
+    maxSentences: 6,
+    vocabulary: 'Grade 8 level. Academic tone okay, but stay concise.',
+    concepts: 'Linear equations, essay structure, biology.',
+    forbidden: []
+  },
+  '9': {
+    maxSentences: 7,
+    vocabulary: 'Grade 9 level. You can introduce more specialized terms.',
+    concepts: 'Geometry, literature themes, chemistry basics.',
+    forbidden: []
+  },
+  '10': {
+    maxSentences: 8,
+    vocabulary: 'Grade 10 level. College-prep vocabulary acceptable.',
+    concepts: 'Quadratics, poetry analysis, physics formulas.',
+    forbidden: []
+  },
+  '11': {
+    maxSentences: 8,
+    vocabulary: 'Grade 11 level. Academic writing style okay.',
+    concepts: 'Pre-calculus, research methods, chemistry reactions.',
+    forbidden: []
+  },
+  '12': {
+    maxSentences: 10,
+    vocabulary: 'Grade 12 level. You can use higher-ed terminology.',
+    concepts: 'Calculus, rhetorical analysis, advanced science.',
+    forbidden: []
   }
 };
 
-// More restrictive token limits
+
+// Fully grade‑aware token limits
 const getMaxTokensForGrade = grade => {
-  if (['PreK', 'K'].includes(grade)) return 25;  // Very short responses
-  if (['1', '2'].includes(grade)) return 40;     // Still very short
-  if (['3', '4'].includes(grade)) return 60;     // Short responses
-  if (['5', '6'].includes(grade)) return 80;     // Medium-short
-  if (['7', '8'].includes(grade)) return 100;    // Medium
-  return 120; // Longer for high school
+  switch (grade) {
+    case 'PreK': return 20;   // 1 sentence max
+    case 'K':    return 30;   // 2 sentences
+    case '1':    return 35;   // 2 sentences
+    case '2':    return 45;   // 3 sentences
+    case '3':    return 60;   // 3 sentences
+    case '4':    return 80;   // 4 sentences
+    case '5':    return 80;   // 4 sentences
+    case '6':    return 90;   // 5 sentences
+    case '7':    return 100;  // 6 sentences
+    case '8':    return 100;  // 6 sentences
+    case '9':    return 110;  // 7 sentences
+    case '10':   return 120;  // 8 sentences
+    case '11':   return 120;  // 8 sentences
+    case '12':   return 150;  // 10 sentences
+    default:     return 100;
+  }
 };
+
 
 // After-school tutoring system prompt with natural, warm feel
 const getTutorSystemPrompt = (grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null, readingTask = false) => {
@@ -472,15 +527,29 @@ async function generateAIResponse(sessionId, userMessage, res) {
                                (session.difficultyLevel < 0.3 ? 0.4 : 
                                (session.difficultyLevel > 0.7 ? 0.6 : 0.5));
 
-    const completion = await openai.chat.completions.create({
-      model: config.GPT_MODEL,
-      messages: messagesToSend,
-      max_tokens: maxTokens,
-      temperature: adjustedTemperature,
-      presence_penalty: config.GPT_PRESENCE_PENALTY,
-      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      stop: ["\n\n", "Additionally:", "Furthermore:", "Moreover:", "However,", "Therefore,", "In conclusion,"]
-    });
+                               // limit to the first 4 stop‑sequences so the API won’t reject it
+const allStops = [
+  "\n\n",
+  "Additionally:",
+  "Furthermore:",
+  "Moreover:",
+  "However,",
+  "Therefore,",
+  "In conclusion,"
+];
+const stops = allStops.slice(0, 4);
+
+
+const completion = await openai.chat.completions.create({
+  model: config.GPT_MODEL,
+  messages: messagesToSend,
+  max_tokens: maxTokens,
+  temperature: adjustedTemperature,
+  presence_penalty: config.GPT_PRESENCE_PENALTY,
+  frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+  stop: stops
+});
+
 
     let aiText = completion.choices[0].message.content.trim();
     
