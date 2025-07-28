@@ -1,144 +1,2675 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Tutor App</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Tutor - Your Personal Learning Companion</title>
+    <link rel="stylesheet" href="css/main.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+
+        :root {
+            /* Primary Colors */
+            --color-primary: #8B5CF6;
+            --color-primary-50: #F3E8FF;
+            --color-primary-100: #E9D5FF;
+            --color-primary-200: #DDD6FE;
+            --color-primary-300: #C4B5FD;
+            --color-primary-400: #A78BFA;
+            --color-primary-500: #8B5CF6;
+            --color-primary-600: #7C3AED;
+            --color-primary-700: #6D28D9;
+            --color-primary-800: #5B21B6;
+            --color-primary-900: #4C1D95;
+
+            /* Secondary Colors */
+            --color-secondary: #3B82F6;
+            --color-secondary-50: #EFF6FF;
+            --color-secondary-100: #DBEAFE;
+            --color-secondary-200: #BFDBFE;
+            --color-secondary-300: #93C5FD;
+            --color-secondary-400: #60A5FA;
+            --color-secondary-500: #3B82F6;
+            --color-secondary-600: #2563EB;
+            --color-secondary-700: #1D4ED8;
+            --color-secondary-800: #1E40AF;
+            --color-secondary-900: #1E3A8A;
+
+            /* Accent Colors */
+            --color-accent: #F59E0B;
+            --color-accent-50: #FFFBEB;
+            --color-accent-100: #FEF3C7;
+            --color-accent-200: #FDE68A;
+            --color-accent-300: #FCD34D;
+            --color-accent-400: #FBBF24;
+            --color-accent-500: #F59E0B;
+            --color-accent-600: #D97706;
+            --color-accent-700: #B45309;
+            --color-accent-800: #92400E;
+            --color-accent-900: #78350F;
+
+            /* Status Colors */
+            --color-success: #10B981;
+            --color-success-50: #ECFDF5;
+            --color-success-500: #10B981;
+            --color-success-600: #059669;
+
+            --color-error: #EF4444;
+            --color-error-50: #FEF2F2;
+            --color-error-500: #EF4444;
+            --color-error-600: #DC2626;
+
+            /* Background Colors */
+            --color-background: #F8FAFC;
+            --color-surface: #FFFFFF;
+
+            /* Text Colors */
+            --color-text-primary: #1E293B;
+            --color-text-secondary: #64748B;
+
+            /* Glassmorphism */
+            --glass-backdrop: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+
+            /* Animation */
+            --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(-45deg, #8B5CF6, #3B82F6, #A78BFA, #60A5FA);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            color: var(--color-text-primary);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism utility classes */
+        .glass {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .glass-light {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Floating background elements */
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        /* Touch target scaling for different age groups */
+        .touch-target-prek { min-height: 44px; min-width: 44px; }
+        .touch-target-elementary { min-height: 40px; min-width: 40px; }
+        .touch-target-middle { min-height: 36px; min-width: 36px; }
+        .touch-target-high { min-height: 32px; min-width: 32px; }
+
+        /* Button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--color-secondary-600), var(--color-secondary-700));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Page container */
+        .page {
+            display: none;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Welcome page styles */
+        .welcome-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .welcome-card {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 2rem;
+            padding: 3rem;
+            width: 100%;
+            max-width: 42rem;
+            text-align: center;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .logo-section {
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 5rem;
+            height: 5rem;
+            background: white;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.125rem;
+        }
+
+        /* Mascot styles */
+        .mascot-container {
+            animation: mascotFloat 4s ease-in-out infinite;
+            margin-bottom: 2rem;
+        }
+
+        @keyframes mascotFloat {
+            0%, 100% { transform: translateY(0px) rotate(-2deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        .mascot-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 6rem;
+            height: 6rem;
+            background: linear-gradient(135deg, var(--color-accent-400), var(--color-accent-600));
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .speech-bubble {
+            margin-top: 0.75rem;
+        }
+
+        .bubble-content {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Form styles */
+        .setup-form {
+            margin-top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1rem;
+            color: white;
+            font-size: 1.125rem;
+            transition: all var(--transition-normal);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .grade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .grade-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            min-height: 44px;
+        }
+
+        .grade-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .grade-btn.selected {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+            transform: scale(1.05);
+        }
+
+        .help-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .start-button {
+            background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            width: 100%;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-button:hover {
+            background: linear-gradient(135deg, var(--color-accent-600), var(--color-accent-700));
+            transform: scale(1.05);
+        }
+
+        .start-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .start-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .start-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Main tutoring interface styles */
+        .main-interface {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header-bar {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-button {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .header-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .student-info {
+            text-align: center;
+        }
+
+        .student-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .student-grade {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .session-info {
+            text-align: right;
+        }
+
+        .session-timer {
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .session-status {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            background: var(--color-success);
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Content area styles */
+        .content-area {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .word-cards-container {
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .word-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .word-card {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .word-card:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .word-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .word-card-front,
+        .word-card-back {
+            backface-visibility: hidden;
+        }
+
+        .word-card-back {
+            transform: rotateY(180deg);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .word-image {
+            width: 8rem;
+            height: 8rem;
+            object-fit: cover;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .word-title {
+            color: white;
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .word-pronunciation {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.125rem;
+        }
+
+        .reading-prompt {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .prompt-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .prompt-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight-word {
+            color: var(--color-accent-300);
+            font-weight: 700;
+        }
+
+        /* Voice interaction styles */
+        .voice-controls {
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .microphone-button {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .mic-idle {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .mic-listening {
+            background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+            animation: micPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+        }
+
+        .mic-processing {
+            background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));
+            animation: micSpin 2s linear infinite;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+        }
+
+        @keyframes micPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes micSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .microphone-button:hover {
+            transform: scale(1.05);
+        }
+
+        .voice-instructions {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .quick-action-btn svg {
+            margin-right: 0.5rem;
+        }
+
+        /* Live captions */
+        .live-captions {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 42rem;
+            padding: 0 1rem;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .captions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .caption {
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            animation: captionSlideUp 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .caption-user {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--color-accent-600);
+            align-self: flex-end;
+        }
+
+        .caption-ai {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--color-secondary-600);
+            align-self: flex-start;
+        }
+
+        @keyframes captionSlideUp {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Floating mascot */
+        .floating-mascot {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            z-index: 30;
+        }
+
+        .mascot-bubble {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            white-space: nowrap;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text-primary);
+        }
+
+        .mascot-bubble.show {
+            opacity: 1;
+        }
+
+        .mascot-bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid rgba(255, 255, 255, 0.9);
+        }
+
+        /* Notes panel styles */
+        .notes-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: -8px 0 32px rgba(31, 38, 135, 0.37);
+            z-index: 40;
+            transform: translateX(100%);
+            transition: transform var(--transition-normal);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-panel.open {
+            transform: translateX(0);
+        }
+
+        .notes-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notes-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .notes-title h2 {
+            color: var(--color-text-primary);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-notes-btn {
+            background: rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .close-notes-btn:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .notes-mode-toggle {
+            display: flex;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.25rem;
+        }
+
+        .mode-toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mode-toggle-btn.active {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .mode-toggle-btn svg {
+            margin-right: 0.5rem;
+        }
+
+        .notes-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .text-mode {
+            height: 100%;
+        }
+
+        .notes-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        .notes-textarea::placeholder {
+            color: var(--color-text-secondary);
+        }
+
+        .draw-mode {
+            height: 100%;
+            position: relative;
+        }
+
+        .drawing-tools {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+
+        .tool-group {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .color-option {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .color-option:hover,
+        .color-option.selected {
+            transform: scale(1.2);
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .brush-slider {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .drawing-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.75rem;
+            background: white;
+            cursor: crosshair;
+        }
+
+        .notes-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .save-notes-btn {
+            width: 100%;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .save-notes-btn:hover {
+            background: var(--color-primary-600);
+        }
+
+        .save-notes-btn svg {
+            margin-right: 0.5rem;
+        }
+
+        /* Session summary styles */
+        .summary-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .celebration-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .celebration-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .celebration-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .celebration-date {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+
+        .progress-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .summary-card {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all var(--transition-normal);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .summary-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .summary-stat {
+            color: white;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+
+        .main-content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .learning-section {
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .learned-words {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .learned-word {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            animation: slideInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .learned-word:nth-child(1) { animation-delay: 0.1s; }
+        .learned-word:nth-child(2) { animation-delay: 0.2s; }
+        .learned-word:nth-child(3) { animation-delay: 0.3s; }
+        .learned-word:nth-child(4) { animation-delay: 0.4s; }
+
+        .word-emoji {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .word-text {
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .word-category {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+
+        .key-concepts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .concept-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .concept-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: white;
+        }
+
+        .concept-info {
+            flex: 1;
+        }
+
+        .concept-title {
+            color: white;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .concept-detail {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .action-button:hover {
+            transform: scale(1.05);
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .action-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .action-button svg {
+            margin-right: 0.75rem;
+            z-index: 1;
+            position: relative;
+        }
+
+        .action-button span {
+            z-index: 1;
+            position: relative;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+
+            .welcome-card {
+                padding: 2rem;
+            }
+
+            .grade-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .word-cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .notes-panel {
+                width: 100vw;
+            }
+
+            .drawing-tools {
+                position: fixed;
+                bottom: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(20px);
+                border-radius: 1rem;
+                padding: 0.75rem;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+
+            .color-picker {
+                grid-template-columns: repeat(8, 1fr);
+                max-width: 280px;
+            }
+
+            .progress-overview {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .celebration-title {
+                font-size: 2.5rem;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .welcome-card {
+                padding: 1.5rem;
+            }
+
+            .main-title {
+                font-size: 2rem;
+            }
+
+            .grade-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .progress-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .celebration-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .mascot-container {
+                animation: none;
+            }
+
+            .floating-element {
+                animation: none;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* High contrast mode support */
+        @media (forced-colors: active) {
+            .glass, .glass-light {
+                background: ButtonFace;
+                border: 1px solid ButtonText;
+            }
+
+            .btn-primary, .btn-secondary {
+                background: ButtonText;
+                color: ButtonFace;
+                border: 1px solid ButtonText;
+            }
+        }
+    </style>
+<script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Faitutor5784back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.6"></script>
 </head>
 <body>
+    <!-- Floating Background Elements -->
+    <div class="floating-element" style="left: 10%; top: 20%; width: 5rem; height: 5rem; background: rgba(255, 255, 255, 0.1); animation-delay: 0s;"></div>
+    <div class="floating-element" style="left: 20%; top: 60%; width: 4rem; height: 4rem; background: rgba(139, 92, 246, 0.1); animation-delay: 5s;"></div>
+    <div class="floating-element" style="left: 70%; top: 30%; width: 3rem; height: 3rem; background: rgba(59, 130, 246, 0.1); animation-delay: 2s;"></div>
+    <div class="floating-element" style="left: 80%; top: 70%; width: 6rem; height: 6rem; background: rgba(252, 211, 77, 0.1); animation-delay: 8s;"></div>
+    <div class="floating-element" style="left: 50%; top: 10%; width: 3.5rem; height: 3.5rem; background: rgba(255, 255, 255, 0.1); animation-delay: 12s;"></div>
 
-    <main class="container">
-
-        <section id="landingPage" class="page active">
-            <div class="header">
-                <h1>AI Tutor App</h1>
-                <p>Your personalized learning companion.</p>
-            </div>
-            <div class="content">
-                <form id="studentForm">
-                    <label for="studentName">Student Name:</label>
-                    <input type="text" id="studentName" placeholder="Enter student's name" required>
-                    <label for="studentGrade">Student Grade:</label>
-                    <select id="studentGrade" required>
-                        <option value="K">Kindergarten</option>
-                        <option value="1">1st Grade</option>
-                        <option value="2">2nd Grade</option>
-                        <option value="3">3rd Grade</option>
-                        <option value="4">4th Grade</option>
-                        <option value="5">5th Grade</option>
-                    </select>
-                    <button type="submit" id="startBtn">
-                        Start Session
-                    </button>
-                </form>
-            </div>
-        </section>
-
-        <section id="mainInterface" class="page">
-            <header class="app-header">
-                <div class="student-info">
-                    <span id="displayStudentName">Student</span>
-                    <span id="displayStudentGrade">K Grade</span>
+    <!-- Welcome Page -->
+    <div id="welcomePage" class="page active">
+        <div class="welcome-container">
+            <div class="welcome-card">
+                <!-- Logo Section -->
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg width="48" height="48" fill="currentColor" style="color: var(--color-primary);" viewBox="0 0 24 24">
+                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
+                            <path d="M19 15L20.09 18.26L24 19L20.09 19.74L19 23L17.91 19.74L14 19L17.91 18.26L19 15Z"/>
+                            <path d="M5 15L6.09 18.26L10 19L6.09 19.74L5 23L3.91 19.74L0 19L3.91 18.26L5 15Z"/>
+                        </svg>
+                    </div>
+                    <h1 class="main-title">AI Tutor</h1>
+                    <p class="subtitle">Your Personal Learning Companion</p>
                 </div>
-                <div class="session-info">
-                    <span id="sessionTimer">00:00</span>
-                    <button id="endSessionBtn" class="end-session-button">End Session</button>
+
+                <!-- Mascot -->
+                <div class="mascot-container">
+                    <div class="mascot-icon">
+                        <svg width="56" height="56" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                        </svg>
+                    </div>
+                    <div class="speech-bubble">
+                        <div class="bubble-content">Hi there! Let's get started! 👋</div>
+                    </div>
+                </div>
+
+                <!-- Setup Form -->
+                <form id="setupForm" class="setup-form">
+                    <!-- Name Input -->
+                    <div class="form-group">
+                        <label for="studentName" class="form-label">What's your name?</label>
+                        <input type="text" id="studentName" name="studentName" class="form-input" placeholder="Enter your name here..." required />
+                        <p class="help-text">This helps me personalize your learning experience!</p>
+                    </div>
+
+                    <!-- Grade Selection -->
+                    <div class="form-group">
+                        <label class="form-label">What grade are you in?</label>
+                        <div class="grade-grid">
+                            <!-- PreK-2nd Grade -->
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="PreK">PreK</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="K">K</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="1st">1st</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="2nd">2nd</button>
+                            
+                            <!-- 3rd-6th Grade -->
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="3rd">3rd</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="4th">4th</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="5th">5th</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="6th">6th</button>
+                            
+                            <!-- 7th-10th Grade -->
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="7th">7th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="8th">8th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="9th">9th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="10th">10th</button>
+                            
+                            <!-- 11th-12th Grade -->
+                            <button type="button" class="grade-btn touch-target-high" data-grade="11th">11th</button>
+                            <button type="button" class="grade-btn touch-target-high" data-grade="12th">12th</button>
+                        </div>
+                        <input type="hidden" id="selectedGrade" name="selectedGrade" required />
+                        <p class="help-text">Choose your current grade level to get personalized content!</p>
+                    </div>
+
+                    <!-- Start Button -->
+                    <button type="submit" id="startBtn" class="start-button" disabled>
+                        <span style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.75rem;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            Start Learning Adventure!
+                        </span>
+                    </button>
+                    <p class="help-text" style="text-align: center; margin-top: 0.5rem;">Complete the form above to begin your personalized tutoring session</p>
+                </form>
+
+                <!-- Footer -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
+                        Safe, secure, and designed for learners of all ages
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tutoring Interface -->
+    <div id="mainInterface" class="page">
+        <div class="main-interface">
+            <!-- Header -->
+            <header class="header-bar">
+                <div class="header-content">
+                    <!-- Session Menu -->
+                    <button id="sessionMenuBtn" class="header-button touch-target-elementary">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <span class="sr-only">Session menu</span>
+                    </button>
+
+                    <!-- Student Info -->
+                    <div class="student-info">
+                        <div class="student-name" id="displayStudentName">Alex Johnson</div>
+                        <div class="student-grade" id="displayStudentGrade">5th Grade</div>
+                    </div>
+
+                    <!-- Session Timer & Status -->
+                    <div class="session-info">
+                        <div class="session-timer" id="sessionTimer">00:00</div>
+                        <div class="session-status">Active Session</div>
+                    </div>
+                </div>
+
+                <!-- Interaction Status -->
+                <div style="margin-top: 1rem; text-align: center;">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span class="status-text" id="statusText">Ready to learn</span>
+                    </div>
                 </div>
             </header>
 
-            <div class="content main-content">
-                <div class="prompt-container">
-                    <img id="mascot" src="mascot.png" alt="Mascot" class="mascot">
-                    <div id="mascotBubble" class="mascot-bubble">
-                        <span id="mascotText">Hello! I'm your AI Tutor. Let's learn to read!</span>
-                    </div>
-                    <div class="prompt-text-box">
-                        <p class="prompt-text">
-                            Read this passage out loud: "The quick brown fox jumps over the lazy dog."
-                        </p>
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <!-- Word Cards Container -->
+                <div class="word-cards-container">
+                    <div class="word-cards-grid">
+                        <!-- Sample Word Card -->
+                        <div class="word-card" data-word="elephant">
+                            <div class="word-card-front">
+                                <img src="https://images.unsplash.com/photo-1564760055775-d63b17a55c44?q=80&w=400&auto=format&fit=crop" alt="Elephant" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn5GEPC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">ELEPHANT</h3>
+                                <p class="word-pronunciation">E-LE-PHANT</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A large mammal with a trunk and big ears</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
+
+                        <!-- Sample Word Card 2 -->
+                        <div class="word-card" data-word="butterfly">
+                            <div class="word-card-front">
+                                <img src="https://images.pixabay.com/photo/2017/05/12/13/05/butterfly-2307499_1280.jpg?auto=format&fit=crop&w=400" alt="Butterfly" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn6aLPC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">BUTTERFLY</h3>
+                                <p class="word-pronunciation">BUT-TER-FLY</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A colorful insect with beautiful wings</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
+
+                        <!-- Sample Word Card 3 -->
+                        <div class="word-card" data-word="rainbow">
+                            <div class="word-card-front">
+                                <img src="https://images.pexels.com/photos/1367192/pexels-photo-1367192.jpeg?auto=format&fit=crop&w=400" alt="Rainbow" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn4y4PC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">RAINBOW</h3>
+                                <p class="word-pronunciation">RAIN-BOW</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">Colorful arc in the sky after rain</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="controls-container">
-                    <div id="statusArea" class="status-area">
-                        <span id="statusDot" class="status-dot"></span>
-                        <span id="statusText" class="status-text">Ready to learn</span>
-                    </div>
-                    <div id="captionsContainer" class="captions-container"></div>
-                    <div class="main-controls">
-                        <button id="readAloudBtn" class="control-button">
-                            <span class="icon">&#x1F50A;</span>
-                            <span class="label">Read Aloud</span>
-                        </button>
-                        <button id="microphoneBtn" class="microphone-button">
-                            <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
-                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                            </svg>
-                            <span id="voiceInstructions" class="voice-instructions">Tap the microphone and start speaking</span>
-                        </button>
-                        <button id="openNotesBtn" class="control-button">
-                            <span class="icon">&#x1F4DD;</span>
-                            <span class="label">Notes</span>
-                        </button>
-                    </div>
+                <!-- Reading Prompt -->
+                <div class="reading-prompt">
+                    <h2 class="prompt-title">Today's Reading Challenge</h2>
+                    <p class="prompt-text">
+                        "The <span class="highlight-word">elephant</span> walked slowly through the forest. 
+                        A beautiful <span class="highlight-word">butterfly</span> landed on its trunk. 
+                        After the rain, they both saw a bright <span class="highlight-word">rainbow</span> in the sky."
+                    </p>
+                    <button id="readAloudBtn" class="btn-secondary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.5rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 12a3 3 0 106 0v-6a3 3 0 00-6 0v6z"/>
+                        </svg>
+                        Read Aloud
+                    </button>
                 </div>
-            </div>
-        </section>
+            </main>
 
-        <section id="summaryPage" class="page">
-            <div class="header">
-                <h2>Session Summary</h2>
-            </div>
-            <div class="summary-content">
-                <p>Student: <span id="summaryStudentName"></span></p>
-                <p><span id="sessionDate"></span></p>
-                <p>Total Duration: <span id="summaryDuration"></span></p>
-                <div id="summaryReportContent" class="summary-report">
-                    </div>
-                <button id="backToHomeBtn" class="primary-button">Back to Home</button>
-            </div>
-        </section>
+            <!-- Voice Interaction Controls -->
+            <section class="voice-controls">
+                <!-- Microphone Button -->
+                <button id="microphoneBtn" class="microphone-button mic-idle" aria-label="Voice interaction">
+                    <svg id="micIcon" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
 
-        <aside id="notesPanel" class="notes-panel">
-            <div class="notes-header">
-                <h3>Notes</h3>
-                <div class="notes-tabs">
-                    <button id="textModeBtn" class="notes-tab active">Text</button>
-                    <button id="drawModeBtn" class="notes-tab">Draw</button>
+                <!-- Voice Instructions -->
+                <p class="voice-instructions" id="voiceInstructions">Tap the microphone and start speaking</p>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button id="notesToggleBtn" class="quick-action-btn touch-target-elementary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Notes
+                    </button>
+                    
+                    <button id="endSessionBtn" class="quick-action-btn touch-target-elementary" style="border-color: rgba(239, 68, 68, 0.3);">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        End Session
+                    </button>
                 </div>
-                <button id="closeNotesBtn" class="close-button">&times;</button>
+            </section>
+        </div>
+
+        <!-- Live Captions -->
+        <div class="live-captions">
+            <div class="captions-container" id="captionsContainer">
+                <!-- Captions will be dynamically added here -->
             </div>
-            <div class="notes-content">
-                <div id="textMode" class="notes-mode active">
-                    <textarea id="notesTextarea" placeholder="Write your notes here..."></textarea>
-                    <button id="saveNotesBtn" class="save-notes-button">Save Notes</button>
+        </div>
+
+        <!-- Floating Mascot -->
+        <div class="floating-mascot">
+            <div class="mascot-container">
+                <div class="mascot-icon" style="width: 4rem; height: 4rem;">
+                    <svg width="32" height="32" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                    </svg>
                 </div>
-                <div id="drawMode" class="notes-mode">
-                    <div class="drawing-tools">
+                <div class="mascot-bubble" id="mascotBubble">
+                    <span id="mascotText">Great job! Keep going! 🌟</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Panel -->
+    <aside id="notesPanel" class="notes-panel">
+        <div class="notes-header">
+            <div class="notes-title">
+                <h2>My Notes</h2>
+                <button id="closeNotesBtn" class="close-notes-btn touch-target-elementary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <span class="sr-only">Close notes</span>
+                </button>
+            </div>
+            
+            <!-- Notes Mode Toggle -->
+            <div class="notes-mode-toggle">
+                <button id="textModeBtn" class="mode-toggle-btn active">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Text
+                </button>
+                <button id="drawModeBtn" class="mode-toggle-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    Draw
+                </button>
+            </div>
+        </div>
+
+        <!-- Notes Content -->
+        <div class="notes-content">
+            <!-- Text Mode -->
+            <div id="textMode" class="text-mode">
+                <textarea id="notesTextarea" class="notes-textarea" placeholder="Write your notes here...
+
+• Key concepts learned
+• Questions to ask
+• Important formulas
+• Study reminders"></textarea>
+            </div>
+
+            <!-- Draw Mode -->
+            <div id="drawMode" class="draw-mode" style="display: none;">
+                <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
+                
+                <!-- Drawing Tools -->
+                <div class="drawing-tools">
+                    <!-- Color Picker -->
+                    <div class="tool-group">
                         <div class="color-picker">
-                            <span class="tool-label">Color:</span>
-                            <div class="color-option selected" data-color="#000000" style="background-color: black;"></div>
-                            <div class="color-option" data-color="#ff0000" style="background-color: red;"></div>
-                            <div class="color-option" data-color="#0000ff" style="background-color: blue;"></div>
-                            <div class="color-option" data-color="#008000" style="background-color: green;"></div>
+                            <div class="color-option selected" data-color="#000000" style="background-color: #000000;" title="Black"></div>
+                            <div class="color-option" data-color="#EF4444" style="background-color: #EF4444;" title="Red"></div>
+                            <div class="color-option" data-color="#3B82F6" style="background-color: #3B82F6;" title="Blue"></div>
+                            <div class="color-option" data-color="#10B981" style="background-color: #10B981;" title="Green"></div>
+                            <div class="color-option" data-color="#F59E0B" style="background-color: #F59E0B;" title="Yellow"></div>
+                            <div class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6;" title="Purple"></div>
+                            <div class="color-option" data-color="#F97316" style="background-color: #F97316;" title="Orange"></div>
+                            <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;" title="White"></div>
                         </div>
-                        <div class="brush-size-picker">
-                            <span class="tool-label">Size: <span id="brushSizeValue">5px</span></span>
-                            <input type="range" id="brushSize" min="1" max="20" value="5">
-                        </div>
-                        <button id="clearCanvasBtn" class="clear-canvas-button">Clear</button>
                     </div>
-                    <canvas id="drawingCanvas"></canvas>
+
+                    <!-- Brush Size -->
+<div class="tool-group">
+    <div style="text-align: center; margin-bottom: 0.5rem; color: var(--color-text-primary); font-size: 0.75rem;">Size</div>
+    <input type="range" id="brushSize" class="brush-slider" min="1" max="50" value="5" />
+    <div style="text-align: center; margin-top: 0.5rem; color: var(--color-text-primary); font-size: 0.75rem;">
+        <span id="brushSizeValue">5px</span>
+    </div>
+</div>
+
+
+                    <!-- Canvas Actions -->
+                    <div class="tool-group">
+                        <button id="clearCanvasBtn" style="width: 100%; background: var(--color-error); color: white; border: none; border-radius: 0.5rem; padding: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: all var(--transition-fast);" title="Clear Canvas">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </aside>
+        </div>
 
-    </main>
+        <!-- Notes Footer -->
+        <div class="notes-footer">
+            <button id="saveNotesBtn" class="save-notes-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                </svg>
+                Save Notes
+            </button>
+        </div>
+    </aside>
 
-    <script type="module" src="main.js"></script>
+    <!-- Session Summary Page -->
+    <div id="summaryPage" class="page">
+        <div class="summary-container">
+            <!-- Celebration Header -->
+            <section class="celebration-header">
+                <div class="mascot-container" style="margin-bottom: 1.5rem;">
+                    <div class="mascot-icon celebration" style="width: 6rem; height: 6rem;">
+                        <svg width="56" height="56" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="glass" style="border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem;">
+                    <h2 class="celebration-title">
+                        🎉 Great Job, <span id="summaryStudentName">Student</span>!
+                    </h2>
+                    <p class="celebration-subtitle">
+                        You completed an amazing learning session!
+                    </p>
+                    <p class="celebration-date" id="sessionDate">
+                        Session completed on January 28, 2025 at 3:05 PM
+                    </p>
+                </div>
+            </section>
 
+            <!-- Progress Overview -->
+            <section class="progress-overview">
+                <!-- Session Duration -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-primary-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Session Time</h3>
+                    <p class="summary-value" id="sessionDuration">24 min</p>
+                    <p class="summary-label">Perfect length!</p>
+                </div>
+
+                <!-- Topics Covered -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-secondary-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Topics</h3>
+                    <p class="summary-value">5</p>
+                    <p class="summary-label">Reading & Math</p>
+                </div>
+
+                <!-- Words Learned -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-accent-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM9 3v1h6V3H9zm0 5a1 1 0 112 0v8a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v8a1 1 0 11-2 0V8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">New Words</h3>
+                    <p class="summary-value">12</p>
+                    <p class="summary-label">Vocabulary boost!</p>
+                </div>
+
+                <!-- Interaction Score -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-success-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Engagement</h3>
+                    <p class="summary-value">95%</p>
+                    <p class="summary-label">Excellent!</p>
+                </div>
+            </section>
+
+            <!-- What You Learned Today -->
+            <section class="learning-section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: var(--color-primary-500);">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <h3 class="section-title">What You Learned Today</h3>
+                </div>
+
+                <!-- Word Cards -->
+                <div class="learned-words">
+                    <div class="learned-word">
+                        <div class="word-emoji">🐱</div>
+                        <p class="word-text">Cat</p>
+                        <p class="word-category">Animal</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">🏠</div>
+                        <p class="word-text">House</p>
+                        <p class="word-category">Home</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">🌳</div>
+                        <p class="word-text">Tree</p>
+                        <p class="word-category">Nature</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">📚</div>
+                        <p class="word-text">Book</p>
+                        <p class="word-category">Reading</p>
+                    </div>
+                </div>
+
+                <!-- Key Concepts -->
+                <div class="key-concepts">
+                    <div class="concept-item">
+                        <div class="concept-icon" style="background: var(--color-primary-400);">A</div>
+                        <div class="concept-info">
+                            <p class="concept-title">Letter Recognition</p>
+                            <p class="concept-detail">Identified 8 letters correctly</p>
+                        </div>
+                    </div>
+                    <div class="concept-item">
+                        <div class="concept-icon" style="background: var(--color-secondary-400);">+</div>
+                        <div class="concept-info">
+                            <p class="concept-title">Basic Addition</p>
+                            <p class="concept-detail">Solved 5 problems</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <section class="action-buttons">
+                <button id="newSessionBtn" class="action-button">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Start New Session</span>
+                </button>
+                
+                <button id="shareProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+                    </svg>
+                    <span>Share Progress</span>
+                </button>
+                
+                <button id="viewProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span>View All Progress</span>
+                </button>
+            </section>
+
+            <!-- Footer -->
+            <footer style="text-align: center; padding-top: 2rem;">
+                <div class="glass" style="border-radius: 1rem; padding: 1.5rem;">
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                        Keep up the great work! Learning is a journey, and you're doing fantastic!
+                    </p>
+                    <p style="color: rgba(255, 255, 255, 0.4); font-size: 0.75rem;">
+                        © 2025 AI Tutor. All Rights Reserved.
+                    </p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- JavaScript for Full Functionality -->
+    <script>
+        class AITutorApp {
+            constructor() {
+                this.currentPage = 'welcomePage';
+                this.studentData = {
+                    name: '',
+                    grade: '',
+                    sessionStartTime: null
+                };
+                this.sessionTimer = null;
+                this.sessionDuration = 0;
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.isListening = false;
+                this.isProcessing = false;
+                
+                // Drawing state
+                this.drawingState = {
+                    isDrawing: false,
+                    currentColor: '#000000',
+                    currentSize: 5,
+                    lastX: 0,
+                    lastY: 0
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initializeSpeechRecognition();
+                this.loadSavedData();
+                this.updateDisplay();
+            }
+
+            setupEventListeners() {
+                // Welcome page events
+                this.setupWelcomePageEvents();
+                
+                // Main interface events
+                this.setupMainInterfaceEvents();
+                
+                // Notes panel events
+                this.setupNotesEvents();
+                
+                // Summary page events
+                this.setupSummaryEvents();
+                
+                // Global events
+                this.setupGlobalEvents();
+            }
+
+            setupWelcomePageEvents() {
+                const setupForm = document.getElementById('setupForm');
+                const nameInput = document.getElementById('studentName');
+                const gradeButtons = document.querySelectorAll('.grade-btn');
+                const selectedGradeInput = document.getElementById('selectedGrade');
+                const startBtn = document.getElementById('startBtn');
+                
+                let selectedGrade = '';
+                
+                // Grade selection
+                gradeButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        gradeButtons.forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        selectedGrade = button.dataset.grade;
+                        selectedGradeInput.value = selectedGrade;
+                        this.validateForm();
+                    });
+                });
+                
+                // Name input validation
+                nameInput.addEventListener('input', () => this.validateForm());
+                
+                // Form submission
+                setupForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = nameInput.value.trim();
+                    const grade = selectedGradeInput.value;
+                    
+                    if (name && grade) {
+                        this.studentData.name = name;
+                        this.studentData.grade = grade;
+                        this.studentData.sessionStartTime = new Date();
+                        this.saveStudentData();
+                        this.showLoadingAndTransition();
+                    }
+                });
+                
+                const validateForm = () => {
+                    const name = nameInput.value.trim();
+                    const grade = selectedGradeInput.value;
+                    
+                    if (name && grade) {
+                        startBtn.disabled = false;
+                        startBtn.style.opacity = '1';
+                    } else {
+                        startBtn.disabled = true;
+                        startBtn.style.opacity = '0.5';
+                    }
+                };
+                
+                this.validateForm = validateForm;
+            }
+
+            setupMainInterfaceEvents() {
+                // Microphone button
+                const microphoneBtn = document.getElementById('microphoneBtn');
+                microphoneBtn.addEventListener('click', () => this.toggleVoiceRecognition());
+                
+                // Notes toggle
+                const notesToggleBtn = document.getElementById('notesToggleBtn');
+                notesToggleBtn.addEventListener('click', () => this.openNotesPanel());
+                
+                // End session button
+                const endSessionBtn = document.getElementById('endSessionBtn');
+                endSessionBtn.addEventListener('click', () => this.endSession());
+                
+                // Read aloud button
+                const readAloudBtn = document.getElementById('readAloudBtn');
+                readAloudBtn.addEventListener('click', () => this.readAloud());
+                
+                // Word card interactions
+                document.querySelectorAll('.word-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('flipped');
+                        const word = card.dataset.word;
+                        this.showMascotMessage(`Great choice! Let's learn about ${word}! 📚`);
+                    });
+                });
+            }
+
+            setupNotesEvents() {
+                // Close notes button
+                const closeNotesBtn = document.getElementById('closeNotesBtn');
+                closeNotesBtn.addEventListener('click', () => this.closeNotesPanel());
+                
+                // Mode toggle buttons
+                const textModeBtn = document.getElementById('textModeBtn');
+                const drawModeBtn = document.getElementById('drawModeBtn');
+                
+                textModeBtn.addEventListener('click', () => this.switchNotesMode('text'));
+                drawModeBtn.addEventListener('click', () => this.switchNotesMode('draw'));
+                
+                // Auto-save notes
+                const notesTextarea = document.getElementById('notesTextarea');
+                let saveTimeout;
+                notesTextarea.addEventListener('input', () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => this.autoSaveNotes(), 1000);
+                });
+                
+                // Save notes button
+                const saveNotesBtn = document.getElementById('saveNotesBtn');
+                saveNotesBtn.addEventListener('click', () => this.saveNotes());
+                
+                // Drawing events
+                this.setupDrawingEvents();
+            }
+
+            setupDrawingEvents() {
+                const canvas = document.getElementById('drawingCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Color picker
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                        option.classList.add('selected');
+                        this.drawingState.currentColor = option.dataset.color;
+                    });
+                });
+                
+                // Brush size
+                const brushSize = document.getElementById('brushSize');
+                const brushSizeValue = document.getElementById('brushSizeValue');
+                
+                brushSize.addEventListener('input', () => {
+                    this.drawingState.currentSize = brushSize.value;
+                    brushSizeValue.textContent = brushSize.value + 'px';
+                });
+                
+                // Canvas events
+                canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                canvas.addEventListener('mousemove', (e) => this.draw(e));
+                canvas.addEventListener('mouseup', () => this.stopDrawing());
+                canvas.addEventListener('mouseout', () => this.stopDrawing());
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousedown', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousemove', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const mouseEvent = new MouseEvent('mouseup', {});
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                // Clear canvas
+                const clearCanvasBtn = document.getElementById('clearCanvasBtn');
+                clearCanvasBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to clear the canvas?')) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                });
+                
+                this.drawingCanvas = canvas;
+                this.drawingContext = ctx;
+            }
+
+            setupSummaryEvents() {
+                // New session button
+                const newSessionBtn = document.getElementById('newSessionBtn');
+                newSessionBtn.addEventListener('click', () => this.startNewSession());
+                
+                // Share progress button
+                const shareProgressBtn = document.getElementById('shareProgressBtn');
+                shareProgressBtn.addEventListener('click', () => this.shareProgress());
+                
+                // View progress button
+                const viewProgressBtn = document.getElementById('viewProgressBtn');
+                viewProgressBtn.addEventListener('click', () => this.viewAllProgress());
+            }
+
+            setupGlobalEvents() {
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' && e.target === document.body && this.currentPage === 'mainInterface') {
+                        e.preventDefault();
+                        this.toggleVoiceRecognition();
+                    } else if (e.key === 'Escape') {
+                        this.closeNotesPanel();
+                    }
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    if (this.drawingCanvas && !document.getElementById('drawMode').style.display === 'none') {
+                        this.resizeCanvas();
+                    }
+                });
+                
+                // Orientation change
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => {
+                        if (this.drawingCanvas && !document.getElementById('drawMode').style.display === 'none') {
+                            this.resizeCanvas();
+                        }
+                    }, 500);
+                });
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = true;
+                    this.recognition.lang = 'en-US';
+                    
+                    this.recognition.onstart = () => {
+                        this.isListening = true;
+                        this.updateMicrophoneState('listening');
+                        this.updateStatus('listening', 'Listening...');
+                        this.showMascotMessage("I'm listening! 👂");
+                    };
+                    
+                    this.recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript;
+                            }
+                        }
+                        
+                        if (finalTranscript) {
+                            this.addCaption('user', finalTranscript);
+                            this.processUserInput(finalTranscript);
+                        }
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error);
+                        this.updateMicrophoneState('idle');
+                        this.updateStatus('error', 'Speech recognition error');
+                        this.showMascotMessage("Oops! Try again! 🔄");
+                    };
+                    
+                    this.recognition.onend = () => {
+                        this.isListening = false;
+                        if (!this.isProcessing) {
+                            this.updateMicrophoneState('idle');
+                            this.updateStatus('ready', 'Ready to learn');
+                        }
+                    };
+                } else {
+                    console.warn('Speech recognition not supported');
+                    this.updateStatus('error', 'Speech recognition not supported');
+                }
+            }
+
+            showLoadingAndTransition() {
+                const startBtn = document.getElementById('startBtn');
+                startBtn.innerHTML = `
+                    <span style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
+                        <div class="loading-spinner"></div>
+                        Preparing your session...
+                    </span>
+                `;
+                
+                setTimeout(() => {
+                    this.switchToPage('mainInterface');
+                    this.startSessionTimer();
+                }, 2000);
+            }
+
+            switchToPage(pageId) {
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Show target page
+                document.getElementById(pageId).classList.add('active');
+                this.currentPage = pageId;
+                
+                // Update display for the new page
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                if (this.currentPage === 'mainInterface') {
+                    document.getElementById('displayStudentName').textContent = this.studentData.name || 'Student';
+                    document.getElementById('displayStudentGrade').textContent = (this.studentData.grade || 'K') + ' Grade';
+                } else if (this.currentPage === 'summaryPage') {
+                    document.getElementById('summaryStudentName').textContent = this.studentData.name || 'Student';
+                    document.getElementById('sessionDate').textContent = `Session completed on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+                }
+            }
+
+            startSessionTimer() {
+                this.sessionTimer = setInterval(() => {
+                    this.sessionDuration++;
+                    const minutes = Math.floor(this.sessionDuration / 60);
+                    const seconds = this.sessionDuration % 60;
+                    document.getElementById('sessionTimer').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            stopSessionTimer() {
+                if (this.sessionTimer) {
+                    clearInterval(this.sessionTimer);
+                    this.sessionTimer = null;
+                }
+            }
+
+            toggleVoiceRecognition() {
+                if (!this.recognition) {
+                    alert('Speech recognition is not supported in your browser.');
+                    return;
+                }
+                
+                if (this.isListening) {
+                    this.recognition.stop();
+                } else if (!this.isProcessing) {
+                    this.recognition.start();
+                }
+            }
+
+            updateMicrophoneState(state) {
+                const microphoneBtn = document.getElementById('microphoneBtn');
+                const micIcon = document.getElementById('micIcon');
+                const voiceInstructions = document.getElementById('voiceInstructions');
+                
+                // Remove all state classes
+                microphoneBtn.className = `microphone-button mic-${state}`;
+                
+                switch (state) {
+                    case 'listening':
+                        voiceInstructions.textContent = 'Listening... Speak now!';
+                        micIcon.innerHTML = `
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        `;
+                        break;
+                    case 'processing':
+                        voiceInstructions.textContent = 'Processing your response...';
+                        micIcon.innerHTML = `
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        `;
+                        break;
+                    default:
+                        voiceInstructions.textContent = 'Tap the microphone and start speaking';
+                        micIcon.innerHTML = `
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        `;
+                        break;
+                }
+            }
+
+            updateStatus(type, message) {
+                const statusText = document.getElementById('statusText');
+                const statusDot = document.getElementById('statusDot');
+                
+                statusText.textContent = message;
+                statusDot.className = 'status-dot';
+                
+                switch (type) {
+                    case 'listening':
+                        statusDot.style.background = 'var(--color-accent)';
+                        break;
+                    case 'processing':
+                        statusDot.style.background = 'var(--color-secondary)';
+                        break;
+                    case 'error':
+                        statusDot.style.background = 'var(--color-error)';
+                        break;
+                    default:
+                        statusDot.style.background = 'var(--color-success)';
+                        break;
+                }
+            }
+
+            processUserInput(input) {
+                this.isProcessing = true;
+                this.updateMicrophoneState('processing');
+                this.updateStatus('processing', 'Processing...');
+                
+                // Simulate AI processing delay
+                setTimeout(() => {
+                    const response = this.generateAIResponse(input);
+                    this.addCaption('ai', response);
+                    this.speakResponse(response);
+                    
+                    this.isProcessing = false;
+                    this.updateMicrophoneState('idle');
+                    this.updateStatus('ready', 'Ready to learn');
+                    this.showMascotMessage(this.getRandomEncouragement());
+                }, 1500);
+            }
+
+            generateAIResponse(input) {
+                const responses = [
+                    "Great job! Let's practice that word again.",
+                    "I heard you say '" + input + "'. That's wonderful!",
+                    "You're doing amazing! Can you try reading the next word?",
+                    "Perfect pronunciation! Let's move on to the next challenge.",
+                    "I love how you're learning! Keep up the great work!"
+                ];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            speakResponse(text) {
+                if (this.synthesis) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.8;
+                    this.synthesis.speak(utterance);
+                }
+            }
+
+            addCaption(speaker, text) {
+                const captionsContainer = document.getElementById('captionsContainer');
+                const caption = document.createElement('div');
+                caption.className = `caption caption-${speaker}`;
+                caption.textContent = `${speaker === 'user' ? 'You' : 'AI Tutor'}: ${text}`;
+                
+                captionsContainer.appendChild(caption);
+                
+                // Remove old captions
+                while (captionsContainer.children.length > 3) {
+                    captionsContainer.removeChild(captionsContainer.firstChild);
+                }
+                
+                // Auto-remove caption after 10 seconds
+                setTimeout(() => {
+                    if (caption.parentNode) {
+                        caption.parentNode.removeChild(caption);
+                    }
+                }, 10000);
+            }
+
+            showMascotMessage(message) {
+                const mascotBubble = document.getElementById('mascotBubble');
+                const mascotText = document.getElementById('mascotText');
+                
+                mascotText.textContent = message;
+                mascotBubble.classList.add('show');
+                
+                setTimeout(() => {
+                    mascotBubble.classList.remove('show');
+                }, 3000);
+            }
+
+            getRandomEncouragement() {
+                const encouragements = [
+                    "You're doing great! 🌟",
+                    "Keep it up! 👏",
+                    "Awesome work! 🎉",
+                    "You're a star! ⭐",
+                    "Fantastic! 🚀",
+                    "Well done! 💫"
+                ];
+                return encouragements[Math.floor(Math.random() * encouragements.length)];
+            }
+
+            readAloud() {
+                const promptText = document.querySelector('.prompt-text').textContent;
+                if (this.synthesis) {
+                    const utterance = new SpeechSynthesisUtterance(promptText);
+                    utterance.rate = 0.8;
+                    utterance.pitch = 1.0;
+                    this.synthesis.speak(utterance);
+                    this.showMascotMessage("Listen carefully! 👂");
+                }
+            }
+
+            openNotesPanel() {
+                document.getElementById('notesPanel').classList.add('open');
+                setTimeout(() => this.resizeCanvas(), 300);
+            }
+
+            closeNotesPanel() {
+                document.getElementById('notesPanel').classList.remove('open');
+            }
+
+            switchNotesMode(mode) {
+                const textModeBtn = document.getElementById('textModeBtn');
+                const drawModeBtn = document.getElementById('drawModeBtn');
+                const textMode = document.getElementById('textMode');
+                const drawMode = document.getElementById('drawMode');
+                
+                if (mode === 'text') {
+                    textModeBtn.classList.add('active');
+                    drawModeBtn.classList.remove('active');
+                    textMode.style.display = 'block';
+                    drawMode.style.display = 'none';
+                } else {
+                    drawModeBtn.classList.add('active');
+                    textModeBtn.classList.remove('active');
+                    drawMode.style.display = 'block';
+                    textMode.style.display = 'none';
+                    setTimeout(() => this.resizeCanvas(), 100);
+                }
+            }
+
+            resizeCanvas() {
+                if (this.drawingCanvas) {
+                    const rect = this.drawingCanvas.getBoundingClientRect();
+                    this.drawingCanvas.width = rect.width * window.devicePixelRatio;
+                    this.drawingCanvas.height = rect.height * window.devicePixelRatio;
+                    this.drawingContext.scale(window.devicePixelRatio, window.devicePixelRatio);
+                    
+                    this.drawingContext.lineCap = 'round';
+                    this.drawingContext.lineJoin = 'round';
+                }
+            }
+
+            startDrawing(e) {
+                this.drawingState.isDrawing = true;
+                const rect = this.drawingCanvas.getBoundingClientRect();
+                this.drawingState.lastX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                this.drawingState.lastY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+            }
+
+            draw(e) {
+                if (!this.drawingState.isDrawing) return;
+                
+                e.preventDefault();
+                const rect = this.drawingCanvas.getBoundingClientRect();
+                const currentX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                const currentY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                
+                this.drawingContext.beginPath();
+                this.drawingContext.moveTo(this.drawingState.lastX, this.drawingState.lastY);
+                this.drawingContext.lineTo(currentX, currentY);
+                this.drawingContext.strokeStyle = this.drawingState.currentColor;
+                this.drawingContext.lineWidth = this.drawingState.currentSize;
+                this.drawingContext.stroke();
+                
+                this.drawingState.lastX = currentX;
+                this.drawingState.lastY = currentY;
+            }
+
+            stopDrawing() {
+                this.drawingState.isDrawing = false;
+            }
+
+            autoSaveNotes() {
+                const notesContent = document.getElementById('notesTextarea').value;
+                localStorage.setItem('aiTutorNotes', notesContent);
+                this.showMascotMessage("Notes auto-saved! 💾");
+            }
+
+            saveNotes() {
+                const notesContent = document.getElementById('notesTextarea').value;
+                const canvasData = this.drawingCanvas?.toDataURL();
+                
+                const notesData = {
+                    text: notesContent,
+                    drawing: canvasData,
+                    timestamp: new Date().toISOString()
+                };
+                
+                localStorage.setItem('aiTutorNotes', JSON.stringify(notesData));
+                this.showMascotMessage("Notes saved successfully! 💾");
+            }
+
+            endSession() {
+                if (confirm('Are you sure you want to end this learning session?')) {
+                    this.stopSessionTimer();
+                    const duration = Math.floor(this.sessionDuration / 60);
+                    document.getElementById('sessionDuration').textContent = `${duration} min`;
+                    this.switchToPage('summaryPage');
+                }
+            }
+
+            startNewSession() {
+                this.sessionDuration = 0;
+                this.switchToPage('mainInterface');
+                this.startSessionTimer();
+                this.showMascotMessage(`Welcome back, ${this.studentData.name}! Ready for another adventure? 🎓`);
+            }
+
+            shareProgress() {
+                const summary = this.generateProgressSummary();
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: `${this.studentData.name}'s Learning Progress`,
+                        text: summary,
+                        url: window.location.href
+                    }).catch(console.error);
+                } else {
+                    navigator.clipboard.writeText(summary).then(() => {
+                        this.showNotification('Progress summary copied to clipboard!');
+                    }).catch(() => {
+                        this.showNotification('Unable to share progress. Please try again.');
+                    });
+                }
+            }
+
+            generateProgressSummary() {
+                const duration = Math.floor(this.sessionDuration / 60);
+                return `🎉 ${this.studentData.name} completed an amazing AI Tutor session!
+
+📊 Session Highlights:
+• Duration: ${duration} minutes
+• Topics covered: 5 (Reading & Math)
+• New words learned: 12
+• Engagement score: 95%
+
+🌟 Areas of Strength:
+• Excellent listening skills
+• Great pronunciation
+• Quick problem solving
+
+📚 Next Steps:
+• Practice sight words
+• Number counting exercises
+• Drawing practice
+
+Keep up the fantastic work! 🚀`;
+            }
+
+            viewAllProgress() {
+                this.showNotification('Detailed progress tracking coming soon!');
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 1rem;
+                    right: 1rem;
+                    background: var(--color-success-500);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 1rem;
+                    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+                    z-index: 1000;
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    max-width: 300px;
+                `;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+
+            saveStudentData() {
+                localStorage.setItem('aiTutorStudentData', JSON.stringify(this.studentData));
+            }
+
+            loadSavedData() {
+                const savedData = localStorage.getItem('aiTutorStudentData');
+                if (savedData) {
+                    this.studentData = { ...this.studentData, ...JSON.parse(savedData) };
+                }
+                
+                const savedNotes = localStorage.getItem('aiTutorNotes');
+                if (savedNotes) {
+                    try {
+                        const notesData = JSON.parse(savedNotes);
+                        if (typeof notesData === 'string') {
+                            document.getElementById('notesTextarea').value = notesData;
+                        } else {
+                            document.getElementById('notesTextarea').value = notesData.text || '';
+                            if (notesData.drawing && this.drawingCanvas) {
+                                const img = new Image();
+                                img.onload = () => {
+                                    this.drawingContext.drawImage(img, 0, 0);
+                                };
+                                img.src = notesData.drawing;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error loading saved notes:', e);
+                    }
+                }
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new AITutorApp();
+        });
+    </script>
+<script id="dhws-dataInjector" src="/public/dhws-data-injector.js"></script>
 </body>
 </html>
