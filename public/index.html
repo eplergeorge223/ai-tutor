@@ -971,23 +971,28 @@
                 }
             }
 
-            processUserInput(input) {
-                this.isProcessing = true;
-                this.updateMicrophoneState('processing');
-                this.updateStatus('processing', 'Processing...');
-                
-                // Simulate AI processing delay
-                setTimeout(() => {
-                    const response = this.generateAIResponse(input);
-                    this.addCaption('ai', response);
-                    this.speakResponse(response);
-                    
-                    this.isProcessing = false;
-                    this.updateMicrophoneState('idle');
-                    this.updateStatus('ready', 'Ready to learn');
-                    this.showMascotMessage(this.getRandomEncouragement());
-                }, 1500);
-            }
+ processUserInput(input) {
+    this.isProcessing = true;
+    this.updateMicrophoneState('processing');
+    this.updateStatus('processing', 'Processing...');
+
+    // Simulate AI thinking
+    setTimeout(() => {
+        const response = this.generateAIResponse(input);
+        
+        // Speak the response out loud
+        this.speakResponse(response);
+        
+        // Then show it in the chat UI
+        this.addCaption('ai', response);
+
+        this.isProcessing = false;
+        this.updateMicrophoneState('idle');
+        this.updateStatus('ready', 'Ready to learn');
+        this.showMascotMessage(this.getRandomEncouragement());
+    }, 1500);
+}
+
 
             generateAIResponse(input) {
                 const responses = [
@@ -1000,15 +1005,18 @@
                 return responses[Math.floor(Math.random() * responses.length)];
             }
 
-            speakResponse(text) {
-                if (this.synthesis) {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.rate = 0.9;
-                    utterance.pitch = 1.1;
-                    utterance.volume = 0.8;
-                    this.synthesis.speak(utterance);
-                }
-            }
+   speakResponse(text) {
+    if (!this.synthesis) {
+        this.synthesis = window.speechSynthesis;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 1.0;
+    this.synthesis.speak(utterance);
+}
+
 
             addCaption(speaker, text) {
                 const captionsContainer = document.getElementById('captionsContainer');
