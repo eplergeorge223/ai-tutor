@@ -97,23 +97,66 @@ function getTutorSystemPrompt(
   studentName,
   difficultyLevel = 0.5,
   needsFoundationalReview = null,
-  readingTask = false      // ← NEW: only true when the user actually asked to read
+  readingTask = false
 ) {
   const isEarlyGrade = ['PreK','K','1','2'].includes(grade);
-  // … all your existing prompt text above …
 
+  // ─── per‑grade language guidelines ───────────────────────────────────────
+  const gradeGuidelines = {
+    PreK: 'Use very simple words. 1–2 sentences max. Focus on colors, shapes, and sounds.',
+    K:   'Simple words, basic ideas. 1–2 sentences. Focus on counting, letters, simple stories.',
+    '1': 'Easy words, encourage trying. 1–2 sentences. Guide them through sounding out words and basic addition.',
+    '2': 'Build confidence in reading and two‑digit math. 2–3 sentences. Prompt for their ideas.',
+    '3': 'Brief detail (2–3 sentences). Encourage problem‑solving & relatable examples.',
+    '4': 'Clear explanations in 2–3 sentences. Break down complex ideas. Ask “why” and “how.”',
+    '5': 'Stay on topic (3 sentences). Foster independent thinking. Encourage them to explain.',
+    '6': '3–4 sentences. Encourage critical thinking. Connect concepts to real‑world scenarios.',
+    '7': '3–4 sentences. Guide analytical skills and deeper inquiry.',
+    '8': '3–4 sentences. Explain in detail without overwhelming. Challenge creativity.',
+    '9': '4–5 sentences. Promote self‑directed learning and advanced problem‑solving.',
+    '10':'4–5 sentences. Encourage complex reasoning and independent research.',
+    '11':'4–5 sentences. Challenge with nuanced questions and diverse perspectives.',
+    '12':'4–5 sentences. Prepare for higher‑level thinking and interdisciplinary connections.'
+  };
+
+  // ─── adjust tone based on how they’re doing ─────────────────────────────
+  let difficultyAdjustment;
+  if (difficultyLevel < 0.3) {
+    difficultyAdjustment = 'Student seems to be struggling—give extra clear, simple steps and encouraging hints.';
+  } else if (difficultyLevel > 0.7) {
+    difficultyAdjustment = 'Student is grasping quickly—offer more complex challenges and deeper inquiry prompts.';
+  } else {
+    difficultyAdjustment = 'Maintain a steady, encouraging pace with balanced support and challenge.';
+  }
+
+  // ─── foundational‑review block (unchanged) ───────────────────────────────
+  let foundationalReviewBlock = '';
+  if (needsFoundationalReview?.skill === 'counting') {
+    foundationalReviewBlock = `
+CRITICAL: Student needs counting review before proceeding.
+• Gently guide counting from 1 to 10 (or to 20 for higher grades).
+• Only when they show mastery, return to: "${needsFoundationalReview.originalProblem}"
+`.trim();
+  }
+
+  // ─── build and return the full system prompt ─────────────────────────────
   return `
 You are an AI Tutor. Your mission: guide ${studentName} to THINK, not just memorize.
 • Tailor language to grade ${grade}: ${gradeGuidelines[grade] || gradeGuidelines.K}
-…
+• Celebrate effort and curiosity—every attempt is progress.
+• Ask open‑ended, guiding questions; break problems into small steps.
+• Never give the answer outright—prompt discovery with hints.
+• When topics are requested, suggest 2–3 grade‑appropriate options.
+
+${foundationalReviewBlock}
+
+${difficultyAdjustment}
 
 ${isEarlyGrade && readingTask ? `
-Reply in JSON with:
+For PreK–2 reading: reply in JSON with:
 {"message":"…","READING_WORD":"word"}
 (do NOT spell the word in your message)
 ` : ''}
-
-${difficultyAdjustment}
 `.trim();
 }
 
