@@ -83,7 +83,7 @@ body {
     animation: gradientShift 15s ease infinite;
     min-height: 100vh;
     color: var(--color-text-primary);
-    overflow-x: hidden;
+    overflow: hidden; /* New: This prevents all scrolling on the page */
 }
 
 @keyframes gradientShift {
@@ -183,6 +183,22 @@ body {
 }
 
 /* Welcome page styles */
+/* Page container with fixed dimensions */
+.page {
+    display: none;
+    position: absolute; /* New: Places pages on top of each other */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* New: Ensures the page takes up the full screen height */
+    overflow: auto; /* Keeps scrollbars inside the page, but not the body */
+}
+
+.page.active {
+    display: block;
+}
+
+/* Welcome page styles */
 .welcome-container {
     min-height: 100vh;
     display: flex;
@@ -229,8 +245,7 @@ body {
 .subtitle {
     color: rgba(255, 255, 255, 0.8);
     font-size: 1.125rem;
-}
-
+} 
 /* Mascot styles */
 .mascot-container {
     animation: mascotFloat 4s ease-in-out infinite;
@@ -1360,7 +1375,6 @@ body {
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
 }
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
