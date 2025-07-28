@@ -850,93 +850,76 @@ function initializeSpeechRecognition() {
                 alert("Failed to start session. Please try again later.");
             }
         }
-
 async function handleUserInput(input) {
-            if (state.isProcessing || !state.sessionStarted) return;
+  if (state.isProcessing || !state.sessionStarted) return;
 
-            state.isProcessing = true;
-            updateStatus("Processing your request...");
+  state.isProcessing = true;
+  updateStatus("Processing your request...");
 
-            addToConversation('user', input);
-            state.conversationContext.push({ role: 'user', content: input });
+  addToConversation('user', input);
+  state.conversationContext.push({ role: 'user', content: input });
 
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: state.currentSessionId,
-                        message: input,
-                        context: {
-                            conversationHistory: state.conversationContext.slice(-6),
-                            currentSubject: state.currentSubject
-                        }
-                    }),
-                    signal: controller.signal
-                });
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId:    state.currentSessionId,
+        userMessage:  input
+      }),
+      signal: controller.signal
+    });
 
-                clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API Error:', response.status, errorText);
-                    throw new Error(`API Error: ${response.status} - ${errorText}`);
-                }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
 
-                const data = await response.json();
-                const tutorResponse = data.response;
+    const data = await response.json();
+    const tutorResponse = data.response;
 
-                if (!tutorResponse || tutorResponse.trim() === '') {
-                    throw new Error('Empty response from API');
-                }
+    if (!tutorResponse.trim()) {
+      throw new Error('Empty response from API');
+    }
 
-                // Handle reading word display
-                if (!data.readingWord) {
-                    const existing = $('reading-word-prompt');
-                    if (existing) existing.remove();
-                }
+    // Handle reading-word prompt
+    if (data.readingWord) {
+      showReadingWordPrompt(tutorResponse, data.readingWord);
+      await speakWithPromise(tutorResponse);
+      addToConversation('tutor', tutorResponse + " (see word above)");
+    } else {
+      const existing = $('reading-word-prompt');
+      if (existing) existing.remove();
+      await speakWithPromise(tutorResponse);
+      addToConversation('tutor', tutorResponse);
+    }
 
-                if (data.readingWord) {
-                    showReadingWordPrompt(tutorResponse, data.readingWord);
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse + ' (See word above)');
-                } else {
-                    await speakWithPromise(tutorResponse);
-                    addToConversation('tutor', tutorResponse);
-                }
+    state.conversationContext.push({ role: 'assistant', content: tutorResponse });
+    if (data.subject) state.currentSubject = data.subject;
 
-                state.conversationContext.push({ role: 'assistant', content: tutorResponse });
-                if (data.subject) state.currentSubject = data.subject;
+  } catch (error) {
+    console.error('Error getting response:', error);
 
-            } catch (error) {
-                console.error('Error getting response:', error);
-                
-                if (error.name === 'AbortError') {
-                    updateStatus("Request timed out. Please try again.");
-                    await speakWithPromise("Sorry, that took too long. Please try asking again.");
-                } else {
-                    const fallbackResponse = generateEnhancedFallbackResponse(input);
-                    addToConversation('tutor', fallbackResponse);
-                    await speakWithPromise(fallbackResponse);
-                }
-            } finally {
-                state.isProcessing = false;
-                updateStatus("Press the microphone to continue our conversation!");
-            }
-        }
+    if (error.name === 'AbortError') {
+      updateStatus("Request timed out. Please try again.");
+      await speakWithPromise("Sorry, that took too long. Please try asking again.");
+    } else {
+      const fallback = generateEnhancedFallbackResponse(input);
+      addToConversation('tutor', fallback);
+      await speakWithPromise(fallback);
+    }
+  } finally {
+    state.isProcessing = false;
+    updateStatus("Press the microphone to continue our conversation!");
+  }
+}
 
-        // Notes functionality
-        let notesState = {
-            isDrawing: false,
-            isTextMode: false,
-            currentColor: '#000',
-            brushSize: 3,
-            canvas: null,
-            ctx: null
-        };
 
         function initializeCanvas() {
             const canvas = $('notes-canvas');
