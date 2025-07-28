@@ -380,34 +380,28 @@
                 </div>
             </section>
 
-<!-- Progress Overview -->
 <section class="progress-overview">
   <!-- Session Duration -->
   <div class="summary-card">
     <div class="summary-icon" style="background: var(--color-primary-500);">
-      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
+      …same SVG…
     </div>
     <h3 class="summary-stat">Session Time</h3>
-    <p class="summary-value" id="sessionDuration">24 min</p>
+    <p class="summary-value" id="sessionDuration">00:00</p>
     <p class="summary-label">Actual duration</p>
   </div>
 
   <!-- Topics Covered -->
   <div class="summary-card">
     <div class="summary-icon" style="background: var(--color-secondary-500);">
-      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547"/>
-      </svg>
+      …same SVG…
     </div>
     <h3 class="summary-stat">Topics Covered</h3>
-    <p class="summary-value" id="topicsCovered">5</p>
-    <p class="summary-label">Reading &amp; Math</p>
+    <p class="summary-value" id="topicsCovered">0</p>
+    <p class="summary-label" id="topicsLabel"></p>
   </div>
 </section>
+
 
 
             <!-- Action Buttons -->
@@ -433,18 +427,6 @@
                     <span>View All Progress</span>
                 </button>
             </section>
-
-            <!-- Footer -->
-            <footer style="text-align: center; padding-top: 2rem;">
-                <div class="glass" style="border-radius: 1rem; padding: 1.5rem;">
-                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem; margin-bottom: 0.5rem;">
-                        Keep up the great work! Learning is a journey, and you're doing fantastic!
-                    </p>
-                    <p style="color: rgba(255, 255, 255, 0.4); font-size: 0.75rem;">
-                        © 2025 AI Tutor. All Rights Reserved.
-                    </p>
-                </div>
-            </footer>
         </div>
     </div>
 
@@ -460,6 +442,7 @@
                 };
                 this.sessionTimer = null;
                 this.sessionDuration = 0;
+                this.sessionTopics = new Set();  
                 this.recognition = null;
                 this.synthesis = window.speechSynthesis;
                 this.isListening = false;
@@ -581,6 +564,18 @@
                         this.showMascotMessage(`Great choice! Let's learn about ${word}! 📚`);
                     });
                 });
+
+                document.querySelectorAll('.word-card').forEach(card => {
+  card.addEventListener('click', () => {
+    card.classList.toggle('flipped');
+    if (card.classList.contains('flipped')) {
+      this.sessionTopics.add('Reading');
+    }
+    const word = card.dataset.word;
+    this.showMascotMessage(`Great choice! Let's learn about ${word}! 📚`);
+  });
+});
+
             }
 
             setupNotesEvents() {
@@ -1090,14 +1085,29 @@
                 this.showMascotMessage("Notes saved successfully! 💾");
             }
 
-            endSession() {
-                if (confirm('Are you sure you want to end this learning session?')) {
-                    this.stopSessionTimer();
-                    const duration = Math.floor(this.sessionDuration / 60);
-                    document.getElementById('sessionDuration').textContent = `${duration} min`;
-                    this.switchToPage('summaryPage');
-                }
-            }
+endSession() {
+  if (!confirm('Are you sure you want to end this learning session?')) return;
+
+  this.stopSessionTimer();
+
+  // mm:ss formatting
+  const mins = Math.floor(this.sessionDuration / 60);
+  const secs = this.sessionDuration % 60;
+  document.getElementById('sessionDuration').textContent =
+    `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+
+  // actual count of flipped cards
+  const covered = document.querySelectorAll('.word-card.flipped').length;
+  document.getElementById('topicsCovered').textContent = covered;
+
+  // dynamic label from sessionTopics Set
+  const topics = Array.from(this.sessionTopics);
+  document.getElementById('topicsLabel').textContent =
+    topics.length ? topics.join(' & ') : 'None';
+
+  this.switchToPage('summaryPage');
+}
+
 
             startNewSession() {
                 this.sessionDuration = 0;
