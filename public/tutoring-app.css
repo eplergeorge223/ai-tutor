@@ -10,6 +10,8 @@ html, body, .page {
 
 
 :root {
+      --header-height: 4rem;      /* adjust to your actual header height */
+  --controls-height: 6rem;    /* adjust to your voice‑controls height */
     /* Primary Colors */
     --color-primary: #8B5CF6;
     --color-primary-50: #F3E8FF;
@@ -180,15 +182,25 @@ body {
 }
 
 /* Page container */
-.page {
-    display: none;
-    min-height: 100vh;
-    position: relative;
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;   /* kill scrollbars globally */
 }
 
-.page.active {
-    display: block;
+.page {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100vh;      /* full viewport */
+  overflow: hidden;   /* no inner scroll */
 }
+.page.active {
+  display: block;
+}
+
 
 /* Welcome page styles */
 /* Page container with fixed dimensions */
@@ -420,11 +432,12 @@ body {
 }
 
 .header-bar {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(15px);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--header-height);
+  z-index: 10;
 }
+
 
 .header-content {
     display: flex;
@@ -513,16 +526,13 @@ body {
 
 /* Content area styles */
 .content-area {
-    flex: 1;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
+  position: absolute;
+  top: var(--header-height);
+  bottom: var(--controls-height);
+  left: 0; right: 0;
+  overflow: hidden;   /* you won’t scroll here */
 }
+
 
 .word-cards-container {
     margin-bottom: 2rem;
@@ -629,10 +639,12 @@ body {
 
 /* Voice interaction styles */
 .voice-controls {
-    padding: 1.5rem;
-    text-align: center;
-    position: relative;
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: var(--controls-height);
+  z-index: 10;
 }
+
 
 .microphone-button {
     width: 5rem;
