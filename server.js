@@ -480,33 +480,80 @@ const filterResponseForGrade = (response, grade) => {
 
 // --- Core AI Response Generation ---
 async function generateAIResponse(sessionId, userMessage, res) {
-  const session = sessions.get(sessionId);
+  const session = sessions.get(sessionId)
   if (!session) {
-    return res.status(404).json({ error: 'Session not found.' });
+    return res.status(404).json({ error: 'Session not found.' })
   }
 
-  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
-  session.lastActivity = Date.now();
+  // Special case: Sing the ABC song
+  if (/sing.*abc/i.test(userMessage)) {
+    const abcLyrics =
+      "A B C D E F G,\n" +
+      "H I J K L M N O P,\n" +
+      "Q R S,\n" +
+      "T U V,\n" +
+      "W X,\n" +
+      "Y and Z!\n" +
+      "Now I know my ABCs,\n" +
+      "Next time won’t you sing with me?"
+    session.messages.push({ role: 'assistant', content: abcLyrics, timestamp: Date.now() })
+    return res.json({
+      response: abcLyrics,
+      readingWord: null,
+      subject: 'music',
+      suggestions: generateDynamicSuggestions(session),
+      encouragement: generateEncouragement(session.grade),
+      status: 'success',
+      sessionStats: {
+        totalWarnings: session.totalWarnings,
+        topicsDiscussed: Array.from(session.topicsDiscussed)
+      }
+    })
+  }
+
+  // Special case: Simple arithmetic scaffold
+  const mathMatch = userMessage.match(/^\s*(\d+)\s*([\+\-])\s*(\d+)\s*$/)
+  if (mathMatch && session.grade !== '12') {
+    const [ , a, op, b ] = mathMatch
+    const scaffold =
+      `Okay, let’s figure it out: if you have ${a}, how many is that so far? ` +
+      `And then you add ${b} more—so how many do you have in total?`
+    session.messages.push({ role: 'assistant', content: scaffold, timestamp: Date.now() })
+    return res.json({
+      response: scaffold,
+      readingWord: null,
+      subject: 'math',
+      suggestions: generateDynamicSuggestions(session),
+      encouragement: generateEncouragement(session.grade),
+      status: 'success',
+      sessionStats: {
+        totalWarnings: session.totalWarnings,
+        topicsDiscussed: Array.from(session.topicsDiscussed)
+      }
+    })
+  }
+
+  // Record user message
+  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() })
+  session.lastActivity = Date.now()
 
   // Check foundational skills
-  let detectedFoundationalIssue = checkFoundationalSkills(userMessage, session);
+  const detectedFoundationalIssue = checkFoundationalSkills(userMessage, session)
   if (session.needsFoundationalReview?.skill === 'counting') {
-    const countingMasteryRegex = /(one two three four five six seven eight nine ten)/;
+    const countingMasteryRegex = /(one two three four five six seven eight nine ten)/
     if (countingMasteryRegex.test(userMessage.toLowerCase())) {
-      console.log(`✅ Session ${sessionId.slice(-6)}: Counting mastered. Returning to original problem.`);
-      session.needsFoundationalReview = null;
+      session.needsFoundationalReview = null
     }
   } else if (detectedFoundationalIssue) {
-    session.needsFoundationalReview = detectedFoundationalIssue;
-    console.log(`⚠️ Session ${sessionId.slice(-6)}: Foundational skill issue: ${detectedFoundationalIssue.skill}`);
+    session.needsFoundationalReview = detectedFoundationalIssue
   }
 
-  const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage);
-  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3); // Shorter context for younger grades
-  
+  const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage)
+  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3)
+
   const messagesToSend = [
-    { 
-      role: 'system', 
+    {
+      role: 'system',
       content: getTutorSystemPrompt(
         session.grade,
         session.studentName,
@@ -516,90 +563,92 @@ async function generateAIResponse(sessionId, userMessage, res) {
       )
     },
     ...recentMessages
-  ];
+  ]
 
   try {
-    let maxTokens = getMaxTokensForGrade(session.grade);
-    
-    // Much lower temperature for younger grades to reduce creativity/complexity
-    const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade);
-    const adjustedTemperature = isVeryYoung ? 0.3 : 
-                               (session.difficultyLevel < 0.3 ? 0.4 : 
-                               (session.difficultyLevel > 0.7 ? 0.6 : 0.5));
+    const maxTokens = getMaxTokensForGrade(session.grade)
+    const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade)
+    const adjustedTemperature = isVeryYoung
+      ? 0.3
+      : session.difficultyLevel < 0.3
+        ? 0.4
+        : session.difficultyLevel > 0.7
+          ? 0.6
+          : 0.5
 
-                               // limit to the first 4 stop‑sequences so the API won’t reject it
-const allStops = [
-  "\n\n",
-  "Additionally:",
-  "Furthermore:",
-  "Moreover:",
-  "However,",
-  "Therefore,",
-  "In conclusion,"
-];
-const stops = allStops.slice(0, 4);
+    // limit to the first 4 stop sequences so the API won’t reject it
+    const allStops = [
+      "\n\n",
+      "Additionally:",
+      "Furthermore:",
+      "Moreover:",
+      "However,",
+      "Therefore,",
+      "In conclusion,"
+    ]
+    const stops = allStops.slice(0, 4)
 
+    const completion = await openai.chat.completions.create({
+      model: config.GPT_MODEL,
+      messages: messagesToSend,
+      max_tokens: maxTokens,
+      temperature: adjustedTemperature,
+      presence_penalty: config.GPT_PRESENCE_PENALTY,
+      frequency_penalty: config.GPT_FREQUENCY_PENALTY,
+      stop: stops
+    })
 
-const completion = await openai.chat.completions.create({
-  model: config.GPT_MODEL,
-  messages: messagesToSend,
-  max_tokens: maxTokens,
-  temperature: adjustedTemperature,
-  presence_penalty: config.GPT_PRESENCE_PENALTY,
-  frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-  stop: stops
-});
+    let aiText = completion.choices[0].message.content.trim()
 
+    // Post-processing: vocabulary filtering
+    aiText = filterResponseForGrade(aiText, session.grade)
 
-    let aiText = completion.choices[0].message.content.trim();
-    
-    // Apply post-processing filter for vocabulary
-    aiText = filterResponseForGrade(aiText, session.grade);
-    
-    // Truncate if still too long (safety net)
-    const guidelines = gradeGuidelines[session.grade];
+    // Truncate to maxSentences as a safety net
+    const guidelines = gradeGuidelines[session.grade]
     if (guidelines?.maxSentences) {
-      const sentences = aiText.split(/[.!?]+/).filter(s => s.trim());
+      const sentences = aiText.split(/[.!?]+/).filter(s => s.trim())
       if (sentences.length > guidelines.maxSentences) {
-        aiText = sentences.slice(0, guidelines.maxSentences).join('. ') + '.';
+        aiText = sentences.slice(0, guidelines.maxSentences).join('. ').trim() + '.'
       }
     }
-    
-    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() });
+
+    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() })
 
     // Update session tracking
     if (userSubject) {
-      session.topicsDiscussed.add(userSubject);
-      session.currentTopic = userSubject;
-      session.currentSubtopic = userSubtopic;
-      session.topicBreakdown[userSubject] = session.topicBreakdown[userSubject] || {};
-      session.topicBreakdown[userSubject][userSubtopic] = 
-        (session.topicBreakdown[userSubject][userSubtopic] || 0) + 1;
+      session.topicsDiscussed.add(userSubject)
+      session.currentTopic = userSubject
+      session.currentSubtopic = userSubtopic
+      session.topicBreakdown[userSubject] = session.topicBreakdown[userSubject] || {}
+      session.topicBreakdown[userSubject][userSubtopic] =
+        (session.topicBreakdown[userSubject][userSubtopic] || 0) + 1
     }
 
-    // Adjust difficulty based on response
-    const lastUserContent = userMessage.toLowerCase();
-    const passiveResponses = ["i don't know", "i dunno", "tell me", "what is the answer"];
-    if (passiveResponses.some(phrase => lastUserContent.includes(phrase))) {
-      session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1);
+    // Adjust difficulty
+    const lowerInput = userMessage.toLowerCase()
+    const passivePhrases = ["i don't know", "i dunno", "tell me", "what is the answer"]
+    if (passivePhrases.some(phrase => lowerInput.includes(phrase))) {
+      session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1)
     } else if (aiText.length > 20 && !aiText.includes("wrong") && !session.needsFoundationalReview) {
-      session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05);
+      session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05)
     }
 
-    // Handle reading word extraction
-    let messageText = aiText;
-    let readingWord = null;
+    // Handle reading word JSON
+    let readingWord = null
+    let messageText = aiText
     try {
-      const maybeJson = JSON.parse(messageText);
+      const maybeJson = JSON.parse(aiText)
       if (maybeJson?.READING_WORD) {
-        messageText = maybeJson.message;
-        readingWord = maybeJson.READING_WORD;
+        messageText = maybeJson.message
+        readingWord = maybeJson.READING_WORD
       }
-    } catch (e) { /* Not JSON; keep as regular text */ }
+    } catch (_) {
+      // not JSON
+    }
 
     res.json({
       response: messageText,
-      readingWord: readingWord,
+      readingWord,
       subject: userSubject,
       suggestions: generateDynamicSuggestions(session),
       encouragement: generateEncouragement(session.grade),
@@ -608,16 +657,16 @@ const completion = await openai.chat.completions.create({
         totalWarnings: session.totalWarnings,
         topicsDiscussed: Array.from(session.topicsDiscussed)
       }
-    });
-
+    })
   } catch (error) {
-    console.error(`❌ Error processing chat for session ${sessionId.slice(-6)}:`, error.message);
+    console.error(`Error in session ${sessionId.slice(-6)}:`, error.message)
     res.status(500).json({
       error: 'Failed to process message. Please try again.',
       fallback: `Oops! Can you ask me again, ${session.studentName}?`
-    });
+    })
   }
 }
+
 
 // --- API Routes ---
 app.post('/api/session/start', (req, res) => {
