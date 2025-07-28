@@ -83,7 +83,7 @@ body {
     animation: gradientShift 15s ease infinite;
     min-height: 100vh;
     color: var(--color-text-primary);
-    overflow: hidden; /* New: This prevents all scrolling on the page */
+    overflow: hidden !important;
 }
 
 @keyframes gradientShift {
