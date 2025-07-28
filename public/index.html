@@ -12,13 +12,13 @@ const Index = () => {
     <title>AI Tutor</title>
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(45deg, #4CAF50, #45a049);
-            --accent-gradient: linear-gradient(45deg, #2196F3, #1976D2);
-            --glass-bg: rgba(255,255,255,0.12);
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary: linear-gradient(45deg, #4CAF50, #45a049);
+            --accent: linear-gradient(45deg, #2196F3, #1976D2);
+            --glass: rgba(255,255,255,0.12);
             --glass-border: rgba(255,255,255,0.25);
             --shadow: 0 8px 32px rgba(0,0,0,0.12);
-            --shadow-hover: 0 12px 40px rgba(0,0,0,0.18);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.18);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --radius: 20px;
             --radius-sm: 12px;
@@ -33,7 +33,6 @@ const Index = () => {
             min-height: 100vh;
             color: white;
             line-height: 1.6;
-            position: relative;
             overflow-x: hidden;
         }
 
@@ -63,9 +62,7 @@ const Index = () => {
             transition: var(--transition);
         }
 
-        .main-content.with-sidebar {
-            margin-right: 320px;
-        }
+        .main-content.with-sidebar { margin-right: 320px; }
 
         .content-wrapper {
             text-align: center;
@@ -103,7 +100,7 @@ const Index = () => {
         }
 
         .glass-panel {
-            background: var(--glass-bg);
+            background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
@@ -126,10 +123,10 @@ const Index = () => {
 
         .glass-panel:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
+            box-shadow: var(--shadow-lg);
         }
 
-        /* Welcome Screen */
+        /* Form Styles */
         .student-info {
             margin: 2rem 0;
             display: flex;
@@ -154,7 +151,7 @@ const Index = () => {
             color: rgba(255,255,255,0.95);
         }
 
-        .form-group input, .form-group select {
+        .form-input {
             background: rgba(255,255,255,0.1);
             border: 2px solid rgba(255,255,255,0.2);
             border-radius: var(--radius-sm);
@@ -166,33 +163,45 @@ const Index = () => {
             backdrop-filter: blur(10px);
         }
 
-        .form-group input:focus, .form-group select:focus {
+        .form-input:focus {
             outline: none;
             border-color: rgba(255,255,255,0.5);
             box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.15);
         }
 
-        .form-group input::placeholder { color: rgba(255,255,255,0.7); }
-        .form-group select option { background: #764ba2; color: white; }
+        .form-input::placeholder { color: rgba(255,255,255,0.7); }
+        .form-input option { background: #764ba2; color: white; }
 
-        .btn-primary {
-            background: var(--primary-gradient);
+        /* Button Styles */
+        .btn {
             border: none;
             border-radius: var(--radius);
-            padding: 1.25rem 2.5rem;
-            font-size: 1.2rem;
             font-weight: 700;
             color: white;
             cursor: pointer;
             transition: var(--transition);
-            box-shadow: var(--shadow);
-            margin-top: 1.5rem;
             position: relative;
             overflow: hidden;
         }
 
-        .btn-primary::before {
+        .btn-primary {
+            background: var(--primary);
+            padding: 1.25rem 2.5rem;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow);
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn::before {
             content: '';
             position: absolute;
             top: 0;
@@ -203,14 +212,19 @@ const Index = () => {
             transition: left 0.5s;
         }
 
-        .btn-primary:hover {
+        .btn:hover {
             transform: translateY(-3px) scale(1.02);
-            box-shadow: var(--shadow-hover);
+            box-shadow: var(--shadow-lg);
         }
 
-        .btn-primary:hover::before { left: 100%; }
+        .btn:hover::before { left: 100%; }
 
-        /* Tutor Interface - Compact Layout */
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        /* Tutor Interface */
         .tutor-main {
             display: flex;
             flex-direction: column;
@@ -220,7 +234,7 @@ const Index = () => {
         }
 
         .status-display {
-            background: var(--glass-bg);
+            background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
@@ -237,7 +251,7 @@ const Index = () => {
             width: 100%;
         }
 
-        /* Improved Voice Controls */
+        /* Voice Controls */
         .voice-section {
             display: flex;
             flex-direction: column;
@@ -245,15 +259,8 @@ const Index = () => {
             gap: 1.5rem;
         }
 
-        .mic-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         .voice-button {
-            background: var(--secondary-gradient);
+            background: var(--secondary);
             width: clamp(120px, 25vw, 160px);
             height: clamp(120px, 25vw, 160px);
             border: none;
@@ -270,22 +277,11 @@ const Index = () => {
             overflow: hidden;
         }
 
-        .voice-button::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .voice-button:hover:not(:disabled) {
+        .voice-button:not(:disabled):hover {
             transform: scale(1.05);
-            box-shadow: var(--shadow-hover);
+            box-shadow: var(--shadow-lg);
         }
 
-        .voice-button:hover::before { opacity: 1; }
         .voice-button:active { transform: scale(0.95); }
         .voice-button:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -310,25 +306,6 @@ const Index = () => {
             opacity: 0.8;
             text-align: center;
             max-width: 300px;
-        }
-
-        .end-session-btn {
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: var(--radius-sm);
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            transition: var(--transition);
-            backdrop-filter: blur(10px);
-        }
-
-        .end-session-btn:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.4);
-            transform: translateY(-2px);
         }
 
         /* Reading Prompt */
@@ -362,7 +339,7 @@ const Index = () => {
             text-align: center;
         }
 
-        /* Sidebar Notes Panel */
+        /* Notes Panel */
         .notes-sidebar {
             position: fixed;
             top: 0;
@@ -378,9 +355,7 @@ const Index = () => {
             flex-direction: column;
         }
 
-        .notes-sidebar.open {
-            right: 0;
-        }
+        .notes-sidebar.open { right: 0; }
 
         .notes-header {
             padding: 1.5rem;
@@ -409,9 +384,7 @@ const Index = () => {
             transition: var(--transition);
         }
 
-        .close-notes:hover {
-            background: rgba(255,255,255,0.1);
-        }
+        .close-notes:hover { background: rgba(255,255,255,0.1); }
 
         .notes-tools {
             padding: 1rem 1.5rem;
@@ -522,12 +495,11 @@ const Index = () => {
             display: block;
         }
 
-        /* Notes Toggle Button */
         .notes-toggle {
             position: fixed;
             top: 2rem;
             right: 2rem;
-            background: var(--glass-bg);
+            background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: 50%;
@@ -546,12 +518,10 @@ const Index = () => {
 
         .notes-toggle:hover {
             transform: scale(1.05);
-            box-shadow: var(--shadow-hover);
+            box-shadow: var(--shadow-lg);
         }
 
-        .notes-toggle.active {
-            background: var(--secondary-gradient);
-        }
+        .notes-toggle.active { background: var(--secondary); }
 
         /* Session Summary */
         .session-summary {
@@ -563,7 +533,7 @@ const Index = () => {
         .summary-item {
             margin: 1.5rem 0;
             padding: 1.5rem;
-            background: var(--glass-bg);
+            background: var(--glass);
             border-radius: var(--radius-sm);
             border-left: 4px solid rgba(255,255,255,0.5);
             backdrop-filter: blur(20px);
@@ -610,17 +580,10 @@ const Index = () => {
         /* Utility Classes */
         .hidden { display: none !important; }
 
-        /* Mobile Optimizations */
+        /* Mobile Styles */
         @media (max-width: 768px) {
-            .main-content.with-sidebar {
-                margin-right: 0;
-            }
-
-            .notes-sidebar {
-                width: 100vw;
-                right: -100vw;
-            }
-
+            .main-content.with-sidebar { margin-right: 0; }
+            .notes-sidebar { width: 100vw; right: -100vw; }
             .notes-toggle {
                 top: 1rem;
                 right: 1rem;
@@ -628,40 +591,19 @@ const Index = () => {
                 height: 48px;
                 font-size: 1.3rem;
             }
-
             .voice-button {
                 width: clamp(100px, 30vw, 140px);
                 height: clamp(100px, 30vw, 140px);
             }
-
-            .content-wrapper {
-                padding: 0 1rem;
-            }
-
-            .form-group input, .form-group select {
-                font-size: 16px; /* Prevents zoom on iOS */
-            }
+            .content-wrapper { padding: 0 1rem; }
+            .form-input { font-size: 16px; }
         }
 
         @media (max-width: 480px) {
-            .main-content {
-                padding: 1rem;
-            }
-
-            .glass-panel {
-                padding: 1.5rem;
-            }
-
-            .notes-tools {
-                padding: 0.75rem;
-            }
-
-            .tool-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-
+            .main-content { padding: 1rem; }
+            .glass-panel { padding: 1.5rem; }
+            .notes-tools { padding: 0.75rem; }
+            .tool-btn { width: 32px; height: 32px; font-size: 0.9rem; }
             .live-captions {
                 bottom: 1rem;
                 padding: 0.75rem 1.25rem;
@@ -669,10 +611,9 @@ const Index = () => {
             }
         }
 
-        /* Enhanced Focus States for Accessibility */
+        /* Focus States */
         .voice-button:focus,
-        .btn-primary:focus,
-        .end-session-btn:focus,
+        .btn:focus,
         .notes-toggle:focus,
         .tool-btn:focus {
             outline: 2px solid rgba(255,255,255,0.6);
@@ -682,7 +623,6 @@ const Index = () => {
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Content Area -->
         <div class="main-content" id="main-content">
             <div class="content-wrapper">
                 <!-- Welcome Screen -->
@@ -694,11 +634,11 @@ const Index = () => {
                     <div class="student-info glass-panel">
                         <div class="form-group">
                             <label for="student-name">Student Name</label>
-                            <input type="text" id="student-name" placeholder="What's your name?" maxlength="50">
+                            <input type="text" id="student-name" class="form-input" placeholder="What's your name?" maxlength="50">
                         </div>
                         <div class="form-group">
                             <label for="student-grade">Grade Level</label>
-                            <select id="student-grade">
+                            <select id="student-grade" class="form-input">
                                 <option value="">Select your grade</option>
                                 <option value="PreK">Pre-K</option>
                                 <option value="K">Kindergarten</option>
@@ -716,7 +656,7 @@ const Index = () => {
                                 <option value="12">12th Grade</option>
                             </select>
                         </div>
-                        <button class="btn-primary" onclick="startTutoring()">Start Learning!</button>
+                        <button class="btn btn-primary" onclick="startTutoring()">Start Learning!</button>
                     </div>
                 </div>
 
@@ -726,19 +666,16 @@ const Index = () => {
                         <div class="mascot">🤖</div>
                         <h2>Let's Learn Together!</h2>
                         
-                        <!-- Reading Prompt (when active) -->
                         <div id="reading-prompt-container"></div>
                         
-                        <!-- Status Display -->
                         <div class="status-display" id="status">Press the microphone to start talking!</div>
                         
-                        <!-- Voice Controls -->
                         <div class="voice-section">
                             <div class="mic-container">
                                 <button class="voice-button" id="mic-btn" onclick="toggleListening()" aria-label="Toggle microphone">🎤</button>
                             </div>
                             <p class="voice-hint">Tap the microphone and start speaking</p>
-                            <button class="end-session-btn" onclick="endSession()">End Session</button>
+                            <button class="btn btn-secondary" onclick="endSession()">End Session</button>
                         </div>
                     </div>
                 </div>
@@ -747,12 +684,12 @@ const Index = () => {
                 <div id="session-summary" class="session-summary glass-panel hidden">
                     <h2>Session Complete! 🎉</h2>
                     <div id="summary-content"></div>
-                    <button class="btn-primary" onclick="startNewSession()">Start New Session</button>
+                    <button class="btn btn-primary" onclick="startNewSession()">Start New Session</button>
                 </div>
             </div>
         </div>
 
-        <!-- Notes Toggle Button -->
+        <!-- Notes Toggle -->
         <button class="notes-toggle" id="notes-toggle" onclick="toggleNotes()" title="Toggle Notes" aria-label="Toggle notes panel">📝</button>
 
         <!-- Notes Sidebar -->
@@ -794,7 +731,7 @@ const Index = () => {
     </div>
 
     <script>
-        // Global State
+        // Consolidated State Management
         const state = {
             isListening: false,
             recognition: null,
@@ -820,32 +757,13 @@ const Index = () => {
         };
         
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
+        
+        // Utility Functions
         const $ = id => document.getElementById(id);
         const updateStatus = msg => $('status').textContent = msg;
         const addToConversation = (sender, message) => state.chatHistory.push({ sender, message });
 
-        // Notes Panel Management
-        function toggleNotes() {
-            state.notesOpen = !state.notesOpen;
-            const sidebar = $('notes-sidebar');
-            const mainContent = $('main-content');
-            const toggle = $('notes-toggle');
-            
-            if (state.notesOpen) {
-                sidebar.classList.add('open');
-                if (window.innerWidth > 768) {
-                    mainContent.classList.add('with-sidebar');
-                }
-                toggle.classList.add('active');
-                setTimeout(() => initializeCanvas(), 100);
-            } else {
-                sidebar.classList.remove('open');
-                mainContent.classList.remove('with-sidebar');
-                toggle.classList.remove('active');
-            }
-        }
-
-        // Speech Setup
+        // Enhanced Speech Setup
         async function initializeSpeechSynthesis() {
             return new Promise(resolve => {
                 const selectVoice = () => {
@@ -884,17 +802,19 @@ const Index = () => {
                         showLiveCaption(text, 'bot');
                     };
 
-                    utterance.onend = utterance.onerror = () => {
+                    const cleanup = () => {
                         $('live-captions').classList.add('hidden');
                         micBtn.disabled = false;
                         resolve();
                     };
 
+                    utterance.onend = utterance.onerror = cleanup;
                     state.speechSynthesis.speak(utterance);
                 }, 100);
             });
         }
 
+        // Enhanced Speech Recognition
         function initializeSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -911,6 +831,7 @@ const Index = () => {
                     maxAlternatives: 1
                 });
 
+                // Event Handlers
                 state.recognition.onstart = () => {
                     state.isListening = true;
                     updateMicButton();
@@ -953,7 +874,6 @@ const Index = () => {
                     };
                     
                     updateStatus(errorMessages[event.error] || `Speech error: ${event.error}. Please try again!`);
-                    console.error('Speech recognition error:', event.error);
                 };
 
                 return true;
@@ -965,16 +885,15 @@ const Index = () => {
         }
 
         // Reading Word Display
-function showReadingWordPrompt(prompt, word) {
-    const container = $('reading-prompt-container');
-    container.innerHTML = `
-        <div class="reading-prompt">
-            <div class="reading-prompt-text">${prompt}</div>
-            <div class="reading-word">${word}</div>
-        </div>
-    `;
-}
-
+        function showReadingWordPrompt(prompt, word) {
+            const container = $('reading-prompt-container');
+            container.innerHTML = `
+                <div class="reading-prompt">
+                    <div class="reading-prompt-text">${prompt}</div>
+                    <div class="reading-word">${word}</div>
+                </div>
+            `;
+        }
 
         function clearReadingPrompt() {
             $('reading-prompt-container').innerHTML = '';
@@ -995,18 +914,15 @@ function showReadingWordPrompt(prompt, word) {
             try {
                 updateStatus("Starting your session...");
 
-const response = await fetch(`${API_BASE_URL}/session/start`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        studentName: studentName || 'Student',
-        grade: studentGrade || 'K',
-        subjects: []
-    })
-});
-
+                const response = await fetch(`${API_BASE_URL}/session/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentName: studentName || 'Student',
+                        grade: studentGrade || 'K',
+                        subjects: []
+                    })
+                });
 
                 if (!response.ok) throw new Error('Failed to start session');
 
@@ -1017,13 +933,12 @@ const response = await fetch(`${API_BASE_URL}/session/start`, {
                 $('welcome-screen').classList.add('hidden');
                 $('tutor-interface').classList.remove('hidden');
                 
-const welcomeMessage = data.welcomeMessage || 
-    `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+                const welcomeMessage = data.welcomeMessage || 
+                    `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
 
-await speakWithPromise(welcomeMessage);
-addToConversation('tutor', welcomeMessage);
-updateStatus("Press the microphone to start talking!");
-
+                await speakWithPromise(welcomeMessage);
+                addToConversation('tutor', welcomeMessage);
+                updateStatus("Press the microphone to start talking!");
 
             } catch (error) {
                 console.error('Error starting session:', error);
@@ -1051,20 +966,19 @@ updateStatus("Press the microphone to start talking!");
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-const response = await fetch(`${API_BASE_URL}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        sessionId: state.currentSessionId,
-        userMessage: input
-    }),
-    signal: controller.signal
-});
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: state.currentSessionId,
+                        userMessage: input
+                    }),
+                    signal: controller.signal
+                });
 
                 clearTimeout(timeoutId);
 
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
 
                 const data = await response.json();
                 const tutorResponse = data.response;
@@ -1125,28 +1039,56 @@ const response = await fetch(`${API_BASE_URL}/chat`, {
             return generalResponses[Math.floor(Math.random() * generalResponses.length)];
         }
 
-        // Canvas Functions
+        // Notes Management
+        function toggleNotes() {
+            state.notesOpen = !state.notesOpen;
+            const sidebar = $('notes-sidebar');
+            const mainContent = $('main-content');
+            const toggle = $('notes-toggle');
+            
+            if (state.notesOpen) {
+                sidebar.classList.add('open');
+                if (window.innerWidth > 768) {
+                    mainContent.classList.add('with-sidebar');
+                }
+                toggle.classList.add('active');
+                setTimeout(() => initializeCanvas(), 100);
+            } else {
+                sidebar.classList.remove('open');
+                mainContent.classList.remove('with-sidebar');
+                toggle.classList.remove('active');
+            }
+        }
+
         function initializeCanvas() {
             const canvas = $('notes-canvas');
             if (!canvas) return;
             
             const container = canvas.parentElement;
-            canvas.width = container.clientWidth - 32; // Account for padding
+            canvas.width = container.clientWidth - 32;
             canvas.height = container.clientHeight - 32;
 
             notesState.canvas = canvas;
             notesState.ctx = canvas.getContext('2d');
             
-            // Mouse events
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            // Touch events
-            canvas.addEventListener('touchstart', handleTouch);
-            canvas.addEventListener('touchmove', handleTouch);
-            canvas.addEventListener('touchend', stopDrawing);
+            // Event Listeners
+            const events = {
+                mouse: [
+                    ['mousedown', startDrawing],
+                    ['mousemove', draw],
+                    ['mouseup', stopDrawing],
+                    ['mouseout', stopDrawing]
+                ],
+                touch: [
+                    ['touchstart', handleTouch],
+                    ['touchmove', handleTouch],
+                    ['touchend', stopDrawing]
+                ]
+            };
+
+            [...events.mouse, ...events.touch].forEach(([event, handler]) => {
+                canvas.addEventListener(event, handler);
+            });
         }
 
         function startDrawing(e) {
@@ -1214,8 +1156,7 @@ const response = await fetch(`${API_BASE_URL}/chat`, {
         function setColor(color) {
             notesState.currentColor = color;
             document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
-document.querySelector(`[data-color="${color}"]`).classList.add('active');
-
+            document.querySelector(`[data-color="${color}"]`).classList.add('active');
         }
 
         function setBrushSize(size) {
@@ -1272,19 +1213,18 @@ document.querySelector(`[data-color="${color}"]`).classList.add('active');
             lastCaptionTime = now;
             const captionsDiv = $('live-captions');
             captionsDiv.textContent = text;
-captionsDiv.className = `live-captions ${type}-caption`;
-
+            captionsDiv.className = `live-captions ${type}-caption`;
             captionsDiv.classList.remove('hidden');
         }
 
-        // Session Management
+        // Session End
         async function endSession() {
             state.speechSynthesis.cancel();
             if (state.isListening) state.recognition.stop();
             
             try {
-const response = await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/summary`);
-await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: 'POST' });
+                const response = await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/summary`);
+                await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: 'POST' });
 
                 const summary = response.ok ? await response.json() : null;
                 showSessionSummary(summary);
@@ -1306,20 +1246,18 @@ await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: '
                     ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
                 ].filter(Boolean);
 
-summaryContent.innerHTML = `
-    <div class="summary-item"><strong>Duration:</strong> ${summary.duration}</div>
-    <div class="summary-item"><strong>Off-topic Requests:</strong> ${summary.totalWarnings}</div>
-    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-    <div class="summary-item"><strong>Learning Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
-    <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
-`;
-
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Duration:</strong> ${summary.duration}</div>
+                    <div class="summary-item"><strong>Off-topic Requests:</strong> ${summary.totalWarnings}</div>
+                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+                    <div class="summary-item"><strong>Learning Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
+                    <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
+                `;
             } else {
-summaryContent.innerHTML = `
-    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-`;
-
+                summaryContent.innerHTML = `
+                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+                `;
             }
             
             await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
@@ -1355,28 +1293,22 @@ summaryContent.innerHTML = `
         }
 
         // Event Listeners
-        window.addEventListener('blur', () => {
-            if (state.isListening) state.recognition.stop();
-        });
+        const eventHandlers = [
+            ['blur', () => { if (state.isListening) state.recognition.stop(); }],
+            ['focus', () => { if (state.sessionStarted) updateStatus("Press the microphone to continue our conversation!"); }],
+            ['resize', () => {
+                if (notesState.canvas && state.notesOpen) setTimeout(initializeCanvas, 100);
+                
+                if (window.innerWidth <= 768 && state.notesOpen) {
+                    $('main-content').classList.remove('with-sidebar');
+                } else if (window.innerWidth > 768 && state.notesOpen) {
+                    $('main-content').classList.add('with-sidebar');
+                }
+            }]
+        ];
 
-        window.addEventListener('focus', () => {
-            if (state.sessionStarted) {
-                updateStatus("Press the microphone to continue our conversation!");
-            }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (notesState.canvas && state.notesOpen) {
-                setTimeout(initializeCanvas, 100);
-            }
-            
-            // Close sidebar on mobile when resizing to larger screen
-            if (window.innerWidth <= 768 && state.notesOpen) {
-                $('main-content').classList.remove('with-sidebar');
-            } else if (window.innerWidth > 768 && state.notesOpen) {
-                $('main-content').classList.add('with-sidebar');
-            }
+        eventHandlers.forEach(([event, handler]) => {
+            window.addEventListener(event, handler);
         });
 
         // Initialize App
@@ -1388,11 +1320,3 @@ summaryContent.innerHTML = `
     </script>
 </body>
 </html>
-          ` 
-        }} 
-      />
-    </div>
-  );
-};
-
-export default Index;
