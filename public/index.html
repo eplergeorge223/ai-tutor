@@ -1433,7 +1433,6 @@
                     <div class="form-group">
                         <label for="studentName" class="form-label">What's your name?</label>
                         <input type="text" id="studentName" name="studentName" class="form-input" placeholder="Enter your name here..." required />
-                        <p class="help-text">This helps me personalize your learning experience!</p>
                     </div>
 
                     <!-- Grade Selection -->
@@ -1463,7 +1462,6 @@
                             <button type="button" class="grade-btn touch-target-high" data-grade="12th">12th</button>
                         </div>
                         <input type="hidden" id="selectedGrade" name="selectedGrade" required />
-                        <p class="help-text">Choose your current grade level to get personalized content!</p>
                     </div>
 
                     <!-- Start Button -->
@@ -1480,9 +1478,6 @@
 
                 <!-- Footer -->
                 <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
-                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
-                        Safe, secure, and designed for learners of all ages
-                    </p>
                 </div>
             </div>
         </div>
@@ -1491,101 +1486,7 @@
     <!-- Main Tutoring Interface -->
     <div id="mainInterface" class="page">
         <div class="main-interface">
-            <!-- Header -->
-            <header class="header-bar">
-                <div class="header-content">
-                    <!-- Session Menu -->
-                    <button id="sessionMenuBtn" class="header-button touch-target-elementary">
-                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                        <span class="sr-only">Session menu</span>
-                    </button>
 
-                    <!-- Student Info -->
-                    <div class="student-info">
-                        <div class="student-name" id="displayStudentName">Alex Johnson</div>
-                        <div class="student-grade" id="displayStudentGrade">5th Grade</div>
-                    </div>
-
-                    <!-- Session Timer & Status -->
-                    <div class="session-info">
-                        <div class="session-timer" id="sessionTimer">00:00</div>
-                        <div class="session-status">Active Session</div>
-                    </div>
-                </div>
-
-                <!-- Interaction Status -->
-                <div style="margin-top: 1rem; text-align: center;">
-                    <div class="status-indicator">
-                        <div class="status-dot" id="statusDot"></div>
-                        <span class="status-text" id="statusText">Ready to learn</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Main Content Area -->
-            <main class="content-area">
-                <!-- Word Cards Container -->
-                <div class="word-cards-container">
-                    <div class="word-cards-grid">
-                        <!-- Sample Word Card -->
-                        <div class="word-card" data-word="elephant">
-                            <div class="word-card-front">
-                                <img src="https://images.unsplash.com/photo-1564760055775-d63b17a55c44?q=80&w=400&auto=format&fit=crop" alt="Elephant" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn5GEPC90ZXh0Pgo8L3N2Zz4K'" />
-                                <h3 class="word-title">ELEPHANT</h3>
-                                <p class="word-pronunciation">E-LE-PHANT</p>
-                            </div>
-                            <div class="word-card-back">
-                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A large mammal with a trunk and big ears</p>
-                                <button class="btn-primary">Practice Sound</button>
-                            </div>
-                        </div>
-
-                        <!-- Sample Word Card 2 -->
-                        <div class="word-card" data-word="butterfly">
-                            <div class="word-card-front">
-                                <img src="https://images.pixabay.com/photo/2017/05/12/13/05/butterfly-2307499_1280.jpg?auto=format&fit=crop&w=400" alt="Butterfly" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn6aLPC90ZXh0Pgo8L3N2Zz4K'" />
-                                <h3 class="word-title">BUTTERFLY</h3>
-                                <p class="word-pronunciation">BUT-TER-FLY</p>
-                            </div>
-                            <div class="word-card-back">
-                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A colorful insect with beautiful wings</p>
-                                <button class="btn-primary">Practice Sound</button>
-                            </div>
-                        </div>
-
-                        <!-- Sample Word Card 3 -->
-                        <div class="word-card" data-word="rainbow">
-                            <div class="word-card-front">
-                                <img src="https://images.pexels.com/photos/1367192/pexels-photo-1367192.jpeg?auto=format&fit=crop&w=400" alt="Rainbow" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn4y4PC90ZXh0Pgo8L3N2Zz4K'" />
-                                <h3 class="word-title">RAINBOW</h3>
-                                <p class="word-pronunciation">RAIN-BOW</p>
-                            </div>
-                            <div class="word-card-back">
-                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">Colorful arc in the sky after rain</p>
-                                <button class="btn-primary">Practice Sound</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reading Prompt -->
-                <div class="reading-prompt">
-                    <h2 class="prompt-title">Today's Reading Challenge</h2>
-                    <p class="prompt-text">
-                        "The <span class="highlight-word">elephant</span> walked slowly through the forest. 
-                        A beautiful <span class="highlight-word">butterfly</span> landed on its trunk. 
-                        After the rain, they both saw a bright <span class="highlight-word">rainbow</span> in the sky."
-                    </p>
-                    <button id="readAloudBtn" class="btn-secondary">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.5rem;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 12a3 3 0 106 0v-6a3 3 0 00-6 0v6z"/>
-                        </svg>
-                        Read Aloud
-                    </button>
-                </div>
-            </main>
 
             <!-- Voice Interaction Controls -->
             <section class="voice-controls">
@@ -1883,25 +1784,7 @@
                     <span>Share Progress</span>
                 </button>
                 
-                <button id="viewProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    <span>View All Progress</span>
-                </button>
             </section>
-
-            <!-- Footer -->
-            <footer style="text-align: center; padding-top: 2rem;">
-                <div class="glass" style="border-radius: 1rem; padding: 1.5rem;">
-                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem; margin-bottom: 0.5rem;">
-                        Keep up the great work! Learning is a journey, and you're doing fantastic!
-                    </p>
-                    <p style="color: rgba(255, 255, 255, 0.4); font-size: 0.75rem;">
-                        © 2025 AI Tutor. All Rights Reserved.
-                    </p>
-                </div>
-            </footer>
         </div>
     </div>
 
@@ -2581,7 +2464,6 @@
 • Duration: ${duration} minutes
 • Topics covered: 5 (Reading & Math)
 • New words learned: 12
-• Engagement score: 95%
 
 🌟 Areas of Strength:
 • Excellent listening skills
