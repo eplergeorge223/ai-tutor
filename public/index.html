@@ -879,6 +879,18 @@ function initializeSpeechRecognition() {
 async function handleUserInput(input) {
   if (state.isProcessing || !state.sessionStarted) return;
 
+    // —— FLASH CARD OPT‑OUT HANDLER ——
+  const cmd = input.trim().toLowerCase();
+  if (cmd === 'stop showing flash cards') {
+    state.flashCardsEnabled = false;
+    // remove any card currently on screen
+    const old = document.getElementById('reading-word-prompt');
+    if (old) old.remove();
+    updateStatus("Flash cards disabled.");
+    // still let the tutor process the phrase if you want a verbal acknowledgement
+  }
+
+
   state.isProcessing = true;
   updateStatus("Processing your request...");
 
@@ -914,17 +926,23 @@ async function handleUserInput(input) {
       throw new Error('Empty response from API');
     }
 
-    // Handle reading-word prompt
-    if (data.readingWord) {
+    // —— CONDITIONAL FLASH‑CARD RENDERING ——
+    const shouldCard =  state.flashCardsEnabled &&
+                        data.readingWord &&
+                        (data.subject === 'reading' || data.subject === 'math');
+
+    if (shouldCard) {
       showReadingWordPrompt(tutorResponse, data.readingWord);
-      await speakWithPromise(tutorResponse);
-      addToConversation('tutor', tutorResponse + " (see word above)");
     } else {
-      const existing = $('reading-word-prompt');
-      if (existing) existing.remove();
-      await speakWithPromise(tutorResponse);
-      addToConversation('tutor', tutorResponse);
+      // always clear old card if not showing a new one
+      const old = document.getElementById('reading-word-prompt');
+      if (old) old.remove();
     }
+
+    // Now speak and record the tutor response (in both cases)
+    await speakWithPromise(tutorResponse);
+    addToConversation('tutor', tutorResponse);
+
 
     state.conversationContext.push({ role: 'assistant', content: tutorResponse });
     if (data.subject) state.currentSubject = data.subject;
@@ -1222,7 +1240,9 @@ function showLiveCaption(text, type = 'bot') {
                 isListening: false,
                 conversationContext: [],
                 chatHistory: [],
-                currentSubject: null
+   currentSubject: null,
+  flashCardsEnabled: true    // ← NEW: toggle this to enable/disable flash cards
+
             });
             
             $('session-summary').classList.add('hidden');
