@@ -62,58 +62,115 @@ setInterval(() => {
 const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1);
 const generateSessionId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
+// Updated grade guidelines with stricter vocabulary and concept constraints
 const gradeGuidelines = {
-  PreK: 'Use very simple words. 1–2 sentences max. Focus on colors, shapes, and sounds.',
-  K: 'Simple words, 2-3 sentences. Basic counting and letters.',
-  '1': '2-3 sentences. Simple reading and basic math.',
-  '2': '3 sentences. Building vocabulary and math skills.',
-  '3': '3-4 sentences. More complex problems and reading.',
-  '4': '4 sentences. Multi-step problems and comprehension.',
-  '5': '4 sentences. Advanced concepts and critical thinking.',
-  '6': '4-5 sentences. Abstract thinking and analysis.',
-  '7': '4-5 sentences. Complex reasoning and connections.',
-  '8': '4-5 sentences. Advanced problem-solving.',
-  '9': '4-5 sentences. Higher-order thinking skills.',
-  '10': '4-5 sentences. College-prep level thinking.',
-  '11': '4-5 sentences. Advanced analysis and synthesis.',
-  '12': '4-5 sentences. Prepare for higher-level thinking.'
+  PreK: {
+    maxSentences: 1,
+    vocabulary: 'Use only very simple words like "big", "red", "happy". NO complex words.',
+    concepts: 'Only basic colors, shapes, animals, counting 1-3.',
+    forbidden: ['elements', 'because', 'however', 'different', 'important', 'understand']
+  },
+  K: {
+    maxSentences: 2,
+    vocabulary: 'Simple 1-2 syllable words. Avoid "difficult", "understand", "explain".',
+    concepts: 'Basic counting to 10, letters A-Z, simple animals and colors.',
+    forbidden: ['elements', 'components', 'analyze', 'determine', 'characteristics']
+  },
+  '1': {
+    maxSentences: 2,
+    vocabulary: 'Short, common words. Say "parts" not "elements", "look at" not "examine".',
+    concepts: 'Simple addition, basic reading, familiar animals and objects.',
+    forbidden: ['elements', 'analyze', 'determine', 'characteristics', 'properties']
+  },
+  '2': {
+    maxSentences: 3,
+    vocabulary: 'Common everyday words. Say "things" not "elements", "find out" not "determine".',
+    concepts: 'Basic math facts, simple stories, weather, family.',
+    forbidden: ['elements', 'analyze', 'characteristics', 'properties', 'components']
+  },
+  '3': {
+    maxSentences: 3,
+    vocabulary: 'Grade 3 reading level. Still avoid academic jargon.',
+    concepts: 'Multiplication basics, chapter books, simple science.',
+    forbidden: ['analyze', 'synthesize', 'evaluate', 'complex']
+  },
+  '4': {
+    maxSentences: 3,
+    vocabulary: 'Grade 4 level. Can use "parts" but not "elements" or "components".',
+    concepts: 'Multi-step problems, longer stories, basic science concepts.',
+    forbidden: ['analyze', 'synthesize', 'evaluate']
+  },
+  '5': {
+    maxSentences: 4,
+    vocabulary: 'Grade 5 level. Introduce some academic terms carefully.',
+    concepts: 'Fractions, research projects, earth science.',
+    forbidden: ['synthesize', 'evaluate', 'critique']
+  }
 };
 
+// More restrictive token limits
 const getMaxTokensForGrade = grade => {
-  if (['PreK', 'K', '1', '2'].includes(grade)) return 80;
-  if (['3', '4', '5'].includes(grade)) return 100;
-  if (['6', '7', '8'].includes(grade)) return 120;
-  return 150;
+  if (['PreK', 'K'].includes(grade)) return 25;  // Very short responses
+  if (['1', '2'].includes(grade)) return 40;     // Still very short
+  if (['3', '4'].includes(grade)) return 60;     // Short responses
+  if (['5', '6'].includes(grade)) return 80;     // Medium-short
+  if (['7', '8'].includes(grade)) return 100;    // Medium
+  return 120; // Longer for high school
 };
 
+// After-school tutoring system prompt with natural, warm feel
 const getTutorSystemPrompt = (grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null, readingTask = false) => {
-  const guideline = gradeGuidelines[grade] || gradeGuidelines.K;
+  const guidelines = gradeGuidelines[grade] || gradeGuidelines.K;
+  const isVeryYoung = ['PreK', 'K', '1', '2'].includes(grade);
   
-  let difficultyAdjustment = 'Maintain a steady, encouraging pace with balanced support and challenge.';
+  // Personalized encouragement based on how they're doing
+  let personalizedSupport = '';
   if (difficultyLevel < 0.3) {
-    difficultyAdjustment = 'Student struggling—give extra clear, simple steps and encouraging hints.';
+    personalizedSupport = `${studentName} seems to need extra help today. Go slower, use simpler words, and give lots of encouragement.`;
   } else if (difficultyLevel > 0.7) {
-    difficultyAdjustment = 'Student grasping quickly—offer more complex challenges and deeper inquiry.';
+    personalizedSupport = `${studentName} is doing great today! You can challenge them a bit more, but keep it age-appropriate.`;
+  } else {
+    personalizedSupport = `${studentName} is making steady progress. Keep up the supportive, patient approach.`;
   }
 
   let foundationalReview = '';
   if (needsFoundationalReview?.skill === 'counting') {
-    foundationalReview = `CRITICAL: Student needs counting review. Guide counting 1-10 before returning to: "${needsFoundationalReview.originalProblem}"`;
+    foundationalReview = `${studentName} needs to practice counting first. Make it fun - count fingers, toys, or snacks before going back to the main problem.`;
   }
 
-  const isEarlyGrade = ['PreK', 'K', '1', '2'].includes(grade);
-  const readingInstruction = isEarlyGrade && readingTask ? 
+  const readingInstruction = isVeryYoung && readingTask ? 
     'For reading: reply in JSON {"message":"...","READING_WORD":"word"} (do NOT spell word in message)' : '';
 
-  return `You are an AI Tutor guiding ${studentName} to THINK, not memorize.
-• ${guideline}
-• Celebrate effort and curiosity—every attempt is progress.
-• Ask guiding questions; break problems into small steps.
-• Never give answers outright—prompt discovery with hints.
-• When topics requested, suggest 2–3 grade-appropriate options.
+  // Grade-specific interaction style
+  let interactionStyle = '';
+  if (isVeryYoung) {
+    interactionStyle = `
+You're like a patient after-school tutor working one-on-one with ${studentName}:
+- Use simple words they definitely know
+- Keep responses to ${guidelines.maxSentences} sentence${guidelines.maxSentences > 1 ? 's' : ''} max
+- Ask one easy question to guide them
+- Be warm and encouraging like you've been working together
+- Say things like "Good job!" or "Let's try this together!"
+- Avoid words like: ${guidelines.forbidden?.join(', ')}`;
+  } else {
+    interactionStyle = `
+You're ${studentName}'s after-school tutor who knows them well:
+- Keep responses brief but conversational 
+- Guide them to discover answers, don't give them away
+- Match their energy - if they're excited, be excited too
+- Use encouraging phrases that feel natural`;
+  }
+
+  return `You are ${studentName}'s personal after-school tutor. They're in grade ${grade} and you've been working together.
+
+${personalizedSupport}
+
+${interactionStyle}
+
 ${foundationalReview}
-${difficultyAdjustment}
-${readingInstruction}`.trim();
+${readingInstruction}
+
+Remember: This feels like a cozy after-school tutoring session, not a formal classroom. Be warm, patient, and keep things simple for grade ${grade}.`.trim();
 };
 
 const createSessionObject = (sessionId, studentName, grade) => ({
@@ -170,42 +227,43 @@ const getInappropriateResponse = (category, session) => {
   };
 };
 
+// Warm after-school tutoring welcome messages
 const generateWelcomeMessage = (studentName, grade) => {
   const messages = {
-    PreK: `Hi ${studentName}! I'm your AI tutor! Let's learn through play—colors, shapes, or animal sounds?`,
-    K: `Hello ${studentName}! I'm your AI tutor. We could count, learn letters, or talk about animals—what sounds fun?`,
-    '1': `Hey ${studentName}! I'm your AI tutor. Want to practice reading, try a math puzzle, or discover science?`,
-    '2': `Hi ${studentName}! I'm your AI tutor. What should we explore—math puzzles, stories, or cool science?`,
-    '3': `Hello ${studentName}! I'm your AI tutor. What are you curious about—math, reading, science, or history?`
+    PreK: `Hi ${studentName}! Ready to play and learn together?`,
+    K: `Hey ${studentName}! What do you want to work on today?`,
+    '1': `Hi there, ${studentName}! What should we practice together?`,
+    '2': `Hello ${studentName}! What are you excited to learn about today?`,
+    '3': `Hey ${studentName}! What caught your interest today at school?`,
+    '4': `Hi ${studentName}! Ready for some fun learning time?`,
+    '5': `Hey there, ${studentName}! What's on your mind to explore today?`
   };
-  return messages[grade] || `Hi ${studentName}! I'm your AI tutor for today. What would you like to explore?`;
+  return messages[grade] || `Hi ${studentName}! Good to see you again. What should we work on?`;
 };
 
 const generateSafeSuggestions = (grade, forceGeneral = false) => {
-  const general = [
-    'Let\'s explore the wonders of science!',
-    'Want to learn about fascinating animals?',
-    'How about some fun math puzzles?',
-    'Let\'s read an exciting story together!',
-    'What about discovering new music rhythms?',
-    'Curious about how technology works?',
-    'How about a peek into history?'
-  ].sort(() => 0.5 - Math.random());
-
-  if (forceGeneral) return general.slice(0, 3);
-
   const gradeSpecific = {
-    PreK: ['Let\'s learn colors!', 'What about shapes?', 'Let\'s sing a song!'],
-    K: ['Let\'s count!', 'What about letters?', 'Let\'s learn animal sounds!'],
-    '1': ['Let\'s practice ABCs!', 'How about counting to 100?', 'Tell me about your favorite animal!']
+    PreK: ['Let\'s count your toys!', 'What colors do you see?', 'Can you make animal sounds?'],
+    K: ['Want to practice your letters?', 'Let\'s count to 10 together!', 'Tell me about your favorite animal!'],
+    '1': ['How about some reading practice?', 'Want to try some adding?', 'Let\'s talk about your day!'],
+    '2': ['Ready for a story?', 'Want to practice math?', 'Tell me something cool you learned!'],
+    '3': ['What\'s something you\'re curious about?', 'Want to work on that math homework?', 'How about we read together?'],
+    '4': ['What subject do you want help with?', 'Want to try a fun challenge?', 'Tell me about your favorite book!'],
+    '5': ['What\'s been tricky for you lately?', 'Want to explore something new?', 'How about some problem solving?']
   };
 
-  const suggestions = gradeSpecific[grade] || general;
-  return Array.from(new Set([
-    ...suggestions.slice(0, 2),
-    'Want to pick a new topic?',
-    'What else are you curious about?'
-  ])).slice(0, 3);
+  const general = [
+    'What did you learn at school today?',
+    'Want to try something fun?',
+    'Tell me what you\'re thinking about!',
+    'What sounds interesting to you?',
+    'How about we practice together?',
+    'What would you like help with?'
+  ].sort(() => 0.5 - Math.random());
+
+  if (forceGeneral || !gradeSpecific[grade]) return general.slice(0, 3);
+
+  return gradeSpecific[grade];
 };
 
 const classifySubject = text => {
@@ -231,36 +289,53 @@ const classifySubject = text => {
 };
 
 const generateDynamicSuggestions = session => {
-  const suggestions = {
-    math: ["Want a math puzzle?", "Switch to a different math topic?", "Try a quick math quiz?"],
-    reading: ["Want to read together?", "Need help with tricky words?", "Switch to a fun story?"],
-    science: ["Try a science experiment at home?", "Explore another science topic?", "Ask a big science question!"],
-    music: ["Want to learn about different instruments?", "How about music from around the world?", "What about composing a simple song?"],
-    socialStudies: ["Want to learn about world cultures?", "How about famous leaders?", "What about different forms of government?"],
-    pe: ["Want to learn about staying active?", "How about healthy habits?", "What about different ways to play and move?"],
-    technology: ["Want to learn about how technology helps us?", "How about exploring the internet?", "What about designing a new app idea?"],
-    language: ["Want to learn about a new language?", "How about exploring common phrases?", "What about understanding different alphabets?"]
+  // Natural follow-up suggestions that feel conversational
+  const contextualSuggestions = {
+    math: {
+      PreK: ["Let's count more things!", "Want to find shapes?", "How about colors and numbers?"],
+      K: ["Try counting something else!", "Want to add with your fingers?", "Let's find numbers around us!"],
+      '1': ["Want to try another math problem?", "How about counting by 2s?", "Let's practice adding!"],
+      '2': ["Ready for a harder one?", "Want to try subtraction?", "How about a word problem?"],
+      default: ["Want to try another approach?", "How about a different type of problem?", "Ready for the next challenge?"]
+    },
+    reading: {
+      PreK: ["Let's find more letters!", "Want to rhyme some words?", "How about picture stories?"],
+      K: ["Want to read another word?", "Let's find letters in your name!", "How about a simple book?"],
+      '1': ["Want to try reading together?", "How about sounding out words?", "Let's read a short story!"],
+      '2': ["Ready for a longer story?", "Want to talk about characters?", "How about new vocabulary?"],
+      default: ["Want to read something different?", "How about discussing what we read?", "Ready for the next chapter?"]
+    },
+    science: {
+      PreK: ["Let's explore more animals!", "Want to talk about weather?", "How about plants?"],
+      K: ["Want to learn about different animals?", "Let's talk about the sky!", "How about our bodies?"],
+      default: ["Want to try an experiment?", "How about exploring nature?", "Let's ask more questions!"]
+    }
   };
 
   const topic = session.currentTopic;
-  const topicSuggestions = suggestions[topic] || generateSafeSuggestions(session.grade, true);
+  const grade = session.grade;
   
-  return Array.from(new Set([
-    ...topicSuggestions.slice(0, 2),
-    "Want to pick a new topic?",
-    "What else are you curious about?"
-  ])).slice(0, 3);
+  if (topic && contextualSuggestions[topic]) {
+    const gradeSuggestions = contextualSuggestions[topic][grade] || contextualSuggestions[topic].default;
+    if (gradeSuggestions) {
+      return [...gradeSuggestions.slice(0, 2), "What else interests you?"];
+    }
+  }
+  
+  return generateSafeSuggestions(session.grade, true);
 };
 
-const generateEncouragement = () => {
-  const encouragements = [
-    "Keep up the great work!",
-    "You're doing wonderfully!",
-    "That's fantastic thinking!",
-    "Awesome effort!",
-    "You're making great progress!"
-  ];
-  return encouragements[Math.floor(Math.random() * encouragements.length)];
+const generateEncouragement = (grade = 'K') => {
+  const encouragements = {
+    PreK: ["You're doing great!", "Good job!", "I'm proud of you!", "You're so smart!", "Keep trying!"],
+    K: ["Nice work!", "You got it!", "Great thinking!", "You're awesome!", "Way to go!"],
+    '1': ["Excellent!", "You're getting better!", "That's right!", "Good for you!", "Keep it up!"],
+    '2': ["Fantastic work!", "You're really learning!", "That was smart!", "Great job thinking!", "You're improving!"],
+    default: ["Great work!", "You're doing well!", "Nice thinking!", "Keep going!", "Good effort!"]
+  };
+  
+  const gradeEncouragements = encouragements[grade] || encouragements.default;
+  return gradeEncouragements[Math.floor(Math.random() * gradeEncouragements.length)];
 };
 
 const checkFoundationalSkills = (userMessage, session) => {
@@ -313,6 +388,41 @@ const generateNextSteps = session => {
   return ['Keep exploring and practicing what interests you most! Every question makes you smarter!'];
 };
 
+// Post-processing to catch inappropriate vocabulary for young grades
+const filterResponseForGrade = (response, grade) => {
+  const isVeryYoung = ['PreK', 'K', '1', '2'].includes(grade);
+  if (!isVeryYoung) return response;
+
+  const guidelines = gradeGuidelines[grade];
+  if (!guidelines?.forbidden) return response;
+
+  let filtered = response;
+  
+  // Replace forbidden words with simpler alternatives
+  const replacements = {
+    'elements': 'things',
+    'components': 'parts',
+    'analyze': 'look at',
+    'examine': 'look at',
+    'determine': 'find out',
+    'characteristics': 'what it looks like',
+    'properties': 'what it does',
+    'understand': 'know',
+    'explain': 'tell me',
+    'because': 'so',
+    'however': 'but',
+    'different': 'not the same',
+    'important': 'special'
+  };
+
+  for (const [complex, simple] of Object.entries(replacements)) {
+    const regex = new RegExp(`\\b${complex}\\b`, 'gi');
+    filtered = filtered.replace(regex, simple);
+  }
+
+  return filtered;
+};
+
 // --- Core AI Response Generation ---
 async function generateAIResponse(sessionId, userMessage, res) {
   const session = sessions.get(sessionId);
@@ -337,7 +447,7 @@ async function generateAIResponse(sessionId, userMessage, res) {
   }
 
   const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage);
-  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-5);
+  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3); // Shorter context for younger grades
   
   const messagesToSend = [
     { 
@@ -355,12 +465,12 @@ async function generateAIResponse(sessionId, userMessage, res) {
 
   try {
     let maxTokens = getMaxTokensForGrade(session.grade);
-    if (userMessage.toLowerCase().includes('story')) {
-      maxTokens = Math.min(maxTokens * 2, 300);
-    }
-
-    const adjustedTemperature = session.difficultyLevel < 0.3 ? 0.5 : 
-                               (session.difficultyLevel > 0.7 ? 0.8 : config.GPT_TEMPERATURE);
+    
+    // Much lower temperature for younger grades to reduce creativity/complexity
+    const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade);
+    const adjustedTemperature = isVeryYoung ? 0.3 : 
+                               (session.difficultyLevel < 0.3 ? 0.4 : 
+                               (session.difficultyLevel > 0.7 ? 0.6 : 0.5));
 
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
@@ -369,10 +479,23 @@ async function generateAIResponse(sessionId, userMessage, res) {
       temperature: adjustedTemperature,
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
-      stop: ["\n\n", "Additionally:", "Furthermore:", "Moreover:"]
+      stop: ["\n\n", "Additionally:", "Furthermore:", "Moreover:", "However,", "Therefore,", "In conclusion,"]
     });
 
     let aiText = completion.choices[0].message.content.trim();
+    
+    // Apply post-processing filter for vocabulary
+    aiText = filterResponseForGrade(aiText, session.grade);
+    
+    // Truncate if still too long (safety net)
+    const guidelines = gradeGuidelines[session.grade];
+    if (guidelines?.maxSentences) {
+      const sentences = aiText.split(/[.!?]+/).filter(s => s.trim());
+      if (sentences.length > guidelines.maxSentences) {
+        aiText = sentences.slice(0, guidelines.maxSentences).join('. ') + '.';
+      }
+    }
+    
     session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() });
 
     // Update session tracking
@@ -390,7 +513,7 @@ async function generateAIResponse(sessionId, userMessage, res) {
     const passiveResponses = ["i don't know", "i dunno", "tell me", "what is the answer"];
     if (passiveResponses.some(phrase => lastUserContent.includes(phrase))) {
       session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1);
-    } else if (aiText.length > 50 && !aiText.includes("wrong") && !session.needsFoundationalReview) {
+    } else if (aiText.length > 20 && !aiText.includes("wrong") && !session.needsFoundationalReview) {
       session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05);
     }
 
@@ -410,7 +533,7 @@ async function generateAIResponse(sessionId, userMessage, res) {
       readingWord: readingWord,
       subject: userSubject,
       suggestions: generateDynamicSuggestions(session),
-      encouragement: generateEncouragement(),
+      encouragement: generateEncouragement(session.grade),
       status: 'success',
       sessionStats: {
         totalWarnings: session.totalWarnings,
@@ -422,7 +545,7 @@ async function generateAIResponse(sessionId, userMessage, res) {
     console.error(`❌ Error processing chat for session ${sessionId.slice(-6)}:`, error.message);
     res.status(500).json({
       error: 'Failed to process message. Please try again.',
-      fallback: `Oops! My brain had a hiccup. No worries, ${session.studentName}! Can you tell me again what you're curious about?`
+      fallback: `Oops! Can you ask me again, ${session.studentName}?`
     });
   }
 }

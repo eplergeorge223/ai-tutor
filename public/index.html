@@ -1,3 +1,9 @@
+const Index = () => {
+  return (
+    <div className="min-h-screen">
+      <div 
+        dangerouslySetInnerHTML={{ 
+          __html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,16 +13,15 @@
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass-bg: rgba(255,255,255,0.1);
-            --glass-border: rgba(255,255,255,0.2);
-            --accent-green: linear-gradient(45deg, #4CAF50, #45a049);
-            --accent-blue: linear-gradient(45deg, #2196F3, #1976D2);
-            --accent-red: linear-gradient(45deg, #f44336, #d32f2f);
-            --accent-yellow: linear-gradient(45deg, #ffcc00, #ffa500);
+            --secondary-gradient: linear-gradient(45deg, #4CAF50, #45a049);
+            --accent-gradient: linear-gradient(45deg, #2196F3, #1976D2);
+            --glass-bg: rgba(255,255,255,0.12);
+            --glass-border: rgba(255,255,255,0.25);
             --shadow: 0 8px 32px rgba(0,0,0,0.12);
-            --shadow-hover: 0 12px 40px rgba(0,0,0,0.15);
+            --shadow-hover: 0 12px 40px rgba(0,0,0,0.18);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --radius: 20px;
+            --radius-sm: 12px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,13 +31,10 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             background-attachment: fixed;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: white;
-            padding: 2rem;
             line-height: 1.6;
             position: relative;
+            overflow-x: hidden;
         }
 
         body::before {
@@ -40,34 +42,65 @@
             position: fixed;
             inset: 0;
             background: 
-                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
         }
 
-        .container { text-align: center; max-width: 800px; width: 100%; }
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        .main-content.with-sidebar {
+            margin-right: 320px;
+        }
+
+        .content-wrapper {
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
 
         .mascot {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            font-size: clamp(3.5rem, 8vw, 5rem);
+            margin-bottom: 1.5rem;
             animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            user-select: none;
         }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(2deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
         }
 
         h1, h2 {
-            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-shadow: 0 4px 16px rgba(0,0,0,0.4);
             margin-bottom: 1rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        h1 { font-size: 2.5rem; }
-        h2 { font-size: 2rem; }
+        h1 { font-size: clamp(2.2rem, 6vw, 3rem); }
+        h2 { font-size: clamp(1.8rem, 5vw, 2.5rem); }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            margin-bottom: 2.5rem;
+            opacity: 0.9;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
 
         .glass-panel {
             background: var(--glass-bg);
@@ -77,63 +110,89 @@
             box-shadow: var(--shadow);
             transition: var(--transition);
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .glass-panel:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        }
 
+        .glass-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Welcome Screen */
         .student-info {
             margin: 2rem 0;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            text-align: left;
         }
 
         .form-group label {
             font-weight: 600;
             font-size: 1.1rem;
             margin-left: 0.5rem;
+            color: rgba(255,255,255,0.95);
         }
 
         .form-group input, .form-group select {
-            background: var(--glass-bg);
-            border: 2px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 1rem 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.25rem;
             color: white;
             font-size: 1rem;
             width: 100%;
-            max-width: 320px;
             transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
 
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: rgba(255,255,255,0.5);
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.1);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.15);
         }
 
         .form-group input::placeholder { color: rgba(255,255,255,0.7); }
         .form-group select option { background: #764ba2; color: white; }
 
-        .btn {
+        .btn-primary {
+            background: var(--primary-gradient);
             border: none;
             border-radius: var(--radius);
-            font-weight: 600;
+            padding: 1.25rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
             cursor: pointer;
             transition: var(--transition);
-            font-family: inherit;
+            box-shadow: var(--shadow);
+            margin-top: 1.5rem;
             position: relative;
             overflow: hidden;
         }
 
-        .btn::before {
+        .btn-primary::before {
             content: '';
             position: absolute;
             top: 0;
@@ -144,134 +203,255 @@
             transition: left 0.5s;
         }
 
-        .btn:hover::before { left: 100%; }
-
-        .btn-primary {
-            background: var(--accent-green);
-            padding: 1.5rem 3rem;
-            font-size: 1.4rem;
-            color: white;
-            box-shadow: var(--shadow);
-            margin: 1rem 0;
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: var(--shadow-hover);
         }
 
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+        .btn-primary:hover::before { left: 100%; }
 
-        .btn-secondary {
-            background: var(--accent-red);
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: white;
-            margin: 0.5rem;
+        /* Tutor Interface - Compact Layout */
+        .tutor-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .status-display {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem 2rem;
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: 500;
+            text-align: center;
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* Improved Voice Controls */
+        .voice-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .mic-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .voice-button {
-            background: var(--accent-blue);
-            width: 120px;
-            height: 120px;
+            background: var(--secondary-gradient);
+            width: clamp(120px, 25vw, 160px);
+            height: clamp(120px, 25vw, 160px);
+            border: none;
             border-radius: 50%;
-            font-size: 2rem;
+            font-size: clamp(2.5rem, 6vw, 3.5rem);
             color: white;
-            margin: 1rem;
-            display: inline-flex;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
         }
 
-        .voice-button:hover:not(:disabled) { transform: scale(1.05); }
+        .voice-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .voice-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .voice-button:hover::before { opacity: 1; }
         .voice-button:active { transform: scale(0.95); }
         .voice-button:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .voice-button.listening {
-            background: var(--accent-red);
-            animation: pulse 1.5s ease-in-out infinite;
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            animation: pulse-listening 1.5s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
-            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(244, 67, 54, 0); }
+        @keyframes pulse-listening {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(244, 67, 54, 0);
+            }
         }
 
-        .status {
-            font-size: 1.2rem;
+        .voice-hint {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .end-session-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .end-session-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Reading Prompt */
+        .reading-prompt {
             margin: 2rem 0;
-            min-height: 4rem;
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 500;
-        }
-
-        .voice-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 1rem;
+            max-width: 500px;
         }
 
-        .notes-section {
-            padding: 1.5rem;
-            margin: 2rem 0;
+        .reading-prompt-text {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .reading-word {
+            font-size: clamp(2.5rem, 7vw, 3.5rem);
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            color: #764ba2;
+            padding: clamp(1rem, 3vw, 1.5rem) clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 3px solid rgba(255,255,255,0.8);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* Sidebar Notes Panel */
+        .notes-sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100vh;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(25px);
+            border-left: 1px solid rgba(255,255,255,0.2);
+            transition: var(--transition);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-sidebar.open {
+            right: 0;
         }
 
         .notes-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 1rem;
         }
 
         .notes-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
+        .close-notes {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .close-notes:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
         .notes-tools {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
+            flex-wrap: wrap;
             gap: 0.5rem;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .tool-btn {
-            background: var(--glass-bg);
-            border: 2px solid var(--glass-border);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             padding: 0.5rem;
             color: white;
             cursor: pointer;
             transition: var(--transition);
-            font-size: 1.1rem;
-            width: 40px;
-            height: 40px;
+            font-size: 1rem;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .tool-btn:hover, .tool-btn.active {
-            background: var(--glass-border);
-            border-color: rgba(255,255,255,0.4);
-            transform: translateY(-1px);
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
         }
 
         .color-picker {
             display: flex;
-            gap: 0.3rem;
+            gap: 0.25rem;
             margin-left: 0.5rem;
         }
 
         .color-option {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid transparent;
@@ -287,37 +467,47 @@
             margin-left: 0.5rem;
             display: flex;
             align-items: center;
+            gap: 0.25rem;
         }
 
         .brush-size input {
-            width: 60px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 5px;
+            width: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
             padding: 0.25rem;
             color: white;
+            font-size: 0.8rem;
+        }
+
+        .notes-content {
+            flex: 1;
+            padding: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .notes-canvas-container {
             background: rgba(255,255,255,0.95);
-            border-radius: 15px;
+            border-radius: var(--radius-sm);
             overflow: hidden;
-            box-shadow: var(--shadow);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+            flex: 1;
             position: relative;
-            min-height: 300px;
         }
 
         .notes-textarea {
             width: 100%;
-            min-height: 200px;
+            height: 100%;
             padding: 1rem;
             border: none;
             outline: none;
             background: transparent;
-            resize: vertical;
+            resize: none;
             font-family: inherit;
-            font-size: 1rem;
-            line-height: 1.5;
+            font-size: 0.9rem;
+            line-height: 1.4;
             color: #333;
         }
 
@@ -329,176 +519,274 @@
         .notes-canvas {
             cursor: crosshair;
             touch-action: none;
+            display: block;
         }
 
+        /* Notes Toggle Button */
+        .notes-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            z-index: 1001;
+        }
+
+        .notes-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .notes-toggle.active {
+            background: var(--secondary-gradient);
+        }
+
+        /* Session Summary */
+        .session-summary {
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .summary-item {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--glass-bg);
+            border-radius: var(--radius-sm);
+            border-left: 4px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(20px);
+        }
+
+        .summary-item strong {
+            color: rgba(255,255,255,0.95);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Live Captions */
         .live-captions {
             position: fixed;
-            bottom: 8vh;
+            bottom: clamp(2rem, 8vh, 6rem);
             left: 50%;
             transform: translateX(-50%);
-            min-width: 220px;
-            max-width: 90vw;
-            background: rgba(0,0,0,0.85);
+            min-width: 200px;
+            max-width: 85vw;
+            background: rgba(0,0,0,0.9);
             color: white;
-            font-size: 1.3rem;
-            font-weight: 500;
-            padding: 1.2rem 2.5rem;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
             border-radius: var(--radius);
             text-align: center;
             z-index: 1000;
-            backdrop-filter: blur(10px);
-            box-shadow: var(--shadow-hover);
+            backdrop-filter: blur(15px);
+            box-shadow: var(--shadow);
             transition: var(--transition);
             pointer-events: none;
         }
 
         .live-captions.user-caption {
-            background: rgba(76, 175, 80, 0.9);
+            background: rgba(76, 175, 80, 0.95);
             border: 2px solid #4CAF50;
         }
 
         .live-captions.bot-caption {
-            background: rgba(33, 150, 243, 0.9);
+            background: rgba(33, 150, 243, 0.95);
             border: 2px solid #2196F3;
         }
 
-        .reading-prompt {
-            margin: 2rem 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .reading-word {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            background: linear-gradient(45deg, #fff, #f0f0f0);
-            color: #764ba2;
-            padding: 1.5rem 3rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 3px solid rgba(255,255,255,0.8);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .session-summary { padding: 2rem; margin: 2rem 0; text-align: left; }
-
-        .summary-item {
-            margin: 1.5rem 0;
-            padding: 1rem;
-            background: var(--glass-bg);
-            border-radius: 15px;
-            border-left: 4px solid rgba(255,255,255,0.5);
-        }
-
-        .summary-item strong { color: rgba(255,255,255,0.9); }
-
+        /* Utility Classes */
         .hidden { display: none !important; }
 
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
-            .voice-controls { flex-direction: row; justify-content: center; }
-            .container { padding: 0.5rem; }
-            h1 { font-size: 2rem; }
-            h2 { font-size: 1.6rem; }
-            .voice-button { width: 100px; height: 100px; font-size: 1.5rem; }
-            .btn-primary { padding: 1rem 2rem; font-size: 1.2rem; }
-            .student-info { padding: 1.5rem; }
-            .reading-word { font-size: 2.8rem; padding: 1rem 2rem; }
-            .notes-header { flex-direction: column; align-items: center; }
-            .brush-size { margin-left: 0; }
+            .main-content.with-sidebar {
+                margin-right: 0;
+            }
+
+            .notes-sidebar {
+                width: 100vw;
+                right: -100vw;
+            }
+
+            .notes-toggle {
+                top: 1rem;
+                right: 1rem;
+                width: 48px;
+                height: 48px;
+                font-size: 1.3rem;
+            }
+
+            .voice-button {
+                width: clamp(100px, 30vw, 140px);
+                height: clamp(100px, 30vw, 140px);
+            }
+
+            .content-wrapper {
+                padding: 0 1rem;
+            }
+
+            .form-group input, .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
         }
 
         @media (max-width: 480px) {
-            .mascot { font-size: 3rem; }
-            .status { font-size: 1rem; padding: 1rem; }
-            .live-captions { font-size: 1.1rem; padding: 1rem 2rem; }
+            .main-content {
+                padding: 1rem;
+            }
+
+            .glass-panel {
+                padding: 1.5rem;
+            }
+
+            .notes-tools {
+                padding: 0.75rem;
+            }
+
+            .tool-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+
+            .live-captions {
+                bottom: 1rem;
+                padding: 0.75rem 1.25rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Enhanced Focus States for Accessibility */
+        .voice-button:focus,
+        .btn-primary:focus,
+        .end-session-btn:focus,
+        .notes-toggle:focus,
+        .tool-btn:focus {
+            outline: 2px solid rgba(255,255,255,0.6);
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Welcome Screen -->
-        <div id="welcome-screen">
-            <div class="mascot">🎓</div>
-            <h1>Hi! I'm your AI Tutor!</h1>
-            <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">Ready to learn and explore together?</p>
-            
-            <div class="student-info glass-panel">
-                <div class="form-group">
-                    <label for="student-name">Student</label>
-                    <input type="text" id="student-name" placeholder="What's your name?" maxlength="50">
-                </div>
-                <div class="form-group">
-                    <label for="student-grade">Grade</label>
-                    <select id="student-grade">
-                        <option value="">Select your grade</option>
-                        <option value="PreK">Pre-K</option>
-                        <option value="K">Kindergarten</option>
-                        <option value="1">1st Grade</option>
-                        <option value="2">2nd Grade</option>
-                        <option value="3">3rd Grade</option>
-                        <option value="4">4th Grade</option>
-                        <option value="5">5th Grade</option>
-                        <option value="6">6th Grade</option>
-                        <option value="7">7th Grade</option>
-                        <option value="8">8th Grade</option>
-                        <option value="9">9th Grade</option>
-                        <option value="10">10th Grade</option>
-                        <option value="11">11th Grade</option>
-                        <option value="12">12th Grade</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="startTutoring()">Start Learning!</button>
-        </div>
-
-        <!-- Tutor Interface -->
-        <div id="tutor-interface" class="hidden">
-            <div class="mascot">🤖</div>
-            <h2>Let's Learn Together!</h2>
-            
-            <div class="status glass-panel" id="status">Press the microphone to start talking!</div>
-            
-            <div class="voice-controls">
-                <button class="voice-button btn" id="mic-btn" onclick="toggleListening()">🎤</button>
-                <button class="btn btn-secondary" onclick="endSession()">End Session</button>
-            </div>
-
-            <div class="notes-section glass-panel">
-                <div class="notes-header">
-                    <div class="notes-title">📝 My Learning Notes</div>
-                    <div class="notes-tools">
-                        <button class="tool-btn" id="text-tool" onclick="switchToText()" title="Text Mode">📖</button>
-                        <button class="tool-btn active" id="draw-tool" onclick="switchToDraw()" title="Draw Mode">🖌️</button>
-                        <button class="tool-btn" onclick="clearNotes()" title="Clear All">🗑️</button>
-                        <div class="color-picker">
-                            <div class="color-option active" style="background: #000" onclick="setColor('#000')" data-color="#000"></div>
-                            <div class="color-option" style="background: #e74c3c" onclick="setColor('#e74c3c')" data-color="#e74c3c"></div>
-                            <div class="color-option" style="background: #3498db" onclick="setColor('#3498db')" data-color="#3498db"></div>
-                            <div class="color-option" style="background: #2ecc71" onclick="setColor('#2ecc71')" data-color="#2ecc71"></div>
-                            <div class="color-option" style="background: #f39c12" onclick="setColor('#f39c12')" data-color="#f39c12"></div>
-                            <div class="color-option" style="background: #9b59b6" onclick="setColor('#9b59b6')" data-color="#9b59b6"></div>
+    <div class="app-container">
+        <!-- Main Content Area -->
+        <div class="main-content" id="main-content">
+            <div class="content-wrapper">
+                <!-- Welcome Screen -->
+                <div id="welcome-screen">
+                    <div class="mascot">🎓</div>
+                    <h1>Hi! I'm your AI Tutor!</h1>
+                    <p class="subtitle">Ready to learn and explore together?</p>
+                    
+                    <div class="student-info glass-panel">
+                        <div class="form-group">
+                            <label for="student-name">Student Name</label>
+                            <input type="text" id="student-name" placeholder="What's your name?" maxlength="50">
                         </div>
-                        <div class="brush-size">
-                            <input type="range" id="brush-size" min="1" max="10" value="3" onchange="setBrushSize(this.value)">
+                        <div class="form-group">
+                            <label for="student-grade">Grade Level</label>
+                            <select id="student-grade">
+                                <option value="">Select your grade</option>
+                                <option value="PreK">Pre-K</option>
+                                <option value="K">Kindergarten</option>
+                                <option value="1">1st Grade</option>
+                                <option value="2">2nd Grade</option>
+                                <option value="3">3rd Grade</option>
+                                <option value="4">4th Grade</option>
+                                <option value="5">5th Grade</option>
+                                <option value="6">6th Grade</option>
+                                <option value="7">7th Grade</option>
+                                <option value="8">8th Grade</option>
+                                <option value="9">9th Grade</option>
+                                <option value="10">10th Grade</option>
+                                <option value="11">11th Grade</option>
+                                <option value="12">12th Grade</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="startTutoring()">Start Learning!</button>
+                    </div>
+                </div>
+
+                <!-- Tutor Interface -->
+                <div id="tutor-interface" class="hidden">
+                    <div class="tutor-main">
+                        <div class="mascot">🤖</div>
+                        <h2>Let's Learn Together!</h2>
+                        
+                        <!-- Reading Prompt (when active) -->
+                        <div id="reading-prompt-container"></div>
+                        
+                        <!-- Status Display -->
+                        <div class="status-display" id="status">Press the microphone to start talking!</div>
+                        
+                        <!-- Voice Controls -->
+                        <div class="voice-section">
+                            <div class="mic-container">
+                                <button class="voice-button" id="mic-btn" onclick="toggleListening()" aria-label="Toggle microphone">🎤</button>
+                            </div>
+                            <p class="voice-hint">Tap the microphone and start speaking</p>
+                            <button class="end-session-btn" onclick="endSession()">End Session</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- Session Summary -->
+                <div id="session-summary" class="session-summary glass-panel hidden">
+                    <h2>Session Complete! 🎉</h2>
+                    <div id="summary-content"></div>
+                    <button class="btn-primary" onclick="startNewSession()">Start New Session</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Toggle Button -->
+        <button class="notes-toggle" id="notes-toggle" onclick="toggleNotes()" title="Toggle Notes" aria-label="Toggle notes panel">📝</button>
+
+        <!-- Notes Sidebar -->
+        <div class="notes-sidebar" id="notes-sidebar">
+            <div class="notes-header">
+                <div class="notes-title">📝 Learning Notes</div>
+                <button class="close-notes" onclick="toggleNotes()" aria-label="Close notes">×</button>
+            </div>
+            
+            <div class="notes-tools">
+                <button class="tool-btn" id="text-tool" onclick="switchToText()" title="Text Mode" aria-label="Switch to text mode">📖</button>
+                <button class="tool-btn active" id="draw-tool" onclick="switchToDraw()" title="Draw Mode" aria-label="Switch to draw mode">🖌️</button>
+                <button class="tool-btn" onclick="clearNotes()" title="Clear All" aria-label="Clear all notes">🗑️</button>
+                
+                <div class="color-picker">
+                    <div class="color-option active" style="background: #000" onclick="setColor('#000')" data-color="#000" title="Black"></div>
+                    <div class="color-option" style="background: #e74c3c" onclick="setColor('#e74c3c')" data-color="#e74c3c" title="Red"></div>
+                    <div class="color-option" style="background: #3498db" onclick="setColor('#3498db')" data-color="#3498db" title="Blue"></div>
+                    <div class="color-option" style="background: #2ecc71" onclick="setColor('#2ecc71')" data-color="#2ecc71" title="Green"></div>
+                    <div class="color-option" style="background: #f39c12" onclick="setColor('#f39c12')" data-color="#f39c12" title="Orange"></div>
+                </div>
+                
+                <div class="brush-size">
+                    <span style="font-size: 0.8rem; opacity: 0.8;">Size:</span>
+                    <input type="range" id="brush-size" min="1" max="8" value="3" onchange="setBrushSize(this.value)" aria-label="Brush size">
+                </div>
+            </div>
+            
+            <div class="notes-content">
                 <div class="notes-canvas-container">
                     <textarea class="notes-textarea" id="notes-text" placeholder="Type your learning notes here..." style="display: none;"></textarea>
                     <canvas class="notes-canvas" id="notes-canvas"></canvas>
                 </div>
             </div>
-        </div>
-
-        <!-- Session Summary -->
-        <div id="session-summary" class="session-summary glass-panel hidden">
-            <h2>Session Complete! 🎉</h2>
-            <div id="summary-content"></div>
-            <button class="btn btn-primary" onclick="startNewSession()">Start New Session</button>
         </div>
 
         <!-- Live Captions -->
@@ -518,7 +806,8 @@
             conversationContext: [],
             chatHistory: [],
             currentSubject: null,
-            flashCardsEnabled: true
+            flashCardsEnabled: true,
+            notesOpen: false
         };
 
         const notesState = {
@@ -534,6 +823,27 @@
         const $ = id => document.getElementById(id);
         const updateStatus = msg => $('status').textContent = msg;
         const addToConversation = (sender, message) => state.chatHistory.push({ sender, message });
+
+        // Notes Panel Management
+        function toggleNotes() {
+            state.notesOpen = !state.notesOpen;
+            const sidebar = $('notes-sidebar');
+            const mainContent = $('main-content');
+            const toggle = $('notes-toggle');
+            
+            if (state.notesOpen) {
+                sidebar.classList.add('open');
+                if (window.innerWidth > 768) {
+                    mainContent.classList.add('with-sidebar');
+                }
+                toggle.classList.add('active');
+                setTimeout(() => initializeCanvas(), 100);
+            } else {
+                sidebar.classList.remove('open');
+                mainContent.classList.remove('with-sidebar');
+                toggle.classList.remove('active');
+            }
+        }
 
         // Speech Setup
         async function initializeSpeechSynthesis() {
@@ -655,19 +965,19 @@
         }
 
         // Reading Word Display
-        function showReadingWordPrompt(prompt, word) {
-            const existing = $('reading-word-prompt');
-            if (existing) existing.remove();
+function showReadingWordPrompt(prompt, word) {
+    const container = $('reading-prompt-container');
+    container.innerHTML = `
+        <div class="reading-prompt">
+            <div class="reading-prompt-text">${prompt}</div>
+            <div class="reading-word">${word}</div>
+        </div>
+    `;
+}
 
-            const container = document.createElement('div');
-            container.id = 'reading-word-prompt';
-            container.className = 'reading-prompt';
-            container.innerHTML = `
-                <div style="font-size: 1.4rem; font-weight: 600;">${prompt}</div>
-                <div class="reading-word">${word}</div>
-            `;
 
-            $('tutor-interface').insertBefore(container, $('tutor-interface').children[2]);
+        function clearReadingPrompt() {
+            $('reading-prompt-container').innerHTML = '';
         }
 
         // Session Management
@@ -684,16 +994,19 @@
 
             try {
                 updateStatus("Starting your session...");
-                
-                const response = await fetch(`${API_BASE_URL}/session/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        studentName: studentName || 'Student',
-                        grade: studentGrade || 'K',
-                        subjects: []
-                    })
-                });
+
+const response = await fetch(`${API_BASE_URL}/session/start`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        studentName: studentName || 'Student',
+        grade: studentGrade || 'K',
+        subjects: []
+    })
+});
+
 
                 if (!response.ok) throw new Error('Failed to start session');
 
@@ -704,14 +1017,13 @@
                 $('welcome-screen').classList.add('hidden');
                 $('tutor-interface').classList.remove('hidden');
                 
-                setTimeout(() => initializeCanvas(), 100);
-                
-                const welcomeMessage = data.welcomeMessage || 
-                    `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
-                
-                await speakWithPromise(welcomeMessage);
-                addToConversation('tutor', welcomeMessage);
-                updateStatus("Press the microphone to start talking!");
+const welcomeMessage = data.welcomeMessage || 
+    `Hi ${studentName || 'there'}! I'm your AI tutor and I'm excited to learn with you today. What would you like to explore?`;
+
+await speakWithPromise(welcomeMessage);
+addToConversation('tutor', welcomeMessage);
+updateStatus("Press the microphone to start talking!");
+
 
             } catch (error) {
                 console.error('Error starting session:', error);
@@ -725,8 +1037,7 @@
             const cmd = input.trim().toLowerCase();
             if (cmd === 'stop showing flash cards') {
                 state.flashCardsEnabled = false;
-                const old = $('reading-word-prompt');
-                if (old) old.remove();
+                clearReadingPrompt();
                 updateStatus("Flash cards disabled.");
             }
 
@@ -740,19 +1051,20 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: state.currentSessionId,
-                        userMessage: input
-                    }),
-                    signal: controller.signal
-                });
+const response = await fetch(`${API_BASE_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        sessionId: state.currentSessionId,
+        userMessage: input
+    }),
+    signal: controller.signal
+});
 
                 clearTimeout(timeoutId);
 
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
 
                 const data = await response.json();
                 const tutorResponse = data.response;
@@ -766,8 +1078,7 @@
                 if (shouldCard) {
                     showReadingWordPrompt(tutorResponse, data.readingWord);
                 } else {
-                    const old = $('reading-word-prompt');
-                    if (old) old.remove();
+                    clearReadingPrompt();
                 }
 
                 await speakWithPromise(tutorResponse);
@@ -817,9 +1128,11 @@
         // Canvas Functions
         function initializeCanvas() {
             const canvas = $('notes-canvas');
+            if (!canvas) return;
+            
             const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = Math.max(300, container.clientHeight);
+            canvas.width = container.clientWidth - 32; // Account for padding
+            canvas.height = container.clientHeight - 32;
 
             notesState.canvas = canvas;
             notesState.ctx = canvas.getContext('2d');
@@ -895,13 +1208,14 @@
             $('text-tool').classList.remove('active');
             $('notes-text').style.display = 'none';
             $('notes-canvas').style.display = 'block';
-            if (!notesState.canvas) initializeCanvas();
+            if (!notesState.canvas) setTimeout(initializeCanvas, 100);
         }
 
         function setColor(color) {
             notesState.currentColor = color;
             document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
-            document.querySelector(`[data-color="${color}"]`).classList.add('active');
+document.querySelector(`[data-color="${color}"]`).classList.add('active');
+
         }
 
         function setBrushSize(size) {
@@ -958,7 +1272,8 @@
             lastCaptionTime = now;
             const captionsDiv = $('live-captions');
             captionsDiv.textContent = text;
-            captionsDiv.className = `live-captions ${type}-caption`;
+captionsDiv.className = `live-captions ${type}-caption`;
+
             captionsDiv.classList.remove('hidden');
         }
 
@@ -968,8 +1283,9 @@
             if (state.isListening) state.recognition.stop();
             
             try {
-                const response = await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/summary`);
-                await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: 'POST' });
+const response = await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/summary`);
+await fetch(`${API_BASE_URL}/session/${state.currentSessionId}/end`, { method: 'POST' });
+
                 const summary = response.ok ? await response.json() : null;
                 showSessionSummary(summary);
             } catch (error) {
@@ -990,18 +1306,20 @@
                     ...(Array.isArray(summary.nextSteps) ? summary.nextSteps : [summary.nextSteps])
                 ].filter(Boolean);
 
-                summaryContent.innerHTML = `
-                    <div class="summary-item"><strong>Duration:</strong> ${summary.duration}</div>
-                    <div class="summary-item"><strong>Off-topic Requests:</strong> ${summary.totalWarnings}</div>
-                    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
-                    <div class="summary-item"><strong>Learning Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
-                    <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
-                `;
+summaryContent.innerHTML = `
+    <div class="summary-item"><strong>Duration:</strong> ${summary.duration}</div>
+    <div class="summary-item"><strong>Off-topic Requests:</strong> ${summary.totalWarnings}</div>
+    <div class="summary-item"><strong>Topics Explored:</strong> ${summary.topicsExplored}</div>
+    <div class="summary-item"><strong>Learning Highlights:</strong><br>${summary.highlights.join('<br>')}</div>
+    <div class="summary-item"><strong>Next Steps:</strong><br>${allSuggestions.length ? allSuggestions.join('<br>') : 'Keep asking great questions!'}</div>
+`;
+
             } else {
-                summaryContent.innerHTML = `
-                    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
-                    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
-                `;
+summaryContent.innerHTML = `
+    <div class="summary-item"><strong>Session Complete!</strong> You had a wonderful learning session today!</div>
+    <div class="summary-item"><strong>Keep Learning:</strong> Continue exploring topics that spark your curiosity!</div>
+`;
+
             }
             
             await speakWithPromise("You had a wonderful learning session today! Keep being curious and asking great questions.");
@@ -1017,7 +1335,8 @@
                 conversationContext: [],
                 chatHistory: [],
                 currentSubject: null,
-                flashCardsEnabled: true
+                flashCardsEnabled: true,
+                notesOpen: false
             });
             
             $('session-summary').classList.add('hidden');
@@ -1025,6 +1344,12 @@
             $('student-name').value = '';
             $('student-grade').value = '';
             
+            // Close notes panel
+            $('notes-sidebar').classList.remove('open');
+            $('main-content').classList.remove('with-sidebar');
+            $('notes-toggle').classList.remove('active');
+            
+            clearReadingPrompt();
             updateMicButton();
             updateStatus("Ready to start a new session!");
         }
@@ -1035,7 +1360,23 @@
         });
 
         window.addEventListener('focus', () => {
-            updateStatus("Press the microphone to continue our conversation!");
+            if (state.sessionStarted) {
+                updateStatus("Press the microphone to continue our conversation!");
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (notesState.canvas && state.notesOpen) {
+                setTimeout(initializeCanvas, 100);
+            }
+            
+            // Close sidebar on mobile when resizing to larger screen
+            if (window.innerWidth <= 768 && state.notesOpen) {
+                $('main-content').classList.remove('with-sidebar');
+            } else if (window.innerWidth > 768 && state.notesOpen) {
+                $('main-content').classList.add('with-sidebar');
+            }
         });
 
         // Initialize App
@@ -1047,3 +1388,11 @@
     </script>
 </body>
 </html>
+          ` 
+        }} 
+      />
+    </div>
+  );
+};
+
+export default Index;
