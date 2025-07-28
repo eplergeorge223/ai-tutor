@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Tutor - Your Personal Learning Companion</title>
-    <link rel="stylesheet" href="css/main.css" />
 <link rel="stylesheet" href="tutoring-app.css">
 <script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Faitutor5784back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.6"></script>
 </head>
@@ -406,12 +405,6 @@
                     <span>Share Progress</span>
                 </button>
                 
-                <button id="viewProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    <span>View All Progress</span>
-                </button>
             </section>
         </div>
     </div>
@@ -1085,11 +1078,6 @@ endSession() {
   // actual count of flipped cards
   const covered = document.querySelectorAll('.word-card.flipped').length;
   document.getElementById('topicsCovered').textContent = covered;
-
-  // dynamic label from sessionTopics Set
-  const topics = Array.from(this.sessionTopics);
-  document.getElementById('topicsLabel').textContent =
-    topics.length ? topics.join(' & ') : 'None';
 
   this.switchToPage('summaryPage');
 }
