@@ -655,6 +655,15 @@
             chatHistory: [],
             currentSubject: null
         };
+
+          let notesState = {
+    isDrawing:   false,
+    isTextMode:  false,
+    currentColor:'#000',
+    brushSize:   3,
+    canvas:      null,
+    ctx:         null
+  };
         
         const API_BASE_URL = 'https://ai-tutor-ww9f.onrender.com/api';
 
@@ -686,25 +695,42 @@
             });
         }
 
-        function speakWithPromise(text) {
-            return new Promise(resolve => {
-                if (state.speechSynthesis.speaking) state.speechSynthesis.cancel();
+function speakWithPromise(text) {
+  return new Promise(resolve => {
+    if (state.speechSynthesis.speaking) state.speechSynthesis.cancel();
 
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    Object.assign(utterance, {
-                        rate: 0.8, pitch: 1.0, volume: 1.0,
-                        voice: state.selectedVoice,
-                        onstart: () => showLiveCaption(text, 'bot'),
-                        onend: () => { $('live-captions').classList.add('hidden'); resolve(); },
-                        onerror: resolve
-                    });
+    // grab the button once
+    const micBtn = $('mic-btn');
 
-                    try { state.speechSynthesis.speak(utterance); }
-                    catch (error) { console.error('Speech error:', error); resolve(); }
-                }, 100);
-            });
-        }
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = state.selectedVoice;
+      utterance.rate  = 0.8;
+      utterance.pitch = 1.0;
+      utterance.volume= 1.0;
+
+      utterance.onstart = () => {
+        // disable mic while AI speaks
+        micBtn.disabled = true;
+        showLiveCaption(text, 'bot');
+      };
+
+      utterance.onend = () => {
+        $('live-captions').classList.add('hidden');
+        micBtn.disabled = false;
+        resolve();
+      };
+
+      utterance.onerror = () => {
+        micBtn.disabled = false;
+        resolve();
+      };
+
+      state.speechSynthesis.speak(utterance);
+    }, 100);
+  });
+}
+
 
 function initializeSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -922,14 +948,13 @@ async function handleUserInput(input) {
 
 
         function initializeCanvas() {
-            const canvas = $('notes-canvas');
-            const container = canvas.parentElement;
-            
-            canvas.width = container.clientWidth;
-            canvas.height = Math.max(300, container.clientHeight);
-            
-            notesState.canvas = canvas;
-            notesState.ctx = canvas.getContext('2d');
+    const canvas    = document.getElementById('notes-canvas');
+    const container = canvas.parentElement;
+    canvas.width    = container.clientWidth;
+    canvas.height   = Math.max(300, container.clientHeight);
+
+    notesState.canvas = canvas;
+    notesState.ctx    = canvas.getContext('2d');
             
             // Set up drawing events
             canvas.addEventListener('mousedown', startDrawing);
