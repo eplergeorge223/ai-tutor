@@ -478,103 +478,59 @@ const filterResponseForGrade = (response, grade) => {
   return filtered;
 };
 
-// --- Core AI Response Generation ---
 async function generateAIResponse(sessionId, userMessage, res) {
-  const session = sessions.get(sessionId)
+  const session = sessions.get(sessionId);
   if (!session) {
-    return res.status(404).json({ error: 'Session not found.' })
-  }
-
-  // Special case: Sing the ABC song
-  if (/sing.*abc/i.test(userMessage)) {
-    const abcLyrics =
-      "A B C D E F G,\n" +
-      "H I J K L M N O P,\n" +
-      "Q R S,\n" +
-      "T U V,\n" +
-      "W X,\n" +
-      "Y and Z!\n" +
-      "Now I know my ABCs,\n" +
-      "Next time won’t you sing with me?"
-    session.messages.push({ role: 'assistant', content: abcLyrics, timestamp: Date.now() })
-    return res.json({
-      response: abcLyrics,
-      readingWord: null,
-      subject: 'music',
-      suggestions: generateDynamicSuggestions(session),
-      encouragement: generateEncouragement(session.grade),
-      status: 'success',
-      sessionStats: {
-        totalWarnings: session.totalWarnings,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
-      }
-    })
-  }
-
-  // Special case: Simple arithmetic scaffold
-  const mathMatch = userMessage.match(/^\s*(\d+)\s*([\+\-])\s*(\d+)\s*$/)
-  if (mathMatch && session.grade !== '12') {
-    const [ , a, op, b ] = mathMatch
-    const scaffold =
-      `Okay, let’s figure it out: if you have ${a}, how many is that so far? ` +
-      `And then you add ${b} more—so how many do you have in total?`
-    session.messages.push({ role: 'assistant', content: scaffold, timestamp: Date.now() })
-    return res.json({
-      response: scaffold,
-      readingWord: null,
-      subject: 'math',
-      suggestions: generateDynamicSuggestions(session),
-      encouragement: generateEncouragement(session.grade),
-      status: 'success',
-      sessionStats: {
-        totalWarnings: session.totalWarnings,
-        topicsDiscussed: Array.from(session.topicsDiscussed)
-      }
-    })
+    return res.status(404).json({ error: 'Session not found.' });
   }
 
   // Record user message
-  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() })
-  session.lastActivity = Date.now()
+  session.messages.push({ role: 'user', content: userMessage, timestamp: Date.now() });
+  session.lastActivity = Date.now();
 
   // Check foundational skills
-  const detectedFoundationalIssue = checkFoundationalSkills(userMessage, session)
+  const detectedFoundationalIssue = checkFoundationalSkills(userMessage, session);
   if (session.needsFoundationalReview?.skill === 'counting') {
-    const countingMasteryRegex = /(one two three four five six seven eight nine ten)/
+    const countingMasteryRegex = /(one two three four five six seven eight nine ten)/;
     if (countingMasteryRegex.test(userMessage.toLowerCase())) {
-      session.needsFoundationalReview = null
+      session.needsFoundationalReview = null;
     }
   } else if (detectedFoundationalIssue) {
-    session.needsFoundationalReview = detectedFoundationalIssue
+    session.needsFoundationalReview = detectedFoundationalIssue;
   }
 
-  const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage)
-  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3)
+  const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage);
+  const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3);
+
+  const newSystemPrompt = `You are a helpful and patient AI tutor named ${session.studentName}.
+  Your goal is to help students learn by guiding them, not by giving them direct answers.
+  You should always use a friendly and encouraging tone.
+
+  For any request to sing a song (like the ABCs), just respond with the lyrics.
+  For simple math questions, never give the final answer. Instead, ask a question to help the student think through the problem step-by-step. For example, if asked "2 + 3", you could respond with "What do you get when you start with 2 and then add 3 more?"
+
+  The student is in grade ${session.grade}.
+  ${getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview, userSubject === 'reading')}`;
+
 
   const messagesToSend = [
     {
       role: 'system',
-      content: getTutorSystemPrompt(
-        session.grade,
-        session.studentName,
-        session.difficultyLevel,
-        session.needsFoundationalReview,
-        userSubject === 'reading'
-      )
+      content: newSystemPrompt
     },
     ...recentMessages
-  ]
+  ];
 
   try {
-    const maxTokens = getMaxTokensForGrade(session.grade)
-    const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade)
+    const maxTokens = getMaxTokensForGrade(session.grade);
+    const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade);
     const adjustedTemperature = isVeryYoung
       ? 0.3
       : session.difficultyLevel < 0.3
         ? 0.4
         : session.difficultyLevel > 0.7
           ? 0.6
-          : 0.5
+          : 0.5;
 
     // limit to the first 4 stop sequences so the API won’t reject it
     const allStops = [
@@ -585,8 +541,8 @@ async function generateAIResponse(sessionId, userMessage, res) {
       "However,",
       "Therefore,",
       "In conclusion,"
-    ]
-    const stops = allStops.slice(0, 4)
+    ];
+    const stops = allStops.slice(0, 4);
 
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
@@ -596,51 +552,51 @@ async function generateAIResponse(sessionId, userMessage, res) {
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
       stop: stops
-    })
+    });
 
-    let aiText = completion.choices[0].message.content.trim()
+    let aiText = completion.choices[0].message.content.trim();
 
     // Post-processing: vocabulary filtering
-    aiText = filterResponseForGrade(aiText, session.grade)
+    aiText = filterResponseForGrade(aiText, session.grade);
 
     // Truncate to maxSentences as a safety net
-    const guidelines = gradeGuidelines[session.grade]
+    const guidelines = gradeGuidelines[session.grade];
     if (guidelines?.maxSentences) {
-      const sentences = aiText.split(/[.!?]+/).filter(s => s.trim())
+      const sentences = aiText.split(/[.!?]+/).filter(s => s.trim());
       if (sentences.length > guidelines.maxSentences) {
-        aiText = sentences.slice(0, guidelines.maxSentences).join('. ').trim() + '.'
+        aiText = sentences.slice(0, guidelines.maxSentences).join('. ').trim() + '.';
       }
     }
 
-    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() })
+    session.messages.push({ role: 'assistant', content: aiText, timestamp: Date.now() });
 
     // Update session tracking
     if (userSubject) {
-      session.topicsDiscussed.add(userSubject)
-      session.currentTopic = userSubject
-      session.currentSubtopic = userSubtopic
-      session.topicBreakdown[userSubject] = session.topicBreakdown[userSubject] || {}
+      session.topicsDiscussed.add(userSubject);
+      session.currentTopic = userSubject;
+      session.currentSubtopic = userSubtopic;
+      session.topicBreakdown[userSubject] = session.topicBreakdown[userSubject] || {};
       session.topicBreakdown[userSubject][userSubtopic] =
-        (session.topicBreakdown[userSubject][userSubtopic] || 0) + 1
+        (session.topicBreakdown[userSubject][userSubtopic] || 0) + 1;
     }
 
     // Adjust difficulty
-    const lowerInput = userMessage.toLowerCase()
-    const passivePhrases = ["i don't know", "i dunno", "tell me", "what is the answer"]
+    const lowerInput = userMessage.toLowerCase();
+    const passivePhrases = ["i don't know", "i dunno", "tell me", "what is the answer"];
     if (passivePhrases.some(phrase => lowerInput.includes(phrase))) {
-      session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1)
+      session.difficultyLevel = Math.max(0.1, session.difficultyLevel - 0.1);
     } else if (aiText.length > 20 && !aiText.includes("wrong") && !session.needsFoundationalReview) {
-      session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05)
+      session.difficultyLevel = Math.min(0.9, session.difficultyLevel + 0.05);
     }
 
     // Handle reading word JSON
-    let readingWord = null
-    let messageText = aiText
+    let readingWord = null;
+    let messageText = aiText;
     try {
-      const maybeJson = JSON.parse(aiText)
+      const maybeJson = JSON.parse(aiText);
       if (maybeJson?.READING_WORD) {
-        messageText = maybeJson.message
-        readingWord = maybeJson.READING_WORD
+        messageText = maybeJson.message;
+        readingWord = maybeJson.READING_WORD;
       }
     } catch (_) {
       // not JSON
@@ -657,16 +613,15 @@ async function generateAIResponse(sessionId, userMessage, res) {
         totalWarnings: session.totalWarnings,
         topicsDiscussed: Array.from(session.topicsDiscussed)
       }
-    })
+    });
   } catch (error) {
-    console.error(`Error in session ${sessionId.slice(-6)}:`, error.message)
+    console.error(`Error in session ${sessionId.slice(-6)}:`, error.message);
     res.status(500).json({
       error: 'Failed to process message. Please try again.',
       fallback: `Oops! Can you ask me again, ${session.studentName}?`
-    })
+    });
   }
 }
-
 
 // --- API Routes ---
 app.post('/api/session/start', (req, res) => {
