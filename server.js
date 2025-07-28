@@ -175,31 +175,31 @@ const getMaxTokensForGrade = grade => {
 
 // After-school tutoring system prompt with natural, warm feel
 const getTutorSystemPrompt = (grade, studentName, difficultyLevel = 0.5, needsFoundationalReview = null, readingTask = false) => {
-  const guidelines = gradeGuidelines[grade] || gradeGuidelines.K;
-  const isVeryYoung = ['PreK', 'K', '1', '2'].includes(grade);
-  
-  // Personalized encouragement based on how they're doing
-  let personalizedSupport = '';
-  if (difficultyLevel < 0.3) {
-    personalizedSupport = `${studentName} seems to need extra help today. Go slower, use simpler words, and give lots of encouragement.`;
-  } else if (difficultyLevel > 0.7) {
-    personalizedSupport = `${studentName} is doing great today! You can challenge them a bit more, but keep it age-appropriate.`;
-  } else {
-    personalizedSupport = `${studentName} is making steady progress. Keep up the supportive, patient approach.`;
-  }
+  const guidelines = gradeGuidelines[grade] || gradeGuidelines.K;
+  const isVeryYoung = ['PreK', 'K', '1', '2'].includes(grade);
+  
+  // Personalized encouragement based on how they're doing
+  let personalizedSupport = '';
+  if (difficultyLevel < 0.3) {
+    personalizedSupport = `${studentName} seems to need extra help today. Go slower, use simpler words, and give lots of encouragement.`;
+  } else if (difficultyLevel > 0.7) {
+    personalizedSupport = `${studentName} is doing great today! You can challenge them a bit more, but keep it age-appropriate.`;
+  } else {
+    personalizedSupport = `${studentName} is making steady progress. Keep up the supportive, patient approach.`;
+  }
 
-  let foundationalReview = '';
-  if (needsFoundationalReview?.skill === 'counting') {
-    foundationalReview = `${studentName} needs to practice counting first. Make it fun - count fingers, toys, or snacks before going back to the main problem.`;
-  }
+  let foundationalReview = '';
+  if (needsFoundationalReview?.skill === 'counting') {
+    foundationalReview = `${studentName} needs to practice counting first. Make it fun - count fingers, toys, or snacks before going back to the main problem.`;
+  }
 
-  const readingInstruction = isVeryYoung && readingTask ? 
-    'For reading: reply in JSON {"message":"...","READING_WORD":"word"} (do NOT spell word in message)' : '';
+  const readingInstruction = isVeryYoung && readingTask ? 
+    'For reading: reply in JSON {"message":"...","READING_WORD":"word"} (do NOT spell word in message)' : '';
 
-  // Grade-specific interaction style
-  let interactionStyle = '';
-  if (isVeryYoung) {
-    interactionStyle = `
+  // Grade-specific interaction style
+  let interactionStyle = '';
+  if (isVeryYoung) {
+    interactionStyle = `
 You're like a patient after-school tutor working one-on-one with ${studentName}:
 - Use simple words they definitely know
 - Keep responses to ${guidelines.maxSentences} sentence${guidelines.maxSentences > 1 ? 's' : ''} max
@@ -207,16 +207,16 @@ You're like a patient after-school tutor working one-on-one with ${studentName}:
 - Be warm and encouraging like you've been working together
 - Say things like "Good job!" or "Let's try this together!"
 - Avoid words like: ${guidelines.forbidden?.join(', ')}`;
-  } else {
-    interactionStyle = `
+  } else {
+    interactionStyle = `
 You're ${studentName}'s after-school tutor who knows them well:
 - Keep responses brief but conversational 
 - Guide them to discover answers, don't give them away
 - Match their energy - if they're excited, be excited too
 - Use encouraging phrases that feel natural`;
-  }
+  }
 
-  return `You are ${studentName}'s personal after-school tutor. They're in grade ${grade} and you've been working together.
+  return `You are ${studentName}'s personal after-school tutor. They're in grade ${grade} and you've been working together.
 
 ${personalizedSupport}
 
@@ -225,9 +225,11 @@ ${interactionStyle}
 ${foundationalReview}
 ${readingInstruction}
 
+For any request to recite a song or a sequence (like the ABCs or counting), you should provide the full, complete response in a single conversational turn. Do not ask for confirmation or try to make it a dialogue. Just provide the complete lyrics or sequence. For example, if asked "sing the ABCs", just respond with the lyrics immediately.
+For simple math questions, never give the final answer. Instead, ask a question to help the student think through the problem step-by-step. For example, if asked "2 + 3", you could respond with "What do you get when you start with 2 and then add 3 more?".
+
 Remember: This feels like a cozy after-school tutoring session, not a formal classroom. Be warm, patient, and keep things simple for grade ${grade}.`.trim();
 };
-
 const createSessionObject = (sessionId, studentName, grade) => ({
   id: sessionId,
   studentName: studentName || 'Student',
@@ -501,28 +503,29 @@ async function generateAIResponse(sessionId, userMessage, res) {
 
   const { subject: userSubject, subtopic: userSubtopic } = classifySubject(userMessage);
   const recentMessages = session.messages.filter(m => m.role !== 'system').slice(-3);
+  
+  // --- NEW LOGIC FOR OVERRIDING LIMITS ---
+  let maxTokens = getMaxTokensForGrade(session.grade);
+  let maxSentences = gradeGuidelines[session.grade]?.maxSentences;
+  
+  const lowerUserMessage = userMessage.toLowerCase();
+  const isSpecialRequest = lowerUserMessage.includes('abc') || lowerUserMessage.includes('alphabet') || lowerUserMessage.includes('count to');
 
-  const newSystemPrompt = `You are a helpful and patient AI tutor named ${session.studentName}.
-  Your goal is to help students learn by guiding them, not by giving them direct answers.
-  You should always use a friendly and encouraging tone.
-
-  For any request to sing a song (like the ABCs), just respond with the lyrics.
-  For simple math questions, never give the final answer. Instead, ask a question to help the student think through the problem step-by-step. For example, if asked "2 + 3", you could respond with "What do you get when you start with 2 and then add 3 more?"
-
-  The student is in grade ${session.grade}.
-  ${getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview, userSubject === 'reading')}`;
-
+  if (isSpecialRequest) {
+      maxTokens = 150; // Give it plenty of room to complete the task
+      maxSentences = 10; // Override sentence limit as well
+  }
+  // --- END NEW LOGIC ---
 
   const messagesToSend = [
     {
       role: 'system',
-      content: newSystemPrompt
+      content: getTutorSystemPrompt(session.grade, session.studentName, session.difficultyLevel, session.needsFoundationalReview, userSubject === 'reading')
     },
     ...recentMessages
   ];
 
   try {
-    const maxTokens = getMaxTokensForGrade(session.grade);
     const isVeryYoung = ['PreK', 'K', '1', '2'].includes(session.grade);
     const adjustedTemperature = isVeryYoung
       ? 0.3
@@ -547,7 +550,7 @@ async function generateAIResponse(sessionId, userMessage, res) {
     const completion = await openai.chat.completions.create({
       model: config.GPT_MODEL,
       messages: messagesToSend,
-      max_tokens: maxTokens,
+      max_tokens: maxTokens, // Use the potentially overridden maxTokens
       temperature: adjustedTemperature,
       presence_penalty: config.GPT_PRESENCE_PENALTY,
       frequency_penalty: config.GPT_FREQUENCY_PENALTY,
@@ -559,12 +562,11 @@ async function generateAIResponse(sessionId, userMessage, res) {
     // Post-processing: vocabulary filtering
     aiText = filterResponseForGrade(aiText, session.grade);
 
-    // Truncate to maxSentences as a safety net
-    const guidelines = gradeGuidelines[session.grade];
-    if (guidelines?.maxSentences) {
+    // Truncate to maxSentences as a safety net, using the potentially overridden value
+    if (maxSentences) {
       const sentences = aiText.split(/[.!?]+/).filter(s => s.trim());
-      if (sentences.length > guidelines.maxSentences) {
-        aiText = sentences.slice(0, guidelines.maxSentences).join('. ').trim() + '.';
+      if (sentences.length > maxSentences) {
+        aiText = sentences.slice(0, maxSentences).join('. ').trim() + '.';
       }
     }
 
