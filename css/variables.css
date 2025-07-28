@@ -1,3 +1,12 @@
+/* 
+    This section sets up the basics for the AI Tutor web page.
+
+    - Sets character encoding to UTF-8 (so weird symbols don’t break).
+    - Makes the page responsive on phones/tablets with the viewport tag.
+    - Gives the browser tab a title: "AI Tutor - Your Personal Learning Companion".
+    - Loads a CSS file for design variables (like colors, spacing, etc.).
+*/
+
 /* Google Fonts Imports */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
