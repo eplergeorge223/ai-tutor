@@ -372,6 +372,27 @@
                     </p>
                 </div>
             </section>
+<!-- Progress Overview -->
+<section class="progress-overview">
+  <!-- Session Duration -->
+  <div class="summary-card">
+    <div class="summary-icon" style="background: var(--color-primary-500);">
+      <!-- lightning‑bolt icon (same as before) -->
+      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+    </div>
+    <h3 class="summary-stat">Session Time</h3>
+    <p class="summary-value" id="sessionDuration">00:00</p>
+    <p class="summary-label">Actual duration</p>
+  </div>
+
+  <!-- Topics Covered (your existing card) -->
+  <div class="summary-card">
+    …  
+  </div>
+</section>
 
 <!-- Topics Covered -->
 <div class="summary-card">
@@ -661,9 +682,6 @@
                 const shareProgressBtn = document.getElementById('shareProgressBtn');
                 shareProgressBtn.addEventListener('click', () => this.shareProgress());
                 
-                // View progress button
-                const viewProgressBtn = document.getElementById('viewProgressBtn');
-                viewProgressBtn.addEventListener('click', () => this.viewAllProgress());
             }
 
             setupGlobalEvents() {
@@ -1205,6 +1223,5 @@ Keep up the fantastic work! 🚀`;
             new AITutorApp();
         });
     </script>
-<script id="dhws-dataInjector" src="/public/dhws-data-injector.js"></script>
 </body>
 </html>
