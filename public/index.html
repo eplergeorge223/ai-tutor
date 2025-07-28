@@ -1,173 +1,546 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
-    <link rel="stylesheet" href="tutoring-app.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Tutor - Your Personal Learning Companion</title>
+    <link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="tutoring-app.css">
+<script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Faitutor5784back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.6"></script>
 </head>
 <body>
+    <!-- Floating Background Elements -->
+    <div class="floating-element" style="left: 10%; top: 20%; width: 5rem; height: 5rem; background: rgba(255, 255, 255, 0.1); animation-delay: 0s;"></div>
+    <div class="floating-element" style="left: 20%; top: 60%; width: 4rem; height: 4rem; background: rgba(139, 92, 246, 0.1); animation-delay: 5s;"></div>
+    <div class="floating-element" style="left: 70%; top: 30%; width: 3rem; height: 3rem; background: rgba(59, 130, 246, 0.1); animation-delay: 2s;"></div>
+    <div class="floating-element" style="left: 80%; top: 70%; width: 6rem; height: 6rem; background: rgba(252, 211, 77, 0.1); animation-delay: 8s;"></div>
+    <div class="floating-element" style="left: 50%; top: 10%; width: 3.5rem; height: 3.5rem; background: rgba(255, 255, 255, 0.1); animation-delay: 12s;"></div>
 
+    <!-- Welcome Page -->
     <div id="welcomePage" class="page active">
-        <div class="welcome-content">
-            <h1>Hi there! What's your name?</h1>
-            <p>I'm your AI Tutor. Let's get to know each other before we start learning!</p>
-            <form id="setupForm">
-                <div class="form-group">
-                    <label for="studentName">Student Name</label>
-                    <input type="text" id="studentName" placeholder="Type your name here..." required>
-                </div>
-                <div class="form-group">
-                    <label>Grade Level</label>
-                    <div class="grade-selection">
-                        <button type="button" class="grade-btn" data-grade="K">K</button>
-                        <button type="button" class="grade-btn" data-grade="1">1</button>
-                        <button type="button" class="grade-btn" data-grade="2">2</button>
-                        <button type="button" class="grade-btn" data-grade="3">3</button>
-                        <button type="button" class="grade-btn" data-grade="4">4</button>
-                        <button type="button" class="grade-btn" data-grade="5">5</button>
+        <div class="welcome-container">
+            <div class="welcome-card">
+                <!-- Logo Section -->
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg width="48" height="48" fill="currentColor" style="color: var(--color-primary);" viewBox="0 0 24 24">
+                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
+                            <path d="M19 15L20.09 18.26L24 19L20.09 19.74L19 23L17.91 19.74L14 19L17.91 18.26L19 15Z"/>
+                            <path d="M5 15L6.09 18.26L10 19L6.09 19.74L5 23L3.91 19.74L0 19L3.91 18.26L5 15Z"/>
+                        </svg>
                     </div>
-                    <input type="hidden" id="selectedGrade" required>
+                    <h1 class="main-title">AI Tutor</h1>
+                    <p class="subtitle">Your Personal Learning Companion</p>
                 </div>
-                <button type="submit" id="startBtn" disabled>Start your session!</button>
-            </form>
+
+                <!-- Mascot -->
+                <div class="mascot-container">
+                    <div class="mascot-icon">
+                        <svg width="56" height="56" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                        </svg>
+                    </div>
+                    <div class="speech-bubble">
+                        <div class="bubble-content">Hi there! Let's get started! 👋</div>
+                    </div>
+                </div>
+
+                <!-- Setup Form -->
+                <form id="setupForm" class="setup-form">
+                    <!-- Name Input -->
+                    <div class="form-group">
+                        <label for="studentName" class="form-label">What's your name?</label>
+                        <input type="text" id="studentName" name="studentName" class="form-input" placeholder="Enter your name here..." required />
+                        <p class="help-text">This helps me personalize your learning experience!</p>
+                    </div>
+
+                    <!-- Grade Selection -->
+                    <div class="form-group">
+                        <label class="form-label">What grade are you in?</label>
+                        <div class="grade-grid">
+                            <!-- PreK-2nd Grade -->
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="PreK">PreK</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="K">K</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="1st">1st</button>
+                            <button type="button" class="grade-btn touch-target-prek" data-grade="2nd">2nd</button>
+                            
+                            <!-- 3rd-6th Grade -->
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="3rd">3rd</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="4th">4th</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="5th">5th</button>
+                            <button type="button" class="grade-btn touch-target-elementary" data-grade="6th">6th</button>
+                            
+                            <!-- 7th-10th Grade -->
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="7th">7th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="8th">8th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="9th">9th</button>
+                            <button type="button" class="grade-btn touch-target-middle" data-grade="10th">10th</button>
+                            
+                            <!-- 11th-12th Grade -->
+                            <button type="button" class="grade-btn touch-target-high" data-grade="11th">11th</button>
+                            <button type="button" class="grade-btn touch-target-high" data-grade="12th">12th</button>
+                        </div>
+                        <input type="hidden" id="selectedGrade" name="selectedGrade" required />
+                        <p class="help-text">Choose your current grade level to get personalized content!</p>
+                    </div>
+
+                    <!-- Start Button -->
+                    <button type="submit" id="startBtn" class="start-button" disabled>
+                        <span style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.75rem;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            Start Learning Adventure!
+                        </span>
+                    </button>
+                    <p class="help-text" style="text-align: center; margin-top: 0.5rem;">Complete the form above to begin your personalized tutoring session</p>
+                </form>
+
+                <!-- Footer -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
+                        Safe, secure, and designed for learners of all ages
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Main Tutoring Interface -->
     <div id="mainInterface" class="page">
-        <header class="header">
-            <div class="header-left">
-                <div class="user-info">
-                    <h2 id="displayStudentName">Student</h2>
-                    <p id="displayStudentGrade">K Grade</p>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="timer" id="sessionTimer">00:00</div>
-                <button class="control-btn" id="notesToggleBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6zM13 19h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2z"/></svg>
-                </button>
-                <button class="control-btn" id="endSessionBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm-2-2v4h4v-4H9zM15 14h-2v-4h2v4z"/></svg>
-                </button>
-            </div>
-        </header>
+        <div class="main-interface">
+            <!-- Header -->
+            <header class="header-bar">
+                <div class="header-content">
+                    <!-- Session Menu -->
+                    <button id="sessionMenuBtn" class="header-button touch-target-elementary">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <span class="sr-only">Session menu</span>
+                    </button>
 
-        <section class="main-content">
-            <div class="ai-mascot">
-                <img src="/public/mascot.svg" alt="AI Tutor Mascot" class="mascot-image">
-                <p class="mascot-message" id="mascotMessage">Hi there! How can I help you learn today?</p>
-            </div>
+                    <!-- Student Info -->
+                    <div class="student-info">
+                        <div class="student-name" id="displayStudentName">Alex Johnson</div>
+                        <div class="student-grade" id="displayStudentGrade">5th Grade</div>
+                    </div>
 
-            <div id="dynamicWordCard" class="card-container"></div>
-            
-            <div class="chat-container">
-                <div class="chat-history" id="chatHistory">
-                    <div class="chat-caption ai">
-                        <div class="avatar">AI</div>
-                        <div class="caption-text">Hello! I am your AI tutor. I can help you with a variety of subjects. What would you like to learn today?</div>
+                    <!-- Session Timer & Status -->
+                    <div class="session-info">
+                        <div class="session-timer" id="sessionTimer">00:00</div>
+                        <div class="session-status">Active Session</div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <footer class="footer">
-            <div class="status">
-                <span id="statusDot" class="status-dot"></span>
-                <span id="statusText">Ready to learn</span>
-            </div>
-            <div class="chat-input">
-                <button class="microphone-button" id="microphoneBtn">
-                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                <!-- Interaction Status -->
+                <div style="margin-top: 1rem; text-align: center;">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span class="status-text" id="statusText">Ready to learn</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <!-- Word Cards Container -->
+                <div class="word-cards-container">
+                    <div class="word-cards-grid">
+                        <!-- Sample Word Card -->
+                        <div class="word-card" data-word="elephant">
+                            <div class="word-card-front">
+                                <img src="https://images.unsplash.com/photo-1564760055775-d63b17a55c44?q=80&w=400&auto=format&fit=crop" alt="Elephant" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn5GEPC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">ELEPHANT</h3>
+                                <p class="word-pronunciation">E-LE-PHANT</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A large mammal with a trunk and big ears</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
+
+                        <!-- Sample Word Card 2 -->
+                        <div class="word-card" data-word="butterfly">
+                            <div class="word-card-front">
+                                <img src="https://images.pixabay.com/photo/2017/05/12/13/05/butterfly-2307499_1280.jpg?auto=format&fit=crop&w=400" alt="Butterfly" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn6aLPC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">BUTTERFLY</h3>
+                                <p class="word-pronunciation">BUT-TER-FLY</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">A colorful insect with beautiful wings</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
+
+                        <!-- Sample Word Card 3 -->
+                        <div class="word-card" data-word="rainbow">
+                            <div class="word-card-front">
+                                <img src="https://images.pexels.com/photos/1367192/pexels-photo-1367192.jpeg?auto=format&fit=crop&w=400" alt="Rainbow" class="word-image" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij7wn4y4PC90ZXh0Pgo8L3N2Zz4K'" />
+                                <h3 class="word-title">RAINBOW</h3>
+                                <p class="word-pronunciation">RAIN-BOW</p>
+                            </div>
+                            <div class="word-card-back">
+                                <p style="color: white; font-size: 1.125rem; margin-bottom: 1rem;">Colorful arc in the sky after rain</p>
+                                <button class="btn-primary">Practice Sound</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reading Prompt -->
+                <div class="reading-prompt">
+                    <h2 class="prompt-title">Today's Reading Challenge</h2>
+                    <p class="prompt-text">
+                        "The <span class="highlight-word">elephant</span> walked slowly through the forest. 
+                        A beautiful <span class="highlight-word">butterfly</span> landed on its trunk. 
+                        After the rain, they both saw a bright <span class="highlight-word">rainbow</span> in the sky."
+                    </p>
+                    <button id="readAloudBtn" class="btn-secondary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.5rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 12a3 3 0 106 0v-6a3 3 0 00-6 0v6z"/>
+                        </svg>
+                        Read Aloud
+                    </button>
+                </div>
+            </main>
+
+            <!-- Voice Interaction Controls -->
+            <section class="voice-controls">
+                <!-- Microphone Button -->
+                <button id="microphoneBtn" class="microphone-button mic-idle" aria-label="Voice interaction">
+                    <svg id="micIcon" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
                 </button>
-                <div id="voiceInstructions" class="voice-instructions">Tap the microphone and start speaking</div>
-                <button class="control-btn" id="readAloudBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2v20h2v-2H4V4h16v16h-2v-2h2V4H4zm10 8h2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-2c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2zm0 2v2h2v-2h-2z"/></svg>
-                </button>
-            </div>
-        </footer>
-    </div>
 
-    <div id="summaryPage" class="page">
-        <div class="summary-card">
-            <h2>Session Summary</h2>
-            <p>Here's a quick look at your recent learning session.</p>
-            <div class="summary-details">
-                <h3>Details</h3>
-                <ul>
-                    <li><strong>Student Name</strong> <span id="summaryStudentName"></span></li>
-                    <li><strong>Session Date</strong> <span id="sessionDate"></span></li>
-                    <li><strong>Session Duration</strong> <span id="sessionDuration"></span></li>
-                    <li><strong>Topics Covered</strong> <span id="topicsCovered">Math, Science</span></li>
-                </ul>
+                <!-- Voice Instructions -->
+                <p class="voice-instructions" id="voiceInstructions">Tap the microphone and start speaking</p>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button id="notesToggleBtn" class="quick-action-btn touch-target-elementary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Notes
+                    </button>
+                    
+                    <button id="endSessionBtn" class="quick-action-btn touch-target-elementary" style="border-color: rgba(239, 68, 68, 0.3);">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        End Session
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Live Captions -->
+        <div class="live-captions">
+            <div class="captions-container" id="captionsContainer">
+                <!-- Captions will be dynamically added here -->
             </div>
-            <div class="summary-buttons">
-                <button id="newSessionBtn">Start a New Session</button>
-                <button id="shareProgressBtn">Share Progress</button>
-                <button id="viewProgressBtn">View All Progress</button>
+        </div>
+
+        <!-- Floating Mascot -->
+        <div class="floating-mascot">
+            <div class="mascot-container">
+                <div class="mascot-icon" style="width: 4rem; height: 4rem;">
+                    <svg width="32" height="32" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                    </svg>
+                </div>
+                <div class="mascot-bubble" id="mascotBubble">
+                    <span id="mascotText">Great job! Keep going! 🌟</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="notesPanel" class="notes-panel">
+    <!-- Notes Panel -->
+    <aside id="notesPanel" class="notes-panel">
         <div class="notes-header">
-            <h3>Your Notes</h3>
-            <div class="notes-header-controls">
-                <button class="control-btn" id="saveNotesBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+            <div class="notes-title">
+                <h2>My Notes</h2>
+                <button id="closeNotesBtn" class="close-notes-btn touch-target-elementary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <span class="sr-only">Close notes</span>
                 </button>
-                <button class="control-btn" id="closeNotesBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </div>
+            
+            <!-- Notes Mode Toggle -->
+            <div class="notes-mode-toggle">
+                <button id="textModeBtn" class="mode-toggle-btn active">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Text
+                </button>
+                <button id="drawModeBtn" class="mode-toggle-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    Draw
                 </button>
             </div>
         </div>
-        <div class="notes-body">
-            <div id="textMode">
-                <textarea id="notesTextarea" placeholder="Write your notes here..."></textarea>
+
+        <!-- Notes Content -->
+        <div class="notes-content">
+            <!-- Text Mode -->
+            <div id="textMode" class="text-mode">
+                <textarea id="notesTextarea" class="notes-textarea" placeholder="Write your notes here...
+
+• Key concepts learned
+• Questions to ask
+• Important formulas
+• Study reminders"></textarea>
             </div>
-            <div id="drawMode" style="display: none;">
-                <canvas id="drawingCanvas"></canvas>
+
+            <!-- Draw Mode -->
+            <div id="drawMode" class="draw-mode" style="display: none;">
+                <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
+                
+                <!-- Drawing Tools -->
+                <div class="drawing-tools">
+                    <!-- Color Picker -->
+                    <div class="tool-group">
+                        <div class="color-picker">
+                            <div class="color-option selected" data-color="#000000" style="background-color: #000000;" title="Black"></div>
+                            <div class="color-option" data-color="#EF4444" style="background-color: #EF4444;" title="Red"></div>
+                            <div class="color-option" data-color="#3B82F6" style="background-color: #3B82F6;" title="Blue"></div>
+                            <div class="color-option" data-color="#10B981" style="background-color: #10B981;" title="Green"></div>
+                            <div class="color-option" data-color="#F59E0B" style="background-color: #F59E0B;" title="Yellow"></div>
+                            <div class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6;" title="Purple"></div>
+                            <div class="color-option" data-color="#F97316" style="background-color: #F97316;" title="Orange"></div>
+                            <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;" title="White"></div>
+                        </div>
+                    </div>
+
+                    <!-- Brush Size -->
+<div class="tool-group">
+    <div style="text-align: center; margin-bottom: 0.5rem; color: var(--color-text-primary); font-size: 0.75rem;">Size</div>
+    <input type="range" id="brushSize" class="brush-slider" min="1" max="50" value="5" />
+    <div style="text-align: center; margin-top: 0.5rem; color: var(--color-text-primary); font-size: 0.75rem;">
+        <span id="brushSizeValue">5px</span>
+    </div>
+</div>
+
+
+                    <!-- Canvas Actions -->
+                    <div class="tool-group">
+                        <button id="clearCanvasBtn" style="width: 100%; background: var(--color-error); color: white; border: none; border-radius: 0.5rem; padding: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: all var(--transition-fast);" title="Clear Canvas">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="notes-controls">
-            <div class="notes-mode-switcher">
-                <button id="textModeBtn" class="notes-mode-btn active">Text</button>
-                <button id="drawModeBtn" class="notes-mode-btn">Draw</button>
-            </div>
-            <div id="drawingTools" class="drawing-tools" style="display: none;">
-                <div class="color-options">
-                    <span class="color-option selected" data-color="#000000" style="background-color: #000000;"></span>
-                    <span class="color-option" data-color="#F56565" style="background-color: #F56565;"></span>
-                    <span class="color-option" data-color="#48BB78" style="background-color: #48BB78;"></span>
-                    <span class="color-option" data-color="#ECC94B" style="background-color: #ECC94B;"></span>
-                    <span class="color-option" data-color="#5A67D8" style="background-color: #5A67D8;"></span>
+
+        <!-- Notes Footer -->
+        <div class="notes-footer">
+            <button id="saveNotesBtn" class="save-notes-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                </svg>
+                Save Notes
+            </button>
+        </div>
+    </aside>
+
+    <!-- Session Summary Page -->
+    <div id="summaryPage" class="page">
+        <div class="summary-container">
+            <!-- Celebration Header -->
+            <section class="celebration-header">
+                <div class="mascot-container" style="margin-bottom: 1.5rem;">
+                    <div class="mascot-icon celebration" style="width: 6rem; height: 6rem;">
+                        <svg width="56" height="56" fill="currentColor" style="color: white;" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V7H1V9H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9H21ZM5 3H14.17L19 7.83V19H5V3ZM12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15Z"/>
+                        </svg>
+                    </div>
                 </div>
-                <div class="brush-size-control">
-                    <span>Brush Size:</span>
-                    <input type="range" id="brushSize" min="1" max="20" value="5">
-                    <span id="brushSizeValue">5px</span>
-                    <button class="control-btn" id="clearCanvasBtn">Clear</button>
+                
+                <div class="glass" style="border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem;">
+                    <h2 class="celebration-title">
+                        🎉 Great Job, <span id="summaryStudentName">Student</span>!
+                    </h2>
+                    <p class="celebration-subtitle">
+                        You completed an amazing learning session!
+                    </p>
+                    <p class="celebration-date" id="sessionDate">
+                        Session completed on January 28, 2025 at 3:05 PM
+                    </p>
                 </div>
-            </div>
+            </section>
+
+            <!-- Progress Overview -->
+            <section class="progress-overview">
+                <!-- Session Duration -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-primary-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Session Time</h3>
+                    <p class="summary-value" id="sessionDuration">24 min</p>
+                    <p class="summary-label">Perfect length!</p>
+                </div>
+
+                <!-- Topics Covered -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-secondary-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Topics</h3>
+                    <p class="summary-value">5</p>
+                    <p class="summary-label">Reading & Math</p>
+                </div>
+
+                <!-- Words Learned -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-accent-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM9 3v1h6V3H9zm0 5a1 1 0 112 0v8a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v8a1 1 0 11-2 0V8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">New Words</h3>
+                    <p class="summary-value">12</p>
+                    <p class="summary-label">Vocabulary boost!</p>
+                </div>
+
+                <!-- Interaction Score -->
+                <div class="summary-card">
+                    <div class="summary-icon" style="background: var(--color-success-500);">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="summary-stat">Engagement</h3>
+                    <p class="summary-value">95%</p>
+                    <p class="summary-label">Excellent!</p>
+                </div>
+            </section>
+
+            <!-- What You Learned Today -->
+            <section class="learning-section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: var(--color-primary-500);">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <h3 class="section-title">What You Learned Today</h3>
+                </div>
+
+                <!-- Word Cards -->
+                <div class="learned-words">
+                    <div class="learned-word">
+                        <div class="word-emoji">🐱</div>
+                        <p class="word-text">Cat</p>
+                        <p class="word-category">Animal</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">🏠</div>
+                        <p class="word-text">House</p>
+                        <p class="word-category">Home</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">🌳</div>
+                        <p class="word-text">Tree</p>
+                        <p class="word-category">Nature</p>
+                    </div>
+                    <div class="learned-word">
+                        <div class="word-emoji">📚</div>
+                        <p class="word-text">Book</p>
+                        <p class="word-category">Reading</p>
+                    </div>
+                </div>
+
+                <!-- Key Concepts -->
+                <div class="key-concepts">
+                    <div class="concept-item">
+                        <div class="concept-icon" style="background: var(--color-primary-400);">A</div>
+                        <div class="concept-info">
+                            <p class="concept-title">Letter Recognition</p>
+                            <p class="concept-detail">Identified 8 letters correctly</p>
+                        </div>
+                    </div>
+                    <div class="concept-item">
+                        <div class="concept-icon" style="background: var(--color-secondary-400);">+</div>
+                        <div class="concept-info">
+                            <p class="concept-title">Basic Addition</p>
+                            <p class="concept-detail">Solved 5 problems</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <section class="action-buttons">
+                <button id="newSessionBtn" class="action-button">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Start New Session</span>
+                </button>
+                
+                <button id="shareProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+                    </svg>
+                    <span>Share Progress</span>
+                </button>
+                
+                <button id="viewProgressBtn" class="action-button" style="background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span>View All Progress</span>
+                </button>
+            </section>
+
+            <!-- Footer -->
+            <footer style="text-align: center; padding-top: 2rem;">
+                <div class="glass" style="border-radius: 1rem; padding: 1.5rem;">
+                    <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                        Keep up the great work! Learning is a journey, and you're doing fantastic!
+                    </p>
+                    <p style="color: rgba(255, 255, 255, 0.4); font-size: 0.75rem;">
+                        © 2025 AI Tutor. All Rights Reserved.
+                    </p>
+                </div>
+            </footer>
         </div>
     </div>
-    
-    <div id="notification"></div>
 
+    <!-- JavaScript for Full Functionality -->
     <script>
         class AITutorApp {
             constructor() {
                 this.currentPage = 'welcomePage';
-                this.studentData = { name: '', grade: '', sessionStartTime: null };
+                this.studentData = {
+                    name: '',
+                    grade: '',
+                    sessionStartTime: null
+                };
                 this.sessionTimer = null;
                 this.sessionDuration = 0;
                 this.recognition = null;
                 this.synthesis = window.speechSynthesis;
                 this.isListening = false;
                 this.isProcessing = false;
+                
+                // Drawing state
                 this.drawingState = {
                     isDrawing: false,
                     currentColor: '#000000',
@@ -175,6 +548,7 @@
                     lastX: 0,
                     lastY: 0
                 };
+                
                 this.init();
             }
 
@@ -186,71 +560,301 @@
             }
 
             setupEventListeners() {
+                // Welcome page events
+                this.setupWelcomePageEvents();
+                
+                // Main interface events
+                this.setupMainInterfaceEvents();
+                
+                // Notes panel events
+                this.setupNotesEvents();
+                
+                // Summary page events
+                this.setupSummaryEvents();
+                
+                // Global events
+                this.setupGlobalEvents();
+            }
+
+            setupWelcomePageEvents() {
                 const setupForm = document.getElementById('setupForm');
-                setupForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
-                document.getElementById('studentName').addEventListener('input', () => this.validateForm());
-                document.querySelectorAll('.grade-btn').forEach(button => button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.grade-btn').forEach(btn => btn.classList.remove('selected'));
-                    button.classList.add('selected');
-                    document.getElementById('selectedGrade').value = button.dataset.grade;
-                    this.validateForm();
-                }));
-
-                document.getElementById('microphoneBtn').addEventListener('click', () => this.toggleVoiceRecognition());
-                document.getElementById('notesToggleBtn').addEventListener('click', () => this.openNotesPanel());
-                document.getElementById('endSessionBtn').addEventListener('click', () => this.endSession());
-                document.getElementById('readAloudBtn').addEventListener('click', () => this.readAloud());
-                document.getElementById('closeNotesBtn').addEventListener('click', () => this.closeNotesPanel());
-                document.getElementById('textModeBtn').addEventListener('click', () => this.switchNotesMode('text'));
-                document.getElementById('drawModeBtn').addEventListener('click', () => this.switchNotesMode('draw'));
-
-                let saveTimeout;
-                document.getElementById('notesTextarea').addEventListener('input', () => {
-                    clearTimeout(saveTimeout);
-                    saveTimeout = setTimeout(() => this.saveNotes(true), 1000);
-                });
-                document.getElementById('saveNotesBtn').addEventListener('click', () => this.saveNotes());
-
-                const canvas = document.getElementById('drawingCanvas');
-                if (canvas) {
-                    this.drawingCanvas = canvas;
-                    this.drawingContext = canvas.getContext('2d');
-                    this.setupDrawingEvents(canvas);
-                }
-
-                document.getElementById('newSessionBtn').addEventListener('click', () => this.startNewSession());
-                document.getElementById('shareProgressBtn').addEventListener('click', () => this.shareProgress());
-                document.getElementById('viewProgressBtn').addEventListener('click', () => this.viewAllProgress());
-
-                document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
-                window.addEventListener('resize', () => this.handleWindowResize());
-            }
-
-            handleFormSubmit(e) {
-                e.preventDefault();
-                const name = document.getElementById('studentName').value.trim();
-                const grade = document.getElementById('selectedGrade').value;
-                if (name && grade) {
-                    this.studentData.name = name;
-                    this.studentData.grade = grade;
-                    this.studentData.sessionStartTime = new Date();
-                    this.saveStudentData();
-                    this.showLoadingAndTransition();
-                }
-            }
-
-            validateForm() {
-                const name = document.getElementById('studentName').value.trim();
-                const grade = document.getElementById('selectedGrade').value;
+                const nameInput = document.getElementById('studentName');
+                const gradeButtons = document.querySelectorAll('.grade-btn');
+                const selectedGradeInput = document.getElementById('selectedGrade');
                 const startBtn = document.getElementById('startBtn');
-                startBtn.disabled = !(name && grade);
-                startBtn.style.opacity = name && grade ? '1' : '0.5';
+                
+                let selectedGrade = '';
+                
+                // Grade selection
+                gradeButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        gradeButtons.forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        selectedGrade = button.dataset.grade;
+                        selectedGradeInput.value = selectedGrade;
+                        this.validateForm();
+                    });
+                });
+                
+                // Name input validation
+                nameInput.addEventListener('input', () => this.validateForm());
+                
+                // Form submission
+                setupForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = nameInput.value.trim();
+                    const grade = selectedGradeInput.value;
+                    
+                    if (name && grade) {
+                        this.studentData.name = name;
+                        this.studentData.grade = grade;
+                        this.studentData.sessionStartTime = new Date();
+                        this.saveStudentData();
+                        this.showLoadingAndTransition();
+                    }
+                });
+                
+                const validateForm = () => {
+                    const name = nameInput.value.trim();
+                    const grade = selectedGradeInput.value;
+                    
+                    if (name && grade) {
+                        startBtn.disabled = false;
+                        startBtn.style.opacity = '1';
+                    } else {
+                        startBtn.disabled = true;
+                        startBtn.style.opacity = '0.5';
+                    }
+                };
+                
+                this.validateForm = validateForm;
+            }
+
+            setupMainInterfaceEvents() {
+                // Microphone button
+                const microphoneBtn = document.getElementById('microphoneBtn');
+                microphoneBtn.addEventListener('click', () => this.toggleVoiceRecognition());
+                
+                // Notes toggle
+                const notesToggleBtn = document.getElementById('notesToggleBtn');
+                notesToggleBtn.addEventListener('click', () => this.openNotesPanel());
+                
+                // End session button
+                const endSessionBtn = document.getElementById('endSessionBtn');
+                endSessionBtn.addEventListener('click', () => this.endSession());
+                
+                // Read aloud button
+                const readAloudBtn = document.getElementById('readAloudBtn');
+                readAloudBtn.addEventListener('click', () => this.readAloud());
+                
+                // Word card interactions
+                document.querySelectorAll('.word-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('flipped');
+                        const word = card.dataset.word;
+                        this.showMascotMessage(`Great choice! Let's learn about ${word}! 📚`);
+                    });
+                });
+            }
+
+            setupNotesEvents() {
+                // Close notes button
+                const closeNotesBtn = document.getElementById('closeNotesBtn');
+                closeNotesBtn.addEventListener('click', () => this.closeNotesPanel());
+                
+                // Mode toggle buttons
+                const textModeBtn = document.getElementById('textModeBtn');
+                const drawModeBtn = document.getElementById('drawModeBtn');
+                
+                textModeBtn.addEventListener('click', () => this.switchNotesMode('text'));
+                drawModeBtn.addEventListener('click', () => this.switchNotesMode('draw'));
+                
+                // Auto-save notes
+                const notesTextarea = document.getElementById('notesTextarea');
+                let saveTimeout;
+                notesTextarea.addEventListener('input', () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => this.autoSaveNotes(), 1000);
+                });
+                
+                // Save notes button
+                const saveNotesBtn = document.getElementById('saveNotesBtn');
+                saveNotesBtn.addEventListener('click', () => this.saveNotes());
+                
+                // Drawing events
+                this.setupDrawingEvents();
+            }
+
+            setupDrawingEvents() {
+                const canvas = document.getElementById('drawingCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Color picker
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                        option.classList.add('selected');
+                        this.drawingState.currentColor = option.dataset.color;
+                    });
+                });
+                
+                // Brush size
+                const brushSize = document.getElementById('brushSize');
+                const brushSizeValue = document.getElementById('brushSizeValue');
+                
+                brushSize.addEventListener('input', () => {
+                    this.drawingState.currentSize = brushSize.value;
+                    brushSizeValue.textContent = brushSize.value + 'px';
+                });
+                
+                // Canvas events
+                canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                canvas.addEventListener('mousemove', (e) => this.draw(e));
+                canvas.addEventListener('mouseup', () => this.stopDrawing());
+                canvas.addEventListener('mouseout', () => this.stopDrawing());
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousedown', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousemove', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const mouseEvent = new MouseEvent('mouseup', {});
+                    canvas.dispatchEvent(mouseEvent);
+                });
+                
+                // Clear canvas
+                const clearCanvasBtn = document.getElementById('clearCanvasBtn');
+                clearCanvasBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to clear the canvas?')) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                });
+                
+                this.drawingCanvas = canvas;
+                this.drawingContext = ctx;
+            }
+
+            setupSummaryEvents() {
+                // New session button
+                const newSessionBtn = document.getElementById('newSessionBtn');
+                newSessionBtn.addEventListener('click', () => this.startNewSession());
+                
+                // Share progress button
+                const shareProgressBtn = document.getElementById('shareProgressBtn');
+                shareProgressBtn.addEventListener('click', () => this.shareProgress());
+                
+                // View progress button
+                const viewProgressBtn = document.getElementById('viewProgressBtn');
+                viewProgressBtn.addEventListener('click', () => this.viewAllProgress());
+            }
+
+            setupGlobalEvents() {
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' && e.target === document.body && this.currentPage === 'mainInterface') {
+                        e.preventDefault();
+                        this.toggleVoiceRecognition();
+                    } else if (e.key === 'Escape') {
+                        this.closeNotesPanel();
+                    }
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    if (this.drawingCanvas && !document.getElementById('drawMode').style.display === 'none') {
+                        this.resizeCanvas();
+                    }
+                });
+                
+                // Orientation change
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => {
+                        if (this.drawingCanvas && !document.getElementById('drawMode').style.display === 'none') {
+                            this.resizeCanvas();
+                        }
+                    }, 500);
+                });
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = true;
+                    this.recognition.lang = 'en-US';
+                    
+                    this.recognition.onstart = () => {
+                        this.isListening = true;
+                        this.updateMicrophoneState('listening');
+                        this.updateStatus('listening', 'Listening...');
+                        this.showMascotMessage("I'm listening! 👂");
+                    };
+                    
+                    this.recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript;
+                            }
+                        }
+                        
+                        if (finalTranscript) {
+                            this.addCaption('user', finalTranscript);
+                            this.processUserInput(finalTranscript);
+                        }
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error);
+                        this.updateMicrophoneState('idle');
+                        this.updateStatus('error', 'Speech recognition error');
+                        this.showMascotMessage("Oops! Try again! 🔄");
+                    };
+                    
+                    this.recognition.onend = () => {
+                        this.isListening = false;
+                        if (!this.isProcessing) {
+                            this.updateMicrophoneState('idle');
+                            this.updateStatus('ready', 'Ready to learn');
+                        }
+                    };
+                } else {
+                    console.warn('Speech recognition not supported');
+                    this.updateStatus('error', 'Speech recognition not supported');
+                }
             }
 
             showLoadingAndTransition() {
                 const startBtn = document.getElementById('startBtn');
-                startBtn.innerHTML = `<span style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;"><div class="loading-spinner"></div>Preparing your session...</span>`;
+                startBtn.innerHTML = `
+                    <span style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
+                        <div class="loading-spinner"></div>
+                        Preparing your session...
+                    </span>
+                `;
+                
                 setTimeout(() => {
                     this.switchToPage('mainInterface');
                     this.startSessionTimer();
@@ -258,9 +862,16 @@
             }
 
             switchToPage(pageId) {
-                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Show target page
                 document.getElementById(pageId).classList.add('active');
                 this.currentPage = pageId;
+                
+                // Update display for the new page
                 this.updateDisplay();
             }
 
@@ -271,17 +882,16 @@
                 } else if (this.currentPage === 'summaryPage') {
                     document.getElementById('summaryStudentName').textContent = this.studentData.name || 'Student';
                     document.getElementById('sessionDate').textContent = `Session completed on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
-                    const duration = Math.floor(this.sessionDuration / 60);
-                    document.getElementById('sessionDuration').textContent = `${duration} min`;
                 }
             }
-            
+
             startSessionTimer() {
                 this.sessionTimer = setInterval(() => {
                     this.sessionDuration++;
                     const minutes = Math.floor(this.sessionDuration / 60);
                     const seconds = this.sessionDuration % 60;
-                    document.getElementById('sessionTimer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    document.getElementById('sessionTimer').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 }, 1000);
             }
 
@@ -297,6 +907,7 @@
                     alert('Speech recognition is not supported in your browser.');
                     return;
                 }
+                
                 if (this.isListening) {
                     this.recognition.stop();
                 } else if (!this.isProcessing) {
@@ -304,167 +915,160 @@
                 }
             }
 
-            initializeSpeechRecognition() {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (SpeechRecognition) {
-                    this.recognition = new SpeechRecognition();
-                    this.recognition.continuous = false;
-                    this.recognition.lang = 'en-US';
-                    this.recognition.interimResults = false;
-                    this.recognition.maxAlternatives = 1;
-
-                    this.recognition.onstart = () => {
-                        this.isListening = true;
-                        this.updateMicrophoneState('listening');
-                        this.updateStatus('listening', 'Listening...');
-                    };
-
-                    this.recognition.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript;
-                        this.addCaption('user', transcript);
-                        this.processUserInput(transcript);
-                    };
-
-                    this.recognition.onend = () => {
-                        this.isListening = false;
-                        if (!this.isProcessing) {
-                            this.updateMicrophoneState('idle');
-                            this.updateStatus('ready', 'Ready to learn');
-                        }
-                    };
-
-                    this.recognition.onerror = (event) => {
-                        console.error('Speech recognition error:', event.error);
-                        this.updateMicrophoneState('idle');
-                        this.updateStatus('error', `Error: ${event.error}`);
-                        this.showMascotMessage('Sorry, I couldn\'t hear you. Can you please repeat that?');
-                        this.isListening = false;
-                        this.isProcessing = false;
-                    };
-                }
-            }
-            
-            processUserInput(input) {
-                this.isProcessing = true;
-                this.updateMicrophoneState('processing');
-                this.updateStatus('processing', 'Processing...');
-
-                setTimeout(() => {
-                    const response = this.generateAIResponse(input);
-                    this.addCaption('ai', response);
-                    this.speakResponse(response);
-                    
-                    const showCard = input.toLowerCase().includes('math') || input.toLowerCase().includes('vocabulary');
-                    this.updateFlashcard(showCard, 'Word', 'Definition');
-
-                    this.isProcessing = false;
-                    this.updateMicrophoneState('idle');
-                    this.updateStatus('ready', 'Ready to learn');
-                    this.showMascotMessage(this.getRandomEncouragement());
-                }, 1500);
-            }
-            
-            generateAIResponse(input) {
-                const lowerInput = input.toLowerCase();
-                if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-                    return `Hello ${this.studentData.name}! How can I help you today?`;
-                } else if (lowerInput.includes('how are you')) {
-                    return 'I am doing great, thank you! I\'m ready to help you learn.';
-                } else if (lowerInput.includes('what is')) {
-                    const topic = input.split('what is')[1] || 'something';
-                    return `That's a great question! Let's explore what ${topic.trim()} is.`;
-                } else {
-                    return `That's an interesting thought! Let's dive deeper into that.`;
-                }
-            }
-            
-            speakResponse(text) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                this.synthesis.speak(utterance);
-            }
-            
-            addCaption(speaker, text) {
-                const chatHistory = document.getElementById('chatHistory');
-                const newCaption = document.createElement('div');
-                newCaption.classList.add('chat-caption', speaker);
-                
-                const avatar = document.createElement('div');
-                avatar.classList.add('avatar');
-                avatar.textContent = speaker.toUpperCase();
-                
-                const captionText = document.createElement('div');
-                captionText.classList.add('caption-text');
-                captionText.textContent = text;
-                
-                newCaption.appendChild(avatar);
-                newCaption.appendChild(captionText);
-                chatHistory.appendChild(newCaption);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            }
-
             updateMicrophoneState(state) {
                 const microphoneBtn = document.getElementById('microphoneBtn');
-                const voiceInstructions = document.getElementById('voiceInstructions');
                 const micIcon = document.getElementById('micIcon');
+                const voiceInstructions = document.getElementById('voiceInstructions');
                 
+                // Remove all state classes
                 microphoneBtn.className = `microphone-button mic-${state}`;
                 
-                if (state === 'listening') {
-                    voiceInstructions.textContent = 'Listening... Speak now!';
-                    micIcon.innerHTML = `<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>`;
-                } else if (state === 'processing') {
-                    voiceInstructions.textContent = 'Processing your response...';
-                    micIcon.innerHTML = `<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>`;
-                } else {
-                    voiceInstructions.textContent = 'Tap the microphone and start speaking';
-                    micIcon.innerHTML = `<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>`;
+                switch (state) {
+                    case 'listening':
+                        voiceInstructions.textContent = 'Listening... Speak now!';
+                        micIcon.innerHTML = `
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        `;
+                        break;
+                    case 'processing':
+                        voiceInstructions.textContent = 'Processing your response...';
+                        micIcon.innerHTML = `
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        `;
+                        break;
+                    default:
+                        voiceInstructions.textContent = 'Tap the microphone and start speaking';
+                        micIcon.innerHTML = `
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        `;
+                        break;
                 }
             }
 
             updateStatus(type, message) {
                 const statusText = document.getElementById('statusText');
                 const statusDot = document.getElementById('statusDot');
+                
                 statusText.textContent = message;
                 statusDot.className = 'status-dot';
+                
                 switch (type) {
-                    case 'listening': statusDot.style.background = 'var(--color-accent)'; break;
-                    case 'processing': statusDot.style.background = 'var(--color-secondary)'; break;
-                    case 'error': statusDot.style.background = 'var(--color-danger)'; break;
-                    default: statusDot.style.background = 'var(--color-success)'; break;
+                    case 'listening':
+                        statusDot.style.background = 'var(--color-accent)';
+                        break;
+                    case 'processing':
+                        statusDot.style.background = 'var(--color-secondary)';
+                        break;
+                    case 'error':
+                        statusDot.style.background = 'var(--color-error)';
+                        break;
+                    default:
+                        statusDot.style.background = 'var(--color-success)';
+                        break;
                 }
             }
 
+            processUserInput(input) {
+                this.isProcessing = true;
+                this.updateMicrophoneState('processing');
+                this.updateStatus('processing', 'Processing...');
+                
+                // Simulate AI processing delay
+                setTimeout(() => {
+                    const response = this.generateAIResponse(input);
+                    this.addCaption('ai', response);
+                    this.speakResponse(response);
+                    
+                    this.isProcessing = false;
+                    this.updateMicrophoneState('idle');
+                    this.updateStatus('ready', 'Ready to learn');
+                    this.showMascotMessage(this.getRandomEncouragement());
+                }, 1500);
+            }
+
+            generateAIResponse(input) {
+                const responses = [
+                    "Great job! Let's practice that word again.",
+                    "I heard you say '" + input + "'. That's wonderful!",
+                    "You're doing amazing! Can you try reading the next word?",
+                    "Perfect pronunciation! Let's move on to the next challenge.",
+                    "I love how you're learning! Keep up the great work!"
+                ];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            speakResponse(text) {
+                if (this.synthesis) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.8;
+                    this.synthesis.speak(utterance);
+                }
+            }
+
+            addCaption(speaker, text) {
+                const captionsContainer = document.getElementById('captionsContainer');
+                const caption = document.createElement('div');
+                caption.className = `caption caption-${speaker}`;
+                caption.textContent = `${speaker === 'user' ? 'You' : 'AI Tutor'}: ${text}`;
+                
+                captionsContainer.appendChild(caption);
+                
+                // Remove old captions
+                while (captionsContainer.children.length > 3) {
+                    captionsContainer.removeChild(captionsContainer.firstChild);
+                }
+                
+                // Auto-remove caption after 10 seconds
+                setTimeout(() => {
+                    if (caption.parentNode) {
+                        caption.parentNode.removeChild(caption);
+                    }
+                }, 10000);
+            }
+
             showMascotMessage(message) {
-                const mascotMessage = document.getElementById('mascotMessage');
-                mascotMessage.textContent = message;
+                const mascotBubble = document.getElementById('mascotBubble');
+                const mascotText = document.getElementById('mascotText');
+                
+                mascotText.textContent = message;
+                mascotBubble.classList.add('show');
+                
+                setTimeout(() => {
+                    mascotBubble.classList.remove('show');
+                }, 3000);
             }
 
             getRandomEncouragement() {
-                const messages = [
-                    "You're doing great!",
-                    "Keep up the good work!",
-                    "That's a fantastic question!",
-                    "I'm here to help you shine!",
-                    "Learning is fun, isn't it?"
+                const encouragements = [
+                    "You're doing great! 🌟",
+                    "Keep it up! 👏",
+                    "Awesome work! 🎉",
+                    "You're a star! ⭐",
+                    "Fantastic! 🚀",
+                    "Well done! 💫"
                 ];
-                return messages[Math.floor(Math.random() * messages.length)];
+                return encouragements[Math.floor(Math.random() * encouragements.length)];
             }
-            
+
             readAloud() {
-                const chatHistory = document.getElementById('chatHistory');
-                const lastAICaption = chatHistory.querySelector('.chat-caption.ai:last-child .caption-text');
-                if (lastAICaption) {
-                    this.speakResponse(lastAICaption.textContent);
-                    this.showMascotMessage('Reading the last message out loud!');
-                } else {
-                    this.showMascotMessage('There are no messages to read out loud yet.');
+                const promptText = document.querySelector('.prompt-text').textContent;
+                if (this.synthesis) {
+                    const utterance = new SpeechSynthesisUtterance(promptText);
+                    utterance.rate = 0.8;
+                    utterance.pitch = 1.0;
+                    this.synthesis.speak(utterance);
+                    this.showMascotMessage("Listen carefully! 👂");
                 }
             }
 
             openNotesPanel() {
                 document.getElementById('notesPanel').classList.add('open');
-                this.resizeCanvas();
+                setTimeout(() => this.resizeCanvas(), 300);
             }
 
             closeNotesPanel() {
@@ -472,214 +1076,178 @@
             }
 
             switchNotesMode(mode) {
-                document.getElementById('textModeBtn').classList.toggle('active', mode === 'text');
-                document.getElementById('drawModeBtn').classList.toggle('active', mode === 'draw');
-                document.getElementById('textMode').style.display = mode === 'text' ? 'block' : 'none';
-                document.getElementById('drawMode').style.display = mode === 'draw' ? 'block' : 'none';
-                document.getElementById('drawingTools').style.display = mode === 'draw' ? 'flex' : 'none';
-                if (mode === 'draw') {
-                    this.resizeCanvas();
+                const textModeBtn = document.getElementById('textModeBtn');
+                const drawModeBtn = document.getElementById('drawModeBtn');
+                const textMode = document.getElementById('textMode');
+                const drawMode = document.getElementById('drawMode');
+                
+                if (mode === 'text') {
+                    textModeBtn.classList.add('active');
+                    drawModeBtn.classList.remove('active');
+                    textMode.style.display = 'block';
+                    drawMode.style.display = 'none';
+                } else {
+                    drawModeBtn.classList.add('active');
+                    textModeBtn.classList.remove('active');
+                    drawMode.style.display = 'block';
+                    textMode.style.display = 'none';
+                    setTimeout(() => this.resizeCanvas(), 100);
                 }
             }
 
             resizeCanvas() {
                 if (this.drawingCanvas) {
-                    const parent = this.drawingCanvas.parentElement;
-                    const dataUrl = this.drawingCanvas.toDataURL();
-                    this.drawingCanvas.width = parent.clientWidth;
-                    this.drawingCanvas.height = parent.clientHeight;
-                    if (dataUrl) {
-                        const img = new Image();
-                        img.onload = () => { this.drawingContext.drawImage(img, 0, 0); };
-                        img.src = dataUrl;
-                    }
+                    const rect = this.drawingCanvas.getBoundingClientRect();
+                    this.drawingCanvas.width = rect.width * window.devicePixelRatio;
+                    this.drawingCanvas.height = rect.height * window.devicePixelRatio;
+                    this.drawingContext.scale(window.devicePixelRatio, window.devicePixelRatio);
+                    
+                    this.drawingContext.lineCap = 'round';
+                    this.drawingContext.lineJoin = 'round';
                 }
-            }
-            
-            setupDrawingEvents(canvas) {
-                const parent = canvas.parentElement;
-                canvas.width = parent.clientWidth;
-                canvas.height = parent.clientHeight;
-
-                document.querySelectorAll('.color-option').forEach(option => {
-                    option.addEventListener('click', () => {
-                        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-                        option.classList.add('selected');
-                        this.drawingState.currentColor = option.dataset.color;
-                    });
-                });
-                
-                const brushSize = document.getElementById('brushSize');
-                const brushSizeValue = document.getElementById('brushSizeValue');
-                brushSize.addEventListener('input', () => {
-                    this.drawingState.currentSize = brushSize.value;
-                    brushSizeValue.textContent = brushSize.value + 'px';
-                });
-
-                canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-                canvas.addEventListener('mousemove', (e) => this.draw(e));
-                canvas.addEventListener('mouseup', () => this.stopDrawing());
-                canvas.addEventListener('mouseout', () => this.stopDrawing());
-                canvas.addEventListener('touchstart', (e) => this.handleTouchEvent(e, 'mousedown'));
-                canvas.addEventListener('touchmove', (e) => this.handleTouchEvent(e, 'mousemove'));
-                canvas.addEventListener('touchend', (e) => this.handleTouchEvent(e, 'mouseup'));
-                
-                document.getElementById('clearCanvasBtn').addEventListener('click', () => {
-                    if (confirm('Are you sure you want to clear the canvas?')) {
-                        this.drawingContext.clearRect(0, 0, canvas.width, canvas.height);
-                    }
-                });
-            }
-
-            handleTouchEvent(e, type) {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent(type, { clientX: touch.clientX, clientY: touch.clientY });
-                this.drawingCanvas.dispatchEvent(mouseEvent);
             }
 
             startDrawing(e) {
                 this.drawingState.isDrawing = true;
-                [this.drawingState.lastX, this.drawingState.lastY] = [e.offsetX, e.offsetY];
+                const rect = this.drawingCanvas.getBoundingClientRect();
+                this.drawingState.lastX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                this.drawingState.lastY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
             }
 
             draw(e) {
                 if (!this.drawingState.isDrawing) return;
+                
+                e.preventDefault();
+                const rect = this.drawingCanvas.getBoundingClientRect();
+                const currentX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                const currentY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                
                 this.drawingContext.beginPath();
                 this.drawingContext.moveTo(this.drawingState.lastX, this.drawingState.lastY);
-                this.drawingContext.lineTo(e.offsetX, e.offsetY);
+                this.drawingContext.lineTo(currentX, currentY);
                 this.drawingContext.strokeStyle = this.drawingState.currentColor;
                 this.drawingContext.lineWidth = this.drawingState.currentSize;
-                this.drawingContext.lineCap = 'round';
                 this.drawingContext.stroke();
-                [this.drawingState.lastX, this.drawingState.lastY] = [e.offsetX, e.offsetY];
+                
+                this.drawingState.lastX = currentX;
+                this.drawingState.lastY = currentY;
             }
 
             stopDrawing() {
                 this.drawingState.isDrawing = false;
             }
 
-            saveNotes(isAuto = false) {
+            autoSaveNotes() {
                 const notesContent = document.getElementById('notesTextarea').value;
-                const canvasData = this.drawingCanvas ? this.drawingCanvas.toDataURL() : null;
-                const notesData = { text: notesContent, drawing: canvasData, timestamp: new Date().toISOString() };
+                localStorage.setItem('aiTutorNotes', notesContent);
+                this.showMascotMessage("Notes auto-saved! 💾");
+            }
+
+            saveNotes() {
+                const notesContent = document.getElementById('notesTextarea').value;
+                const canvasData = this.drawingCanvas?.toDataURL();
+                
+                const notesData = {
+                    text: notesContent,
+                    drawing: canvasData,
+                    timestamp: new Date().toISOString()
+                };
+                
                 localStorage.setItem('aiTutorNotes', JSON.stringify(notesData));
-                if (!isAuto) {
-                    this.showNotification("Notes saved successfully! 💾");
-                }
+                this.showMascotMessage("Notes saved successfully! 💾");
             }
 
             endSession() {
                 if (confirm('Are you sure you want to end this learning session?')) {
                     this.stopSessionTimer();
-                    this.generateProgressSummary();
+                    const duration = Math.floor(this.sessionDuration / 60);
+                    document.getElementById('sessionDuration').textContent = `${duration} min`;
                     this.switchToPage('summaryPage');
                 }
             }
 
             startNewSession() {
-                this.studentData = { name: '', grade: '', sessionStartTime: null };
                 this.sessionDuration = 0;
-                localStorage.removeItem('aiTutorStudentData');
-                localStorage.removeItem('aiTutorNotes');
-                this.switchToPage('welcomePage');
-                document.getElementById('studentName').value = '';
-                document.getElementById('selectedGrade').value = '';
-                document.querySelectorAll('.grade-btn').forEach(btn => btn.classList.remove('selected'));
-                this.validateForm();
+                this.switchToPage('mainInterface');
+                this.startSessionTimer();
+                this.showMascotMessage(`Welcome back, ${this.studentData.name}! Ready for another adventure? 🎓`);
             }
 
             shareProgress() {
-                const summary = this.generateProgressSummary(true);
-                const shareText = `Check out my AI Tutor session summary:\n\n${summary}`;
+                const summary = this.generateProgressSummary();
+                
                 if (navigator.share) {
                     navigator.share({
-                        title: 'AI Tutor Session Summary',
-                        text: shareText,
-                    }).then(() => {
-                        this.showNotification('Summary shared successfully!');
-                    }).catch((error) => {
-                        console.error('Error sharing:', error);
-                    });
+                        title: `${this.studentData.name}'s Learning Progress`,
+                        text: summary,
+                        url: window.location.href
+                    }).catch(console.error);
                 } else {
-                    navigator.clipboard.writeText(shareText).then(() => {
-                        this.showNotification('Summary copied to clipboard!');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
+                    navigator.clipboard.writeText(summary).then(() => {
+                        this.showNotification('Progress summary copied to clipboard!');
+                    }).catch(() => {
+                        this.showNotification('Unable to share progress. Please try again.');
                     });
                 }
             }
-            
-            generateProgressSummary(forShare = false) {
-                const duration = Math.floor(this.sessionDuration / 60);
-                let summary = `Student: ${this.studentData.name}\nGrade: ${this.studentData.grade}\nDate: ${new Date().toLocaleDateString()}\nDuration: ${duration} minutes\n`;
 
-                if (forShare) {
-                    const notes = localStorage.getItem('aiTutorNotes');
-                    if (notes) {
-                        const notesData = JSON.parse(notes);
-                        summary += `\nYour Notes:\n${notesData.text || ''}\n\n`;
-                    }
-                }
-                return summary;
+            generateProgressSummary() {
+                const duration = Math.floor(this.sessionDuration / 60);
+                return `🎉 ${this.studentData.name} completed an amazing AI Tutor session!
+
+📊 Session Highlights:
+• Duration: ${duration} minutes
+• Topics covered: 5 (Reading & Math)
+• New words learned: 12
+• Engagement score: 95%
+
+🌟 Areas of Strength:
+• Excellent listening skills
+• Great pronunciation
+• Quick problem solving
+
+📚 Next Steps:
+• Practice sight words
+• Number counting exercises
+• Drawing practice
+
+Keep up the fantastic work! 🚀`;
             }
 
             viewAllProgress() {
-                this.showNotification('This feature is coming soon!');
-            }
-
-            handleKeyboardShortcuts(e) {
-                if (e.key === ' ' && e.target === document.body && this.currentPage === 'mainInterface') {
-                    e.preventDefault();
-                    this.toggleVoiceRecognition();
-                } else if (e.key === 'Escape') {
-                    this.closeNotesPanel();
-                }
-            }
-            
-            handleWindowResize() {
-                if (this.drawingCanvas && document.getElementById('drawMode').style.display !== 'none') {
-                    setTimeout(() => this.resizeCanvas(), 500);
-                }
+                this.showNotification('Detailed progress tracking coming soon!');
             }
 
             showNotification(message) {
-                let notification = document.getElementById('notification');
-                if (!notification) {
-                    notification = document.createElement('div');
-                    notification.id = 'notification';
-                    document.body.appendChild(notification);
-                }
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 1rem;
+                    right: 1rem;
+                    background: var(--color-success-500);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 1rem;
+                    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+                    z-index: 1000;
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    max-width: 300px;
+                `;
                 notification.textContent = message;
                 
-                notification.style.transform = 'translateX(0)';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
                 
                 setTimeout(() => {
                     notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
                 }, 3000);
-            }
-
-            updateFlashcard(shouldShow, word, definition) {
-                const cardContainer = document.getElementById('dynamicWordCard');
-                if (shouldShow) {
-                    cardContainer.innerHTML = `
-                        <div class="word-card" data-word="${word}">
-                            <div class="card-front">
-                                <div class="card-icon">🧠</div>
-                                <h3 class="card-title">${word}</h3>
-                            </div>
-                            <div class="card-back">
-                                <p class="card-description">${definition}</p>
-                            </div>
-                        </div>
-                    `;
-                    cardContainer.querySelector('.word-card').addEventListener('click', (e) => {
-                        e.currentTarget.classList.toggle('flipped');
-                        this.showMascotMessage(`Great choice! Let's learn about ${word}! 📚`);
-                    });
-                } else {
-                    cardContainer.innerHTML = '';
-                }
             }
 
             saveStudentData() {
@@ -715,6 +1283,7 @@
             }
         }
 
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
             new AITutorApp();
         });
